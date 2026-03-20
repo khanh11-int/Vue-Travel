@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 
@@ -111,6 +111,14 @@ const switchMode = (nextMode) => {
     form.isAdmin = false
   }
 }
+
+watch(
+  () => route.query.mode,
+  (modeQuery) => {
+    switchMode(modeQuery === 'register' ? 'register' : 'login')
+  },
+  { immediate: true }
+)
 
 const validate = () => {
   errors.fullName = mode.value === 'register' && !form.fullName.trim() ? 'Vui lòng nhập họ tên.' : ''

@@ -1,17 +1,23 @@
 <template>
   <div class="app-shell">
     <header class="main-header">
-      <router-link class="brand" to="/">Việt Voyage</router-link>
+      <router-link class="brand" to="/" aria-label="Việt Voyage">
+        <img :src="logoImage" alt="Việt Voyage" class="brand-logo" />
+      </router-link>
       <nav class="main-nav">
         <router-link to="/">Trang chủ</router-link>
         <router-link to="/dich-vu">Khám phá</router-link>
-        <router-link :to="{ name: 'travel-list', query: { category: 'hotel' } }">Khách sạn</router-link>
-        <router-link :to="{ name: 'travel-list', query: { category: 'tour' } }">Tour</router-link>
-        <router-link :to="{ name: 'travel-list', query: { category: 'ticket' } }">Vé tham quan</router-link>
-        <router-link to="/wishlist">Wishlist <span class="nav-pill">{{ wishlistCount }}</span></router-link>
+        <router-link to="/wishlist" class="nav-right-start">Wishlist <span class="nav-pill">{{ wishlistCount }}</span></router-link>
         <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
         <router-link to="/lich-su-dat-cho">Đơn đặt chỗ</router-link>
         <router-link v-if="!isLoggedIn" to="/dang-nhap">Đăng nhập</router-link>
+        <router-link
+          v-if="!isLoggedIn"
+          :to="{ path: '/dang-nhap', query: { mode: 'register' } }"
+          class="nav-register-button"
+        >
+          Đăng ký
+        </router-link>
         <div v-else class="user-nav">
           <span class="user-chip">{{ currentUserLabel }}</span>
           <button class="ghost-button" type="button" @click="handleLogout">Đăng xuất</button>
@@ -45,6 +51,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTravelStore } from '@/stores/useTravelStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import logoImage from '@/assets/logo.png'
 
 const router = useRouter()
 const store = useTravelStore()

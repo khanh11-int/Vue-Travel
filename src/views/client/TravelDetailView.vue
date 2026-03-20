@@ -3,13 +3,15 @@
     <div>
       <div class="gallery-grid">
         <img :src="service.image" :alt="service.name" class="gallery-main" />
-        <img
-          v-for="item in service.gallery"
-          :key="item"
-          :src="item"
-          :alt="service.name"
-          class="gallery-thumb"
-        />
+        <div v-if="service.gallery?.length" class="gallery-thumbs">
+          <img
+            v-for="item in service.gallery"
+            :key="item"
+            :src="item"
+            :alt="service.name"
+            class="gallery-thumb"
+          />
+        </div>
       </div>
 
       <div class="section-heading compact">
@@ -168,7 +170,7 @@ const handleBookNow = () => {
     bookingFeedback.value = `Số lượng vượt quá ${service.value.availableSlots} chỗ còn lại.`
     return
   }
-  
+
   store.addToCart({
     serviceId: service.value.id,
     quantity: bookingForm.quantity,

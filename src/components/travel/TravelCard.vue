@@ -18,18 +18,18 @@
       <p class="travel-card__description">{{ service.shortDescription }}</p>
 
       <div class="travel-card__price-row">
-        <div>
-          <small>Giá từ</small>
-          <p class="price">{{ formatCurrencyVND(service.salePrice) }}</p>
-        </div>
         <span :class="['availability', service.availableSlots > 0 ? 'available' : 'sold-out']">
           {{ service.availableSlots > 0 ? `Còn ${service.availableSlots} chỗ` : 'Hết chỗ' }}
         </span>
+        <div class="travel-card__price-main">
+          <small class="price-label">Giá từ</small><p class="price">{{ formatCurrencyVND(service.salePrice) }}</p>
+        </div>
+
       </div>
 
       <div class="travel-card__actions">
-        <router-link :to="`/dich-vu/${service.slug}`" class="secondary-button">Xem chi tiết</router-link>
-        <button class="primary-button" type="button" @click="$emit('book-now', service)">
+        <router-link :to="`/dich-vu/${service.slug}`" class="secondary-button travel-card__action">Xem chi tiết</router-link>
+        <button class="primary-button travel-card__action" type="button" @click="$emit('book-now', service)">
           Đặt ngay
         </button>
       </div>

@@ -2,7 +2,7 @@
   <section class="page-section hero-section">
     <div>
       <p class="eyebrow">Khám phá Việt Nam</p>
-      <h1>Website du lịch nội địa Việt Nam theo phong cách Traveloka mini.</h1>
+      <h1>Website du lịch nội địa Việt Nam</h1>
       <p class="hero-copy">
         Tập trung khách sạn, tour, vé tham quan và combo tại Hà Nội, Đà Nẵng, Hạ Long,
         Đà Lạt, Phú Quốc cùng nhiều điểm đến nổi bật khác.

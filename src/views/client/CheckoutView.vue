@@ -66,6 +66,10 @@
         <strong>{{ formatCurrencyVND(subtotal) }}</strong>
       </div>
       <div class="summary-row">
+        <span>Giảm giá</span>
+        <strong>-{{ formatCurrencyVND(discount) }}</strong>
+      </div>
+      <div class="summary-row">
         <span>Phí dịch vụ</span>
         <strong>{{ formatCurrencyVND(serviceFee) }}</strong>
       </div>
@@ -93,8 +97,9 @@ const store = useTravelStore()
 
 const cartItems = computed(() => store.cartItems.value)
 const subtotal = computed(() => store.cartTotal.value)
+const discount = computed(() => store.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
-const total = computed(() => subtotal.value + serviceFee.value)
+const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
 
 const form = reactive({
   fullName: '',
@@ -129,8 +134,10 @@ const handleCheckout = () => {
     customer: { ...form },
     items: cartItems.value,
     subtotal: subtotal.value,
+    discount: discount.value,
     serviceFee: serviceFee.value,
-    total: total.value
+    total: total.value,
+    promotion: store.state.appliedPromotion
   })
 
   router.push({ name: 'booking-success', query: { code: booking.code } })

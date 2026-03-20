@@ -1,0 +1,116 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import ClientLayout from '@/layouts/ClientLayout.vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
+import HomeView from '@/views/client/HomeView.vue'
+import TravelListView from '@/views/client/TravelListView.vue'
+import TravelDetailView from '@/views/client/TravelDetailView.vue'
+import WishlistView from '@/views/client/WishlistView.vue'
+import CartView from '@/views/client/CartView.vue'
+import CheckoutView from '@/views/client/CheckoutView.vue'
+import BookingSuccessView from '@/views/client/BookingSuccessView.vue'
+import BookingHistoryView from '@/views/client/BookingHistoryView.vue'
+import LoginView from '@/views/client/LoginView.vue'
+import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
+
+const routes = [
+  {
+    path: '/',
+    component: ClientLayout,
+    children: [
+      {
+        path: '',
+        name: 'home',
+        component: HomeView,
+        meta: { title: 'Việt Voyage | Du lịch nội địa Việt Nam' }
+      },
+      {
+        path: 'dich-vu',
+        name: 'travel-list',
+        component: TravelListView,
+        meta: { title: 'Khám phá dịch vụ du lịch Việt Nam' }
+      },
+      {
+        path: 'dich-vu/:slug',
+        name: 'travel-detail',
+        component: TravelDetailView,
+        props: true,
+        meta: { title: 'Chi tiết dịch vụ du lịch' }
+      },
+      {
+        path: 'wishlist',
+        name: 'wishlist',
+        component: WishlistView,
+        meta: { title: 'Danh sách yêu thích' }
+      },
+      {
+        path: 'gio-hang',
+        name: 'cart',
+        component: CartView,
+        meta: { title: 'Giỏ đặt chỗ' }
+      },
+      {
+        path: 'thanh-toan',
+        name: 'checkout',
+        component: CheckoutView,
+        meta: { title: 'Thanh toán đặt chỗ' }
+      },
+      {
+        path: 'dat-cho-thanh-cong',
+        name: 'booking-success',
+        component: BookingSuccessView,
+        meta: { title: 'Đặt chỗ thành công' }
+      },
+      {
+        path: 'lich-su-dat-cho',
+        name: 'booking-history',
+        component: BookingHistoryView,
+        meta: { title: 'Lịch sử đặt chỗ' }
+      },
+      {
+        path: 'dang-nhap',
+        name: 'login',
+        component: LoginView,
+        meta: { title: 'Đăng nhập / Đăng ký' }
+      }
+    ]
+  },
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: { requiresAdmin: true, title: 'Quản trị Việt Voyage' },
+    children: [
+      {
+        path: '',
+        name: 'admin-dashboard',
+        component: AdminDashboardView,
+        meta: { requiresAdmin: true, title: 'Dashboard quản trị' }
+      }
+    ]
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+  scrollBehavior() {
+    return { top: 0 }
+  }
+})
+
+router.beforeEach((to, from, next) => {
+  if (to.meta?.title) {
+    document.title = to.meta.title
+  }
+
+  if (to.meta?.requiresAdmin) {
+    const adminSession = window.localStorage.getItem('vietvoyage_admin_session')
+    if (!adminSession) {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+      return
+    }
+  }
+
+  next()
+})
+
+export default router

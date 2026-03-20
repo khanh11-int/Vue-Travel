@@ -1,0 +1,43 @@
+<template>
+  <div class="app-shell">
+    <header class="main-header">
+      <router-link class="brand" to="/">Việt Voyage</router-link>
+      <nav class="main-nav">
+        <router-link to="/">Trang chủ</router-link>
+        <router-link to="/dich-vu">Khám phá</router-link>
+        <router-link to="/wishlist">Wishlist <span class="nav-pill">{{ wishlistCount }}</span></router-link>
+        <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
+        <router-link to="/lich-su-dat-cho">Đơn đặt chỗ</router-link>
+        <router-link to="/dang-nhap">Đăng nhập</router-link>
+      </nav>
+    </header>
+
+    <main>
+      <router-view />
+    </main>
+
+    <footer class="main-footer">
+      <div>
+        <h3>Việt Voyage</h3>
+        <p>Nền tảng du lịch nội địa Việt Nam lấy cảm hứng từ trải nghiệm OTA hiện đại.</p>
+      </div>
+      <div>
+        <h4>Hỗ trợ</h4>
+        <p>Chính sách bảo mật · Điều khoản dịch vụ · Liên hệ</p>
+      </div>
+      <div>
+        <h4>Thanh toán mock</h4>
+        <p>VNPay · MoMo · Visa nội địa</p>
+      </div>
+    </footer>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { useTravelStore } from '@/stores/useTravelStore'
+
+const store = useTravelStore()
+const wishlistCount = computed(() => store.wishlistItems.value.length)
+const cartCount = computed(() => store.cartItems.value.length)
+</script>

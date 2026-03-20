@@ -7,12 +7,12 @@
       </div>
       <nav>
         <router-link to="/admin">Dashboard</router-link>
+        <router-link to="/admin/services">Dịch vụ</router-link>
+        <router-link to="/admin/bookings">Đơn đặt chỗ</router-link>
         <a href="#">Danh mục</a>
-        <a href="#">Dịch vụ</a>
-        <a href="#">Đơn đặt chỗ</a>
         <a href="#">Khách hàng</a>
-        <a href="#">Bình luận</a>
-        <a href="#">Khuyến mãi</a>
+        <router-link to="/admin/comments">Bình luận</router-link>
+        <router-link to="/admin/promotions">Khuyến mãi</router-link>
       </nav>
     </aside>
 

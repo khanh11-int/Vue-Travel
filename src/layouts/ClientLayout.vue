@@ -30,7 +30,7 @@
         <p>Chính sách bảo mật · Điều khoản dịch vụ · Liên hệ</p>
       </div>
       <div>
-        <h4>Thanh toán mock</h4>
+        <h4>Thanh toán </h4>
         <p>VNPay · MoMo · Visa nội địa</p>
       </div>
     </footer>

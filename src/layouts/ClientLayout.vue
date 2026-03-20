@@ -8,7 +8,11 @@
         <router-link to="/wishlist">Wishlist <span class="nav-pill">{{ wishlistCount }}</span></router-link>
         <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
         <router-link to="/lich-su-dat-cho">Đơn đặt chỗ</router-link>
-        <router-link to="/dang-nhap">Đăng nhập</router-link>
+        <router-link v-if="!isLoggedIn" to="/dang-nhap">Đăng nhập</router-link>
+        <div v-else class="user-nav">
+          <span class="user-chip">{{ currentUserLabel }}</span>
+          <button class="ghost-button" type="button" @click="handleLogout">Đăng xuất</button>
+        </div>
       </nav>
     </header>
 
@@ -35,9 +39,24 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useTravelStore } from '@/stores/useTravelStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 
+const router = useRouter()
 const store = useTravelStore()
+const authStore = useAuthStore()
+
 const wishlistCount = computed(() => store.wishlistItems.value.length)
 const cartCount = computed(() => store.cartItems.value.length)
+const isLoggedIn = computed(() => authStore.isLoggedIn.value)
+const currentUserLabel = computed(() => {
+  if (!authStore.state.currentUser) return ''
+  return `${authStore.state.currentUser.fullName} · ${authStore.state.currentUser.role === 'admin' ? 'Admin' : 'Khách hàng'}`
+})
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/')
+}
 </script>

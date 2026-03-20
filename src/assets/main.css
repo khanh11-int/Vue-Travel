@@ -924,3 +924,16 @@ img {
     grid-column: span 1;
   }
 }
+
+
+.voucher-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .voucher-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -51,9 +51,21 @@
 
     <aside class="summary-card sticky-card">
       <p class="eyebrow">Tóm tắt booking</p>
+      <div class="field-group">
+        <label>Mã khuyến mãi</label>
+        <div class="voucher-row">
+          <input v-model="promotionCode" type="text" placeholder="Ví dụ: VIETVOYAGE10" />
+          <button class="secondary-button" type="button" @click="handleApplyPromotion">Áp dụng</button>
+        </div>
+        <small v-if="promotionFeedback" :class="promotionSuccess ? 'success-text' : 'error-text'">{{ promotionFeedback }}</small>
+      </div>
       <div class="summary-row">
         <span>Tạm tính</span>
         <strong>{{ formatCurrencyVND(subtotal) }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Giảm giá</span>
+        <strong>-{{ formatCurrencyVND(discount) }}</strong>
       </div>
       <div class="summary-row">
         <span>Phí dịch vụ</span>
@@ -75,18 +87,30 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { categories } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
 
 const store = useTravelStore()
+const promotionCode = ref(store.state.appliedPromotion?.code || '')
+const promotionFeedback = ref('')
+const promotionSuccess = ref(false)
 
 const cartItems = computed(() => store.cartItems.value)
 const subtotal = computed(() => store.cartTotal.value)
+const discount = computed(() => store.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
-const total = computed(() => subtotal.value + serviceFee.value)
+const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
 
 const getCategoryLabel = (categoryId) =>
   categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
+
+const handleApplyPromotion = () => {
+  const result = store.applyPromotionCode(promotionCode.value, subtotal.value)
+  promotionSuccess.value = result.success
+  promotionFeedback.value = result.success
+    ? `Áp dụng thành công mã ${result.promotion.code}.`
+    : result.message
+}
 </script>

@@ -118,7 +118,8 @@ export const comments = [
     userName: 'Nguyễn Lan Anh',
     rating: 5,
     content: 'Du thuyền đẹp, đồ ăn ngon và lịch trình hợp lý. Rất đáng thử cho chuyến đi Hạ Long.',
-    createdAt: '2026-03-15T08:30:00Z'
+    createdAt: '2026-03-15T08:30:00Z',
+    visible: true
   },
   {
     id: 9002,
@@ -126,7 +127,31 @@ export const comments = [
     userName: 'Trần Minh Quân',
     rating: 4,
     content: 'Nhân viên hỗ trợ nhiệt tình, phòng sạch đẹp. Chỉ mong thời gian kayak dài hơn.',
-    createdAt: '2026-03-16T14:20:00Z'
+    createdAt: '2026-03-16T14:20:00Z',
+    visible: true
+  }
+]
+
+export const promotions = [
+  {
+    id: 3001,
+    code: 'VIETVOYAGE10',
+    type: 'percent',
+    value: 10,
+    description: 'Giảm 10% cho booking nội địa',
+    status: 'active',
+    startDate: '2026-03-01',
+    endDate: '2026-12-31'
+  },
+  {
+    id: 3002,
+    code: 'PHUQUOC500K',
+    type: 'amount',
+    value: 500000,
+    description: 'Giảm 500.000đ cho đơn từ 5.000.000đ',
+    status: 'active',
+    startDate: '2026-03-01',
+    endDate: '2026-09-30'
   }
 ]
 

@@ -25,6 +25,29 @@
         </select>
       </div>
       <div class="field-group">
+        <label>Khoảng giá</label>
+        <div class="range-grid">
+          <input v-model.number="filters.minPrice" type="number" min="0" placeholder="Từ" />
+          <input v-model.number="filters.maxPrice" type="number" min="0" placeholder="Đến" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Đánh giá tối thiểu</label>
+        <select v-model.number="filters.minRating">
+          <option :value="0">Tất cả</option>
+          <option :value="4">Từ 4 sao</option>
+          <option :value="4.5">Từ 4.5 sao</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Tình trạng</label>
+        <select v-model="filters.availability">
+          <option value="">Tất cả</option>
+          <option value="available">Còn chỗ</option>
+          <option value="soldout">Hết chỗ</option>
+        </select>
+      </div>
+      <div class="field-group">
         <label>Sắp xếp</label>
         <select v-model="filters.sortBy">
           <option value="featured">Nổi bật</option>
@@ -34,6 +57,7 @@
           <option value="latest">Mới nhất</option>
         </select>
       </div>
+      <button class="ghost-button full-width" type="button" @click="resetFilters">Xóa bộ lọc</button>
     </aside>
 
     <div>
@@ -41,10 +65,14 @@
         <div>
           <p class="eyebrow">Khám phá dịch vụ</p>
           <h1>{{ filteredServices.length }} lựa chọn du lịch nội địa Việt Nam</h1>
+          <p class="muted">
+            Ngày đi: {{ route.query.date || 'Chưa chọn' }} · Ngày về: {{ route.query.returnDate || 'Chưa chọn' }} ·
+            {{ guestLabel }}
+          </p>
         </div>
       </div>
 
-      <div class="travel-grid">
+      <div v-if="filteredServices.length" class="travel-grid">
         <TravelCard
           v-for="service in filteredServices"
           :key="service.id"
@@ -53,6 +81,10 @@
           @toggle-wishlist="store.toggleWishlist"
           @book-now="handleBookNow"
         />
+      </div>
+      <div v-else class="empty-state">
+        <h2>Không tìm thấy dịch vụ phù hợp</h2>
+        <p>Hãy thử nới lỏng bộ lọc để xem thêm khách sạn, tour hoặc vé tham quan nội địa khác.</p>
       </div>
     </div>
   </section>
@@ -69,20 +101,29 @@ const route = useRoute()
 const router = useRouter()
 const store = useTravelStore()
 
-const filters = reactive({
+const createInitialFilters = () => ({
   keyword: route.query.destination || '',
   categoryId: route.query.category || '',
-  province: '',
+  province: route.query.province || '',
+  minPrice: 0,
+  maxPrice: 0,
+  minRating: 0,
+  availability: '',
   sortBy: 'featured'
 })
+
+const filters = reactive(createInitialFilters())
 
 watch(
   () => route.query,
   (query) => {
     filters.keyword = query.destination || ''
     filters.categoryId = query.category || ''
+    filters.province = query.province || ''
   }
 )
+
+const guestLabel = computed(() => `${route.query.guests || 1} khách`)
 
 const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
@@ -95,8 +136,15 @@ const filteredServices = computed(() => {
 
     const matchesCategory = !filters.categoryId || service.categoryId === filters.categoryId
     const matchesProvince = !filters.province || service.province === filters.province
+    const matchesMinPrice = !filters.minPrice || service.salePrice >= filters.minPrice
+    const matchesMaxPrice = !filters.maxPrice || service.salePrice <= filters.maxPrice
+    const matchesRating = !filters.minRating || service.rating >= filters.minRating
+    const matchesAvailability = !filters.availability
+      || (filters.availability === 'available' && service.availableSlots > 0)
+      || (filters.availability === 'soldout' && service.availableSlots <= 0)
 
-    return matchesKeyword && matchesCategory && matchesProvince
+    return matchesKeyword && matchesCategory && matchesProvince && matchesMinPrice
+      && matchesMaxPrice && matchesRating && matchesAvailability
   })
 
   return [...result].sort((left, right) => {
@@ -116,7 +164,11 @@ const filteredServices = computed(() => {
 })
 
 const handleBookNow = (service) => {
-  store.addToCart({ serviceId: service.id, quantity: 1, travelDate: route.query.date || '' })
+  store.addToCart({
+    serviceId: service.id,
+    quantity: Number(route.query.guests || 1),
+    travelDate: route.query.date || ''
+  })
   router.push('/gio-hang')
 }
 </script>

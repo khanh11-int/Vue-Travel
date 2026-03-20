@@ -114,23 +114,31 @@ export const useTravelStore = () => {
   }
 
   const addToCart = ({ serviceId, quantity = 1, travelDate = '' }) => {
+    const service = state.services.find((entry) => entry.id === serviceId)
+    if (!service || service.availableSlots <= 0) return
+
+    const normalizedQuantity = Math.max(1, Math.min(Number(quantity) || 1, service.availableSlots))
     const existing = state.cart.find((item) => item.serviceId === serviceId && item.travelDate === travelDate)
     if (existing) {
-      existing.quantity += quantity
+      existing.quantity = Math.min(existing.quantity + normalizedQuantity, service.availableSlots)
     } else {
-      state.cart.push({ serviceId, quantity, travelDate })
+      state.cart.push({ serviceId, quantity: normalizedQuantity, travelDate })
     }
+
     persistStorage(STORAGE_KEYS.cart, state.cart)
   }
 
   const updateCartQuantity = (serviceId, travelDate, quantity) => {
+    const service = state.services.find((entry) => entry.id === serviceId)
+    const maxSlots = service?.availableSlots || 0
     const normalizedQuantity = Number(quantity)
+
     if (normalizedQuantity <= 0) {
       state.cart = state.cart.filter((item) => !(item.serviceId === serviceId && item.travelDate === travelDate))
     } else {
       state.cart = state.cart.map((item) =>
         item.serviceId === serviceId && item.travelDate === travelDate
-          ? { ...item, quantity: normalizedQuantity }
+          ? { ...item, quantity: Math.min(normalizedQuantity, Math.max(maxSlots, 1)) }
           : item
       )
     }

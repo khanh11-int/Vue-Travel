@@ -45,7 +45,7 @@
 
       <label v-if="mode === 'login'" class="checkbox-row">
         <input v-model="form.isAdmin" type="checkbox" />
-        <span>Đăng nhập với vai trò admin mock</span>
+        <span>Đăng nhập</span>
       </label>
 
       <p v-if="feedback.message" :class="feedback.success ? 'success-text' : 'error-text'">

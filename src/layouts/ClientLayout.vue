@@ -5,6 +5,9 @@
       <nav class="main-nav">
         <router-link to="/">Trang chủ</router-link>
         <router-link to="/dich-vu">Khám phá</router-link>
+        <router-link :to="{ name: 'travel-list', query: { category: 'hotel' } }">Khách sạn</router-link>
+        <router-link :to="{ name: 'travel-list', query: { category: 'tour' } }">Tour</router-link>
+        <router-link :to="{ name: 'travel-list', query: { category: 'ticket' } }">Vé tham quan</router-link>
         <router-link to="/wishlist">Wishlist <span class="nav-pill">{{ wishlistCount }}</span></router-link>
         <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
         <router-link to="/lich-su-dat-cho">Đơn đặt chỗ</router-link>
@@ -26,12 +29,12 @@
         <p>Nền tảng du lịch nội địa Việt Nam lấy cảm hứng từ trải nghiệm OTA hiện đại.</p>
       </div>
       <div>
-        <h4>Hỗ trợ</h4>
-        <p>Chính sách bảo mật · Điều khoản dịch vụ · Liên hệ</p>
+        <h4>Liên hệ & chính sách</h4>
+        <p>Hotline 1900 6868 · cskh@vietvoyage.vn · Chính sách bảo mật · Điều khoản dịch vụ</p>
       </div>
       <div>
-        <h4>Thanh toán </h4>
-        <p>VNPay · MoMo · Visa nội địa</p>
+        <h4>Thanh toán & hỗ trợ</h4>
+        <p>VNPay · MoMo · Thẻ nội địa · Hỗ trợ đặt chỗ 24/7 cho khách hàng tại Việt Nam</p>
       </div>
     </footer>
   </div>

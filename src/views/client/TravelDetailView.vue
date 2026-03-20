@@ -16,6 +16,9 @@
         <div>
           <p class="eyebrow">{{ service.destination }}, {{ service.province }}</p>
           <h1>{{ service.name }}</h1>
+            <p class="muted">
+            {{ service.availableSlots > 0 ? `Còn ${service.availableSlots} chỗ` : 'Hiện đã hết chỗ' }}
+          </p>
         </div>
         <RatingStars :value="service.rating" />
       </div>
@@ -81,16 +84,17 @@
       <div class="quantity-box">
         <button type="button" @click="decreaseQuantity">-</button>
         <span>{{ bookingForm.quantity }}</span>
-        <button type="button" @click="bookingForm.quantity += 1">+</button>
+        <button type="button" @click="increaseQuantity">+</button>
       </div>
+      <small v-if="bookingFeedback" class="error-text">{{ bookingFeedback }}</small>
 
       <div class="booking-summary-row">
         <span>Tạm tính</span>
         <strong>{{ formatCurrencyVND(totalPrice) }}</strong>
       </div>
 
-      <button class="primary-button full-width" type="button" @click="handleBookNow">
-        Đặt ngay
+      <button class="primary-button full-width" type="button" :disabled="service.availableSlots <= 0" @click="handleBookNow">
+        {{ service.availableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
       </button>
       <button class="secondary-button full-width" type="button" @click="store.toggleWishlist(service.id)">
         {{ isWishlisted ? 'Đã lưu wishlist' : 'Thêm vào wishlist' }}
@@ -105,7 +109,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import RatingStars from '@/components/common/RatingStars.vue'
 import { useTravelStore } from '@/stores/useTravelStore'
@@ -123,6 +127,12 @@ const bookingForm = reactive({
   travelDate: '',
   quantity: 2
 })
+const bookingFeedback = ref('')
+
+watch(service, (nextService) => {
+  if (!nextService) return
+  bookingForm.quantity = Math.min(bookingForm.quantity, Math.max(nextService.availableSlots, 1))
+})
 
 const commentForm = reactive({
   userName: '',
@@ -133,11 +143,32 @@ const commentForm = reactive({
 const totalPrice = computed(() => (service.value?.salePrice || 0) * bookingForm.quantity)
 
 const decreaseQuantity = () => {
+    bookingFeedback.value = ''
   if (bookingForm.quantity > 1) bookingForm.quantity -= 1
 }
 
-const handleBookNow = () => {
+const increaseQuantity = () => {
+  bookingFeedback.value = ''
   if (!service.value) return
+  if (bookingForm.quantity >= service.value.availableSlots) {
+    bookingFeedback.value = `Dịch vụ này chỉ còn ${service.value.availableSlots} chỗ.`
+    return
+  }
+  bookingForm.quantity += 1
+}
+
+const handleBookNow = () => {
+    bookingFeedback.value = ''
+  if (!service.value) return
+  if (service.value.availableSlots <= 0) {
+    bookingFeedback.value = 'Dịch vụ hiện đã hết chỗ.'
+    return
+  }
+  if (bookingForm.quantity > service.value.availableSlots) {
+    bookingFeedback.value = `Số lượng vượt quá ${service.value.availableSlots} chỗ còn lại.`
+    return
+  }
+  
   store.addToCart({
     serviceId: service.value.id,
     quantity: bookingForm.quantity,

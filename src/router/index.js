@@ -11,6 +11,8 @@ import BookingSuccessView from '@/views/client/BookingSuccessView.vue'
 import BookingHistoryView from '@/views/client/BookingHistoryView.vue'
 import LoginView from '@/views/client/LoginView.vue'
 import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
+import AdminServiceManagementView from '@/views/admin/AdminServiceManagementView.vue'
+import AdminBookingManagementView from '@/views/admin/AdminBookingManagementView.vue'
 
 const routes = [
   {
@@ -84,6 +86,18 @@ const routes = [
         name: 'admin-dashboard',
         component: AdminDashboardView,
         meta: { requiresAdmin: true, title: 'Dashboard quản trị' }
+      },
+      {
+        path: 'services',
+        name: 'admin-services',
+        component: AdminServiceManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý dịch vụ' }
+      },
+      {
+        path: 'bookings',
+        name: 'admin-bookings',
+        component: AdminBookingManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý đơn đặt chỗ' }
       }
     ]
   }

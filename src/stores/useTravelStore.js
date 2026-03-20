@@ -1,11 +1,12 @@
 import { computed, reactive, readonly } from 'vue'
-import { comments as seedComments, services } from '@/data/mockData'
+import { comments as seedComments, services as seedServices } from '@/data/mockData'
 
 const STORAGE_KEYS = {
   wishlist: 'vietvoyage_wishlist',
   cart: 'vietvoyage_cart',
   comments: 'vietvoyage_comments',
-  bookings: 'vietvoyage_bookings'
+  bookings: 'vietvoyage_bookings',
+  services: 'vietvoyage_services'
 }
 
 const readStorage = (key, fallback) => {
@@ -22,7 +23,7 @@ const persistStorage = (key, value) => {
 }
 
 const state = reactive({
-  services,
+  services: seedServices,
   wishlist: [],
   cart: [],
   comments: [],
@@ -31,6 +32,7 @@ const state = reactive({
 
 const bootstrapState = () => {
   if (typeof window === 'undefined') return
+  state.services = readStorage(STORAGE_KEYS.services, seedServices)
   state.wishlist = readStorage(STORAGE_KEYS.wishlist, [])
   state.cart = readStorage(STORAGE_KEYS.cart, [])
   state.comments = readStorage(STORAGE_KEYS.comments, seedComments)
@@ -38,6 +40,17 @@ const bootstrapState = () => {
 }
 
 bootstrapState()
+const persistServices = () => {
+  persistStorage(STORAGE_KEYS.services, state.services)
+}
+
+const BOOKING_STATUS_LABELS = {
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
+  processing: 'Đang xử lý',
+  completed: 'Hoàn thành',
+  cancelled: 'Hủy'
+}
 
 export const useTravelStore = () => {
   const featuredServices = computed(() => state.services.filter((service) => service.featured))
@@ -130,10 +143,77 @@ export const useTravelStore = () => {
       createdAt: new Date().toISOString()
     }
 
+    state.services = state.services.map((service) => {
+      const item = items.find((entry) => entry.serviceId === service.id)
+      if (!item) return service
+      return {
+        ...service,
+        availableSlots: Math.max(0, service.availableSlots - item.quantity)
+      }
+    })
+
     state.bookings = [booking, ...state.bookings]
+    persistServices()
     persistStorage(STORAGE_KEYS.bookings, state.bookings)
     clearCart()
     return booking
+  }
+
+  const saveService = (serviceInput) => {
+    const payload = {
+      ...serviceInput,
+      salePrice: Number(serviceInput.salePrice || 0),
+      price: Number(serviceInput.price || 0),
+      availableSlots: Number(serviceInput.availableSlots || 0),
+      rating: Number(serviceInput.rating || 4.5)
+    }
+
+    if (payload.id) {
+      state.services = state.services.map((service) => service.id === payload.id ? { ...service, ...payload } : service)
+    } else {
+      state.services = [{
+        ...payload,
+        id: Date.now(),
+        createdAt: new Date().toISOString()
+      }, ...state.services]
+    }
+
+    persistServices()
+  }
+
+  const toggleServiceStatus = (serviceId) => {
+    state.services = state.services.map((service) =>
+      service.id === serviceId
+        ? { ...service, status: service.status === 'active' ? 'inactive' : 'active' }
+        : service
+    )
+    persistServices()
+  }
+
+  const updateBookingStatus = (bookingId, status) => {
+    const existing = state.bookings.find((booking) => booking.id === bookingId)
+    if (!existing || existing.status === 'completed' || existing.status === status) return
+
+    const shouldRestoreSlots = status === 'cancelled' && existing.status !== 'cancelled'
+
+    if (shouldRestoreSlots) {
+      state.services = state.services.map((service) => {
+        const item = existing.items.find((entry) => entry.serviceId === service.id)
+        if (!item) return service
+        return {
+          ...service,
+          availableSlots: service.availableSlots + item.quantity
+        }
+      })
+      persistServices()
+    }
+
+    state.bookings = state.bookings.map((booking) =>
+      booking.id === bookingId
+        ? { ...booking, status, statusLabel: BOOKING_STATUS_LABELS[status] || booking.statusLabel }
+        : booking
+    )
+    persistStorage(STORAGE_KEYS.bookings, state.bookings)
   }
 
   const addComment = ({ serviceId, userName, rating, content }) => {
@@ -164,6 +244,9 @@ export const useTravelStore = () => {
     removeCartItem,
     clearCart,
     createBooking,
+    saveService,
+    toggleServiceStatus,
+    updateBookingStatus,
     addComment
   }
 }

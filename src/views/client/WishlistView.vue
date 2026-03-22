@@ -36,7 +36,10 @@ const store = useTravelStore()
 const wishlistItems = computed(() => store.wishlistItems.value)
 
 const handleBookNow = (service) => {
-  store.addToCart({ serviceId: service.id, quantity: 1, travelDate: '' })
-  router.push('/gio-hang')
+  router.push({
+    name: 'travel-detail',
+    params: { slug: service.slug },
+    query: { guests: 1 }
+  })
 }
 </script>

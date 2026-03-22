@@ -11,6 +11,11 @@ const STORAGE_KEYS = {
   appliedPromotion: 'vietvoyage_applied_promotion'
 }
 
+const SESSION_KEY = 'vietvoyage_session'
+const LEGACY_USER_KEY = 'vietvoyage_user'
+const AUTH_CHANGED_EVENT = 'vietvoyage:auth-changed'
+const GUEST_SCOPE = 'guest'
+
 const readStorage = (key, fallback) => {
   try {
     const rawValue = window.localStorage.getItem(key)
@@ -24,7 +29,35 @@ const persistStorage = (key, value) => {
   window.localStorage.setItem(key, JSON.stringify(value))
 }
 
+const getActiveUserId = () => {
+  const session = readStorage(SESSION_KEY, null)
+  if (session?.user?.id) return String(session.user.id)
+
+  const legacyUser = readStorage(LEGACY_USER_KEY, null)
+  if (legacyUser?.id) return String(legacyUser.id)
+
+  return GUEST_SCOPE
+}
+
+const getScopedKey = (baseKey, userId) => `${baseKey}_${userId || GUEST_SCOPE}`
+const requiresEndDate = (service) => service?.categoryId !== 'ticket'
+
+const normalizeCartItem = (item, services) => {
+  const service = services.find((entry) => entry.id === item.serviceId)
+  const normalizedStartDate = item.startDate || item.travelDate || ''
+  const normalizedEndDate = requiresEndDate(service) ? (item.endDate || '') : ''
+
+  return {
+    serviceId: item.serviceId,
+    quantity: Math.max(1, Number(item.quantity) || 1),
+    startDate: normalizedStartDate,
+    endDate: normalizedEndDate,
+    travelDate: normalizedStartDate
+  }
+}
+
 const state = reactive({
+  activeUserId: GUEST_SCOPE,
   services: seedServices,
   wishlist: [],
   cart: [],
@@ -34,24 +67,59 @@ const state = reactive({
   appliedPromotion: null
 })
 
+const loadUserScopedState = (userId) => {
+  const scope = userId || GUEST_SCOPE
+  state.activeUserId = scope
+  state.wishlist = readStorage(getScopedKey(STORAGE_KEYS.wishlist, scope), [])
+  const rawCart = readStorage(getScopedKey(STORAGE_KEYS.cart, scope), [])
+  state.cart = rawCart.map((item) => normalizeCartItem(item, state.services))
+  state.bookings = readStorage(getScopedKey(STORAGE_KEYS.bookings, scope), [])
+  state.appliedPromotion = readStorage(getScopedKey(STORAGE_KEYS.appliedPromotion, scope), null)
+
+  // Persist normalized shape for older cart records (travelDate-only records).
+  persistStorage(getScopedKey(STORAGE_KEYS.cart, scope), state.cart)
+}
+
 const bootstrapState = () => {
   if (typeof window === 'undefined') return
   state.services = readStorage(STORAGE_KEYS.services, seedServices)
-  state.wishlist = readStorage(STORAGE_KEYS.wishlist, [])
-  state.cart = readStorage(STORAGE_KEYS.cart, [])
   state.comments = readStorage(STORAGE_KEYS.comments, seedComments)
-  state.bookings = readStorage(STORAGE_KEYS.bookings, [])
   state.promotions = readStorage(STORAGE_KEYS.promotions, seedPromotions)
-  state.appliedPromotion = readStorage(STORAGE_KEYS.appliedPromotion, null)
+  loadUserScopedState(getActiveUserId())
 }
 
 bootstrapState()
+
 const persistServices = () => {
   persistStorage(STORAGE_KEYS.services, state.services)
 }
 
 const persistPromotions = () => {
   persistStorage(STORAGE_KEYS.promotions, state.promotions)
+}
+
+const persistScoped = (baseKey, value) => {
+  persistStorage(getScopedKey(baseKey, state.activeUserId), value)
+}
+
+const syncScopeFromSession = () => {
+  if (typeof window === 'undefined') return
+  const nextUserId = getActiveUserId()
+  if (nextUserId !== state.activeUserId) {
+    loadUserScopedState(nextUserId)
+  }
+}
+
+let authEventBound = false
+const bindAuthSync = () => {
+  if (typeof window === 'undefined' || authEventBound) return
+
+  window.addEventListener(AUTH_CHANGED_EVENT, (event) => {
+    const userId = event.detail?.id ? String(event.detail.id) : GUEST_SCOPE
+    loadUserScopedState(userId)
+  })
+
+  authEventBound = true
 }
 
 const BOOKING_STATUS_LABELS = {
@@ -63,6 +131,9 @@ const BOOKING_STATUS_LABELS = {
 }
 
 export const useTravelStore = () => {
+  syncScopeFromSession()
+  bindAuthSync()
+
   const featuredServices = computed(() => state.services.filter((service) => service.featured))
 
   const wishlistItems = computed(() =>
@@ -74,8 +145,14 @@ export const useTravelStore = () => {
   const cartItems = computed(() =>
     state.cart.map((item) => {
       const service = state.services.find((entry) => entry.id === item.serviceId)
+      const normalizedStartDate = item.startDate || item.travelDate || ''
+      const normalizedEndDate = item.endDate || ''
+
       return {
         ...item,
+        startDate: normalizedStartDate,
+        endDate: normalizedEndDate,
+        travelDate: normalizedStartDate,
         service,
         lineTotal: (service?.salePrice || 0) * item.quantity
       }
@@ -106,64 +183,109 @@ export const useTravelStore = () => {
       .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
 
   const toggleWishlist = (serviceId) => {
+    syncScopeFromSession()
     const exists = state.wishlist.includes(serviceId)
     state.wishlist = exists
       ? state.wishlist.filter((id) => id !== serviceId)
       : [...state.wishlist, serviceId]
-    persistStorage(STORAGE_KEYS.wishlist, state.wishlist)
+    persistScoped(STORAGE_KEYS.wishlist, state.wishlist)
   }
 
-  const addToCart = ({ serviceId, quantity = 1, travelDate = '' }) => {
+  const addToCart = ({ serviceId, quantity = 1, travelDate = '', startDate = '', endDate = '' }) => {
+    syncScopeFromSession()
     const service = state.services.find((entry) => entry.id === serviceId)
     if (!service || service.availableSlots <= 0) return
 
+    const normalizedStartDate = startDate || travelDate || ''
+    const normalizedEndDate = endDate || ''
     const normalizedQuantity = Math.max(1, Math.min(Number(quantity) || 1, service.availableSlots))
-    const existing = state.cart.find((item) => item.serviceId === serviceId && item.travelDate === travelDate)
+    const existing = state.cart.find((item) =>
+      item.serviceId === serviceId
+      && (item.startDate || item.travelDate || '') === normalizedStartDate
+      && (item.endDate || '') === normalizedEndDate
+    )
     if (existing) {
       existing.quantity = Math.min(existing.quantity + normalizedQuantity, service.availableSlots)
     } else {
-      state.cart.push({ serviceId, quantity: normalizedQuantity, travelDate })
+      state.cart.push({
+        serviceId,
+        quantity: normalizedQuantity,
+        startDate: normalizedStartDate,
+        endDate: normalizedEndDate,
+        travelDate: normalizedStartDate
+      })
     }
 
-    persistStorage(STORAGE_KEYS.cart, state.cart)
+    persistScoped(STORAGE_KEYS.cart, state.cart)
   }
 
-  const updateCartQuantity = (serviceId, travelDate, quantity) => {
+  const updateCartQuantity = (serviceId, startDate, quantity, endDate = '') => {
+    syncScopeFromSession()
     const service = state.services.find((entry) => entry.id === serviceId)
     const maxSlots = service?.availableSlots || 0
     const normalizedQuantity = Number(quantity)
+    const normalizedStartDate = startDate || ''
+    const normalizedEndDate = endDate || ''
 
     if (normalizedQuantity <= 0) {
-      state.cart = state.cart.filter((item) => !(item.serviceId === serviceId && item.travelDate === travelDate))
+      state.cart = state.cart.filter((item) => !(
+        item.serviceId === serviceId
+        && (item.startDate || item.travelDate || '') === normalizedStartDate
+        && (item.endDate || '') === normalizedEndDate
+      ))
     } else {
       state.cart = state.cart.map((item) =>
-        item.serviceId === serviceId && item.travelDate === travelDate
+        item.serviceId === serviceId
+        && (item.startDate || item.travelDate || '') === normalizedStartDate
+        && (item.endDate || '') === normalizedEndDate
           ? { ...item, quantity: Math.min(normalizedQuantity, Math.max(maxSlots, 1)) }
           : item
       )
     }
-    persistStorage(STORAGE_KEYS.cart, state.cart)
+    persistScoped(STORAGE_KEYS.cart, state.cart)
   }
 
-  const removeCartItem = (serviceId, travelDate) => {
-    state.cart = state.cart.filter((item) => !(item.serviceId === serviceId && item.travelDate === travelDate))
-    persistStorage(STORAGE_KEYS.cart, state.cart)
+  const removeCartItem = (serviceId, startDate, endDate = '') => {
+    syncScopeFromSession()
+    const normalizedStartDate = startDate || ''
+    const normalizedEndDate = endDate || ''
+    state.cart = state.cart.filter((item) => !(
+      item.serviceId === serviceId
+      && (item.startDate || item.travelDate || '') === normalizedStartDate
+      && (item.endDate || '') === normalizedEndDate
+    ))
+    persistScoped(STORAGE_KEYS.cart, state.cart)
   }
 
   const clearCart = () => {
+    syncScopeFromSession()
     state.cart = []
-    persistStorage(STORAGE_KEYS.cart, state.cart)
+    persistScoped(STORAGE_KEYS.cart, state.cart)
   }
 
-  const createBooking = ({ customer, items, subtotal, serviceFee, total }) => {
+  const createBooking = ({
+    customer,
+    items,
+    subtotal,
+    serviceFee,
+    total,
+    discount = 0,
+    promotion = null,
+    clearCartAfterBooking = true,
+    clearPromotionAfterBooking = true
+  }) => {
+    syncScopeFromSession()
+
     const booking = {
       id: Date.now(),
       code: `VV${Date.now().toString().slice(-6)}`,
       customer,
       items,
       subtotal,
+      discount,
       serviceFee,
       total,
+      promotion,
       status: 'pending',
       statusLabel: 'Chờ xác nhận',
       createdAt: new Date().toISOString(),
@@ -181,9 +303,16 @@ export const useTravelStore = () => {
 
     state.bookings = [booking, ...state.bookings]
     persistServices()
-    persistStorage(STORAGE_KEYS.bookings, state.bookings)
-    clearAppliedPromotion()
-    clearCart()
+    persistScoped(STORAGE_KEYS.bookings, state.bookings)
+
+    if (clearPromotionAfterBooking) {
+      clearAppliedPromotion()
+    }
+
+    if (clearCartAfterBooking) {
+      clearCart()
+    }
+
     return booking
   }
 
@@ -219,6 +348,7 @@ export const useTravelStore = () => {
   }
 
   const updateBookingStatus = (bookingId, status) => {
+    syncScopeFromSession()
     const existing = state.bookings.find((booking) => booking.id === bookingId)
     if (!existing || existing.status === 'completed' || existing.status === status) return
 
@@ -241,16 +371,17 @@ export const useTravelStore = () => {
         ? { ...booking, status, statusLabel: BOOKING_STATUS_LABELS[status] || booking.statusLabel }
         : booking
     )
-    persistStorage(STORAGE_KEYS.bookings, state.bookings)
+    persistScoped(STORAGE_KEYS.bookings, state.bookings)
   }
 
   const applyPromotionCode = (code, subtotal) => {
+    syncScopeFromSession()
     const normalizedCode = code.trim().toUpperCase()
     const promotion = state.promotions.find((entry) => entry.code === normalizedCode && entry.status === 'active')
 
     if (!promotion) {
       state.appliedPromotion = null
-      persistStorage(STORAGE_KEYS.appliedPromotion, state.appliedPromotion)
+      persistScoped(STORAGE_KEYS.appliedPromotion, state.appliedPromotion)
       return { success: false, message: 'Mã khuyến mãi không hợp lệ hoặc đã ngưng áp dụng.' }
     }
 
@@ -259,13 +390,14 @@ export const useTravelStore = () => {
     }
 
     state.appliedPromotion = promotion
-    persistStorage(STORAGE_KEYS.appliedPromotion, state.appliedPromotion)
+    persistScoped(STORAGE_KEYS.appliedPromotion, state.appliedPromotion)
     return { success: true, promotion }
   }
 
   const clearAppliedPromotion = () => {
+    syncScopeFromSession()
     state.appliedPromotion = null
-    persistStorage(STORAGE_KEYS.appliedPromotion, state.appliedPromotion)
+    persistScoped(STORAGE_KEYS.appliedPromotion, state.appliedPromotion)
   }
 
   const calculatePromotionDiscount = (subtotal) => {

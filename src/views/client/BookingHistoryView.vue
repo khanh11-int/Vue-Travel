@@ -3,7 +3,7 @@
     <div class="section-heading compact">
       <div>
         <p class="eyebrow">Lịch sử đặt chỗ</p>
-        <h1>Theo dõi tất cả booking mock đã xác nhận</h1>
+        <h1>Theo dõi tất cả booking đã xác nhận</h1>
       </div>
     </div>
 
@@ -37,9 +37,9 @@
           <div>
             <h3>Dịch vụ trong đơn</h3>
             <ul class="booking-detail-list">
-              <li v-for="item in booking.items" :key="`${booking.id}-${item.serviceId}-${item.travelDate}`">
+              <li v-for="item in booking.items" :key="`${booking.id}-${item.serviceId}-${item.startDate || item.travelDate}-${item.endDate || ''}`">
                 <strong>{{ item.service?.name }}</strong>
-                <span>{{ formatDateVN(item.travelDate) }} · {{ item.quantity }} khách · {{ formatCurrencyVND(item.lineTotal) }}</span>
+                <span>{{ formatDateRangeVN(item.startDate || item.travelDate, item.endDate) }} · {{ item.quantity }} khách · {{ formatCurrencyVND(item.lineTotal) }}</span>
               </li>
             </ul>
           </div>
@@ -47,7 +47,7 @@
       </template>
     </div>
     <div v-else class="empty-state">
-      <h2>Chưa có booking mock nào</h2>
+      <h2>Chưa có booking nào</h2>
       <p>Sau khi hoàn tất checkout, booking của bạn sẽ hiển thị tại đây.</p>
     </div>
   </section>
@@ -56,7 +56,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useTravelStore } from '@/stores/useTravelStore'
-import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
+import { formatCurrencyVND, formatDateVN, formatDateRangeVN } from '@/utils/formatters'
 
 const store = useTravelStore()
 const bookings = computed(() => store.bookingHistory.value)

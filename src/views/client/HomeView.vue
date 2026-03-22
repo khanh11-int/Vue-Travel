@@ -15,11 +15,11 @@
         </div>
         <div class="home-search-panel__date">
           <label>Ngày đi</label>
-          <input v-model="searchForm.travelDate" type="date" />
+          <input v-model="searchForm.startDate" :min="todayISO" type="date" />
         </div>
         <div class="home-search-panel__return-date">
           <label>Ngày về</label>
-          <input v-model="searchForm.returnDate" type="date" />
+          <input v-model="searchForm.endDate" :min="searchForm.startDate || todayISO" type="date" />
         </div>
         <div class="home-search-panel__guests">
           <label>Số khách</label>
@@ -102,11 +102,16 @@ import { useTravelStore } from '@/stores/useTravelStore'
 
 const router = useRouter()
 const store = useTravelStore()
+const todayISO = (() => {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+})()
 
 const searchForm = reactive({
   destination: '',
-  travelDate: '',
-  returnDate: '',
+  startDate: '',
+  endDate: '',
   guests: 2,
   categoryId: ''
 })
@@ -118,18 +123,43 @@ const featuredDestinations = computed(() => destinations.slice(0, 6))
 const searchTarget = computed(() => {
   const query = new URLSearchParams()
   if (searchForm.destination) query.set('destination', searchForm.destination)
-  if (searchForm.travelDate) query.set('date', searchForm.travelDate)
-  if (searchForm.returnDate) query.set('returnDate', searchForm.returnDate)
+  if (searchForm.startDate) query.set('startDate', searchForm.startDate)
+  if (searchForm.endDate) query.set('endDate', searchForm.endDate)
   if (searchForm.guests) query.set('guests', String(searchForm.guests))
   if (searchForm.categoryId) query.set('category', searchForm.categoryId)
   return `/dich-vu?${query.toString()}`
 })
 
 const handleBookNow = (service) => {
-    store.addToCart({
+  const requiresEndDate = service.categoryId !== 'ticket'
+  if (searchForm.startDate && searchForm.startDate < todayISO) {
+    router.push({ name: 'travel-detail', params: { slug: service.slug } })
+    return
+  }
+
+  if (searchForm.endDate && searchForm.startDate && searchForm.endDate < searchForm.startDate) {
+    router.push({ name: 'travel-detail', params: { slug: service.slug } })
+    return
+  }
+
+  if (!searchForm.startDate || (requiresEndDate && !searchForm.endDate)) {
+    router.push({
+      name: 'travel-detail',
+      params: { slug: service.slug },
+      query: {
+        startDate: searchForm.startDate || undefined,
+        endDate: searchForm.endDate || undefined,
+        guests: searchForm.guests || undefined
+      }
+    })
+    return
+  }
+
+  store.addToCart({
     serviceId: service.id,
     quantity: searchForm.guests || 1,
-    travelDate: searchForm.travelDate
+    startDate: searchForm.startDate,
+    endDate: requiresEndDate ? searchForm.endDate : ''
   })
   router.push('/gio-hang')
 }

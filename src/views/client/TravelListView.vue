@@ -66,7 +66,7 @@
           <p class="eyebrow">Khám phá dịch vụ</p>
           <h1>{{ filteredServices.length }} lựa chọn du lịch nội địa Việt Nam</h1>
           <p class="muted">
-            Ngày đi: {{ route.query.date || 'Chưa chọn' }} · Ngày về: {{ route.query.returnDate || 'Chưa chọn' }} ·
+            Ngày đi: {{ selectedStartDate || 'Chưa chọn' }} · Ngày về: {{ selectedEndDate || 'Chưa chọn' }} ·
             {{ guestLabel }}
           </p>
         </div>
@@ -113,6 +113,9 @@ const createInitialFilters = () => ({
 })
 
 const filters = reactive(createInitialFilters())
+
+const selectedStartDate = computed(() => route.query.startDate || route.query.date || '')
+const selectedEndDate = computed(() => route.query.endDate || route.query.returnDate || '')
 
 watch(
   () => route.query,
@@ -164,11 +167,40 @@ const filteredServices = computed(() => {
 })
 
 const handleBookNow = (service) => {
+  const requiresEndDate = service.categoryId !== 'ticket'
+
+  if (!selectedStartDate.value || (requiresEndDate && !selectedEndDate.value)) {
+    router.push({
+      name: 'travel-detail',
+      params: { slug: service.slug },
+      query: {
+        startDate: selectedStartDate.value || undefined,
+        endDate: selectedEndDate.value || undefined,
+        guests: Number(route.query.guests || 1) || 1
+      }
+    })
+    return
+  }
+
   store.addToCart({
     serviceId: service.id,
     quantity: Number(route.query.guests || 1),
-    travelDate: route.query.date || ''
+    startDate: selectedStartDate.value,
+    endDate: requiresEndDate ? selectedEndDate.value : ''
   })
   router.push('/gio-hang')
+}
+
+const resetFilters = () => {
+  Object.assign(filters, {
+    keyword: '',
+    categoryId: '',
+    province: '',
+    minPrice: 0,
+    maxPrice: 0,
+    minRating: 0,
+    availability: '',
+    sortBy: 'featured'
+  })
 }
 </script>

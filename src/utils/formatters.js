@@ -13,3 +13,10 @@ export const formatDateVN = (dateValue) => {
     year: 'numeric'
   }).format(new Date(dateValue))
 }
+
+export const formatDateRangeVN = (startDate, endDate) => {
+  if (!startDate && !endDate) return 'Chưa chọn ngày'
+  if (startDate && !endDate) return formatDateVN(startDate)
+  if (!startDate && endDate) return formatDateVN(endDate)
+  return `${formatDateVN(startDate)} - ${formatDateVN(endDate)}`
+}

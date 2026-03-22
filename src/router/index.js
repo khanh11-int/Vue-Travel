@@ -15,6 +15,7 @@ import AdminServiceManagementView from '@/views/admin/AdminServiceManagementView
 import AdminBookingManagementView from '@/views/admin/AdminBookingManagementView.vue'
 import AdminCommentManagementView from '@/views/admin/AdminCommentManagementView.vue'
 import AdminPromotionManagementView from '@/views/admin/AdminPromotionManagementView.vue'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const routes = [
   {
@@ -44,31 +45,31 @@ const routes = [
         path: 'wishlist',
         name: 'wishlist',
         component: WishlistView,
-        meta: { title: 'Danh sách yêu thích' }
+        meta: { title: 'Danh sách yêu thích', requiresAuth: true }
       },
       {
         path: 'gio-hang',
         name: 'cart',
         component: CartView,
-        meta: { title: 'Giỏ đặt chỗ' }
+        meta: { title: 'Giỏ đặt chỗ', requiresAuth: true }
       },
       {
         path: 'thanh-toan',
         name: 'checkout',
         component: CheckoutView,
-        meta: { title: 'Thanh toán đặt chỗ' }
+        meta: { title: 'Thanh toán đặt chỗ', requiresAuth: true }
       },
       {
         path: 'dat-cho-thanh-cong',
         name: 'booking-success',
         component: BookingSuccessView,
-        meta: { title: 'Đặt chỗ thành công' }
+        meta: { title: 'Đặt chỗ thành công', requiresAuth: true }
       },
       {
         path: 'lich-su-dat-cho',
         name: 'booking-history',
         component: BookingHistoryView,
-        meta: { title: 'Lịch sử đặt chỗ' }
+        meta: { title: 'Lịch sử đặt chỗ', requiresAuth: true }
       },
       {
         path: 'dang-nhap',
@@ -126,13 +127,19 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+
   if (to.meta?.title) {
     document.title = to.meta.title
   }
 
+  if (to.meta?.requiresAuth && !authStore.isLoggedIn.value) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+    return
+  }
+
   if (to.meta?.requiresAdmin) {
-    const adminSession = window.localStorage.getItem('vietvoyage_admin_session')
-    if (!adminSession) {
+    if (!authStore.isAdmin.value) {
       next({ name: 'login', query: { redirect: to.fullPath } })
       return
     }

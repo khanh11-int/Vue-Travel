@@ -10,7 +10,7 @@
       </div>
 
       <div v-if="cartItems.length" class="cart-list">
-        <article v-for="item in cartItems" :key="`${item.serviceId}-${item.travelDate}`" class="cart-item-card">
+        <article v-for="item in cartItems" :key="`${item.serviceId}-${item.startDate}-${item.endDate}`" class="cart-item-card">
           <img :src="item.service?.image" :alt="item.service?.name" class="cart-item-image" />
 
           <div class="cart-item-main">
@@ -19,19 +19,34 @@
                 <p class="eyebrow eyebrow--blue">{{ getCategoryLabel(item.service?.categoryId) }}</p>
                 <h3>{{ item.service?.name }}</h3>
                 <p class="muted">
-                  {{ item.service?.destination }}, {{ item.service?.province }} · {{ formatDateVN(item.travelDate) }}
+                  {{ item.service?.destination }}, {{ item.service?.province }} · {{ formatDateRangeVN(item.startDate, item.endDate) }}
                 </p>
+                <router-link
+                  v-if="isItemDateInvalid(item) && item.service?.slug"
+                  class="ghost-button cart-fix-date-button"
+                  :to="{
+                    name: 'travel-detail',
+                    params: { slug: item.service.slug },
+                    query: {
+                      startDate: item.startDate || undefined,
+                      endDate: item.endDate || undefined,
+                      guests: item.quantity || 1
+                    }
+                  }"
+                >
+                  Sửa ngày
+                </router-link>
               </div>
-              <button class="icon-button" type="button" @click="store.removeCartItem(item.serviceId, item.travelDate)">
+              <button class="icon-button" type="button" @click="store.removeCartItem(item.serviceId, item.startDate, item.endDate)">
                 ✕
               </button>
             </div>
 
             <div class="cart-item-footer">
               <div class="quantity-box compact">
-                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.travelDate, item.quantity - 1)">-</button>
+                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity - 1, item.endDate)">-</button>
                 <span>{{ item.quantity }}</span>
-                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.travelDate, item.quantity + 1)">+</button>
+                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity + 1, item.endDate)">+</button>
               </div>
 
               <div class="price-stack">
@@ -76,9 +91,13 @@
         <strong>{{ formatCurrencyVND(total) }}</strong>
       </div>
 
-      <router-link v-if="cartItems.length" class="primary-button full-width" to="/thanh-toan">
+      <small v-if="hasInvalidCartItems" class="error-text">
+        Có dịch vụ chưa chọn đủ ngày đi/ngày về hợp lệ. Vui lòng chỉnh lại trước khi thanh toán.
+      </small>
+
+      <button v-if="cartItems.length" class="primary-button full-width" type="button" :disabled="hasInvalidCartItems" @click="handleProceedCheckout">
         Tiếp tục thanh toán
-      </router-link>
+      </button>
       <router-link v-else class="secondary-button full-width" to="/dich-vu">
         Quay lại danh sách
       </router-link>
@@ -88,10 +107,12 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { categories } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
-import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
+import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 
+const router = useRouter()
 const store = useTravelStore()
 const promotionCode = ref(store.state.appliedPromotion?.code || '')
 const promotionFeedback = ref('')
@@ -102,6 +123,17 @@ const subtotal = computed(() => store.cartTotal.value)
 const discount = computed(() => store.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
+const hasInvalidCartItems = computed(() =>
+  cartItems.value.some((item) => isItemDateInvalid(item))
+)
+
+const isItemDateInvalid = (item) => {
+  const needsEndDate = item.service?.categoryId !== 'ticket'
+  if (!item.startDate) return true
+  if (needsEndDate && !item.endDate) return true
+  if (item.endDate && item.startDate && new Date(item.endDate) < new Date(item.startDate)) return true
+  return false
+}
 
 const getCategoryLabel = (categoryId) =>
   categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
@@ -112,5 +144,10 @@ const handleApplyPromotion = () => {
   promotionFeedback.value = result.success
     ? `Áp dụng thành công mã ${result.promotion.code}.`
     : result.message
+}
+
+const handleProceedCheckout = () => {
+  if (hasInvalidCartItems.value) return
+  router.push('/thanh-toan')
 }
 </script>

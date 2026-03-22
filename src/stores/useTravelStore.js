@@ -1,5 +1,6 @@
 import { computed, reactive, readonly } from 'vue'
 import { comments as seedComments, promotions as seedPromotions, services as seedServices } from '@/data/mockData'
+import { serviceRequiresEndDate } from '@/utils/bookingRules'
 
 const STORAGE_KEYS = {
   wishlist: 'vietvoyage_wishlist',
@@ -40,16 +41,207 @@ const getActiveUserId = () => {
 }
 
 const getScopedKey = (baseKey, userId) => `${baseKey}_${userId || GUEST_SCOPE}`
-const requiresEndDate = (service) => service?.categoryId !== 'ticket'
+
+const getBookingType = (service, item = null) => {
+  if (item?.bookingType) return item.bookingType
+  return service?.categoryId || 'hotel'
+}
+
+const buildBookingMeta = ({ bookingType, startDate = '', endDate = '', quantity = 1, bookingMeta = {} }) => {
+  const normalizedQuantity = Math.max(1, Number(quantity) || 1)
+
+  if (bookingType === 'hotel') {
+    return {
+      checkInDate: bookingMeta.checkInDate || startDate || '',
+      checkOutDate: bookingMeta.checkOutDate || endDate || '',
+      guests: Math.max(1, Number(bookingMeta.guests ?? normalizedQuantity) || 1),
+      rooms: Math.max(1, Number(bookingMeta.rooms ?? 1) || 1),
+      durationLabel: bookingMeta.durationLabel || '',
+      unitPrice: Number(bookingMeta.unitPrice || 0) || 0
+    }
+  }
+
+  if (bookingType === 'ticket') {
+    return {
+      useDate: bookingMeta.useDate || startDate || '',
+      ticketQuantity: Math.max(1, Number(bookingMeta.ticketQuantity ?? normalizedQuantity) || 1),
+      durationLabel: bookingMeta.durationLabel || '',
+      unitPrice: Number(bookingMeta.unitPrice || 0) || 0
+    }
+  }
+
+  if (bookingType === 'tour') {
+    return {
+      departureId: bookingMeta.departureId || '',
+      departureDate: bookingMeta.departureDate || startDate || '',
+      travelers: Math.max(1, Number(bookingMeta.travelers ?? normalizedQuantity) || 1),
+      durationLabel: bookingMeta.durationLabel || '',
+      unitPrice: Number(bookingMeta.unitPrice || 0) || 0
+    }
+  }
+
+  return {
+    packageId: bookingMeta.packageId || '',
+    departureId: bookingMeta.departureId || '',
+    applyDate: bookingMeta.applyDate || startDate || '',
+    travelers: Math.max(1, Number(bookingMeta.travelers ?? normalizedQuantity) || 1),
+    durationLabel: bookingMeta.durationLabel || '',
+    unitPrice: Number(bookingMeta.unitPrice || 0) || 0
+  }
+}
+
+const extractDateRangeFromBookingMeta = (bookingType, bookingMeta) => {
+  if (bookingType === 'hotel') {
+    return {
+      startDate: bookingMeta.checkInDate || '',
+      endDate: bookingMeta.checkOutDate || ''
+    }
+  }
+
+  if (bookingType === 'ticket') {
+    return {
+      startDate: bookingMeta.useDate || '',
+      endDate: ''
+    }
+  }
+
+  if (bookingType === 'tour') {
+    return {
+      startDate: bookingMeta.departureDate || '',
+      endDate: ''
+    }
+  }
+
+  return {
+    startDate: bookingMeta.applyDate || '',
+    endDate: ''
+  }
+}
+
+const extractQuantityFromBookingMeta = (bookingType, bookingMeta) => {
+  if (bookingType === 'hotel') return Math.max(1, Number(bookingMeta.guests || 1) || 1)
+  if (bookingType === 'ticket') return Math.max(1, Number(bookingMeta.ticketQuantity || 1) || 1)
+  return Math.max(1, Number(bookingMeta.travelers || 1) || 1)
+}
+
+const getCartIdentity = (item) => {
+  const bookingType = item.bookingType || 'hotel'
+  const startDate = item.startDate || item.travelDate || ''
+  const endDate = item.endDate || ''
+  const bookingMeta = item.bookingMeta || {}
+
+  if (bookingType === 'hotel') {
+    const rooms = Math.max(1, Number(bookingMeta.rooms || 1) || 1)
+    return `${bookingType}|${item.serviceId}|${startDate}|${endDate}|rooms:${rooms}`
+  }
+
+  if (bookingType === 'tour') {
+    return `${bookingType}|${item.serviceId}|${startDate}|dep:${bookingMeta.departureId || ''}`
+  }
+
+  if (bookingType === 'combo') {
+    return `${bookingType}|${item.serviceId}|${startDate}|pkg:${bookingMeta.packageId || ''}|dep:${bookingMeta.departureId || ''}`
+  }
+
+  return `${bookingType}|${item.serviceId}|${startDate}`
+}
+
+const resolveItemMaxSlots = (service, item) => {
+  if (!service || !item) return 0
+
+  const bookingType = item.bookingType || service.categoryId || 'hotel'
+  const bookingMeta = item.bookingMeta || {}
+
+  if (bookingType === 'tour') {
+    const departureId = bookingMeta.departureId
+    if (!departureId) return Number(service.availableSlots || 0)
+    const departure = (service.departures || []).find((entry) => entry.departureId === departureId)
+    return Number(departure?.remainingSlots || 0)
+  }
+
+  if (bookingType === 'combo' && service.isFixedSchedule !== false) {
+    const packageId = bookingMeta.packageId
+    if (!packageId) return Number(service.availableSlots || 0)
+    const selectedPackage = (service.packages || []).find((entry) => entry.packageId === packageId)
+    return Number(selectedPackage?.remainingSlots || 0)
+  }
+
+  return Number(service.availableSlots || 0)
+}
+
+const applyServiceSlotDelta = (service, item, delta) => {
+  if (!item || item.serviceId !== service.id) return service
+
+  const bookingType = item.bookingType || service.categoryId || 'hotel'
+  const bookingMeta = item.bookingMeta || {}
+  const nextService = {
+    ...service,
+    availableSlots: Math.max(0, Number(service.availableSlots || 0) + delta)
+  }
+
+  if (bookingType === 'tour' && bookingMeta.departureId) {
+    nextService.departures = (service.departures || []).map((departure) =>
+      departure.departureId === bookingMeta.departureId
+        ? { ...departure, remainingSlots: Math.max(0, Number(departure.remainingSlots || 0) + delta) }
+        : departure
+    )
+  }
+
+  if (bookingType === 'combo' && service.isFixedSchedule !== false && bookingMeta.packageId) {
+    nextService.packages = (service.packages || []).map((pkg) =>
+      pkg.packageId === bookingMeta.packageId
+        ? { ...pkg, remainingSlots: Math.max(0, Number(pkg.remainingSlots || 0) + delta) }
+        : pkg
+    )
+  }
+
+  return nextService
+}
+
+const buildBookingSummary = (item) => {
+  const bookingType = item.bookingType || 'hotel'
+  const meta = item.bookingMeta || {}
+  const durationSuffix = meta.durationLabel ? ` · ${meta.durationLabel}` : ''
+
+  if (bookingType === 'hotel') {
+    return `${meta.checkInDate || item.startDate || 'Chưa chọn ngày'} - ${meta.checkOutDate || item.endDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.guests || item.quantity} khách · ${meta.rooms || 1} phòng`
+  }
+
+  if (bookingType === 'ticket') {
+    return `${meta.useDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.ticketQuantity || item.quantity} vé`
+  }
+
+  if (bookingType === 'tour') {
+    return `Khởi hành ${meta.departureDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.travelers || item.quantity} người`
+  }
+
+  return `Áp dụng ${meta.applyDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.travelers || item.quantity} người`
+}
 
 const normalizeCartItem = (item, services) => {
   const service = services.find((entry) => entry.id === item.serviceId)
-  const normalizedStartDate = item.startDate || item.travelDate || ''
-  const normalizedEndDate = requiresEndDate(service) ? (item.endDate || '') : ''
+  const bookingType = getBookingType(service, item)
+  const fallbackStartDate = item.startDate || item.travelDate || ''
+  const fallbackEndDate = serviceRequiresEndDate(service) ? (item.endDate || '') : ''
+  const inferredQuantity = Math.max(1, Number(item.quantity) || 1)
+
+  const normalizedMeta = buildBookingMeta({
+    bookingType,
+    startDate: fallbackStartDate,
+    endDate: fallbackEndDate,
+    quantity: inferredQuantity,
+    bookingMeta: item.bookingMeta || {}
+  })
+  const derivedDates = extractDateRangeFromBookingMeta(bookingType, normalizedMeta)
+  const normalizedQuantity = extractQuantityFromBookingMeta(bookingType, normalizedMeta)
+  const normalizedStartDate = derivedDates.startDate || fallbackStartDate
+  const normalizedEndDate = serviceRequiresEndDate(service) ? (derivedDates.endDate || fallbackEndDate) : ''
 
   return {
     serviceId: item.serviceId,
-    quantity: Math.max(1, Number(item.quantity) || 1),
+    bookingType,
+    bookingMeta: normalizedMeta,
+    quantity: normalizedQuantity,
     startDate: normalizedStartDate,
     endDate: normalizedEndDate,
     travelDate: normalizedStartDate
@@ -76,7 +268,6 @@ const loadUserScopedState = (userId) => {
   state.bookings = readStorage(getScopedKey(STORAGE_KEYS.bookings, scope), [])
   state.appliedPromotion = readStorage(getScopedKey(STORAGE_KEYS.appliedPromotion, scope), null)
 
-  // Persist normalized shape for older cart records (travelDate-only records).
   persistStorage(getScopedKey(STORAGE_KEYS.cart, scope), state.cart)
 }
 
@@ -144,17 +335,20 @@ export const useTravelStore = () => {
 
   const cartItems = computed(() =>
     state.cart.map((item) => {
-      const service = state.services.find((entry) => entry.id === item.serviceId)
-      const normalizedStartDate = item.startDate || item.travelDate || ''
-      const normalizedEndDate = item.endDate || ''
+      const normalizedItem = normalizeCartItem(item, state.services)
+      const service = state.services.find((entry) => entry.id === normalizedItem.serviceId)
+      const normalizedStartDate = normalizedItem.startDate || normalizedItem.travelDate || ''
+      const normalizedEndDate = normalizedItem.endDate || ''
 
       return {
-        ...item,
+        ...normalizedItem,
         startDate: normalizedStartDate,
         endDate: normalizedEndDate,
         travelDate: normalizedStartDate,
         service,
-        lineTotal: (service?.salePrice || 0) * item.quantity
+        identityKey: getCartIdentity(normalizedItem),
+        bookingSummary: buildBookingSummary(normalizedItem),
+        lineTotal: (Number(normalizedItem.bookingMeta?.unitPrice || 0) || Number(service?.salePrice || 0) || 0) * normalizedItem.quantity
       }
     })
   )
@@ -191,69 +385,181 @@ export const useTravelStore = () => {
     persistScoped(STORAGE_KEYS.wishlist, state.wishlist)
   }
 
-  const addToCart = ({ serviceId, quantity = 1, travelDate = '', startDate = '', endDate = '' }) => {
+  const addToCart = ({
+    serviceId,
+    quantity = 1,
+    travelDate = '',
+    startDate = '',
+    endDate = '',
+    bookingType = '',
+    bookingMeta = null
+  }) => {
     syncScopeFromSession()
     const service = state.services.find((entry) => entry.id === serviceId)
     if (!service || service.availableSlots <= 0) return
 
-    const normalizedStartDate = startDate || travelDate || ''
-    const normalizedEndDate = endDate || ''
-    const normalizedQuantity = Math.max(1, Math.min(Number(quantity) || 1, service.availableSlots))
-    const existing = state.cart.find((item) =>
-      item.serviceId === serviceId
-      && (item.startDate || item.travelDate || '') === normalizedStartDate
-      && (item.endDate || '') === normalizedEndDate
-    )
-    if (existing) {
-      existing.quantity = Math.min(existing.quantity + normalizedQuantity, service.availableSlots)
-    } else {
-      state.cart.push({
-        serviceId,
+    const resolvedBookingType = bookingType || getBookingType(service)
+    const rawStartDate = startDate || travelDate || ''
+    const rawEndDate = serviceRequiresEndDate(service) ? (endDate || '') : ''
+    const tentativeQuantity = Math.max(1, Number(quantity) || 1)
+    const normalizedMeta = buildBookingMeta({
+      bookingType: resolvedBookingType,
+      startDate: rawStartDate,
+      endDate: rawEndDate,
+      quantity: tentativeQuantity,
+      bookingMeta: bookingMeta || {}
+    })
+    const normalizedDates = extractDateRangeFromBookingMeta(resolvedBookingType, normalizedMeta)
+    const maxSlots = resolveItemMaxSlots(service, {
+      bookingType: resolvedBookingType,
+      bookingMeta: normalizedMeta
+    })
+    const normalizedQuantity = Math.max(1, Math.min(tentativeQuantity, Math.max(maxSlots, 1)))
+    const candidate = {
+      serviceId,
+      bookingType: resolvedBookingType,
+      bookingMeta: buildBookingMeta({
+        bookingType: resolvedBookingType,
+        startDate: normalizedDates.startDate || rawStartDate,
+        endDate: normalizedDates.endDate || rawEndDate,
         quantity: normalizedQuantity,
-        startDate: normalizedStartDate,
-        endDate: normalizedEndDate,
-        travelDate: normalizedStartDate
+        bookingMeta: normalizedMeta
+      }),
+      quantity: normalizedQuantity,
+      startDate: normalizedDates.startDate || rawStartDate,
+      endDate: serviceRequiresEndDate(service) ? (normalizedDates.endDate || rawEndDate) : '',
+      travelDate: normalizedDates.startDate || rawStartDate
+    }
+    const candidateIdentity = getCartIdentity(candidate)
+
+    const existing = state.cart.find((item) => {
+      const normalizedItem = normalizeCartItem(item, state.services)
+      return normalizedItem.serviceId === serviceId && getCartIdentity(normalizedItem) === candidateIdentity
+    })
+
+    if (existing) {
+      const existingNormalized = normalizeCartItem(existing, state.services)
+      const scopedMaxSlots = resolveItemMaxSlots(service, existingNormalized)
+      const mergedQuantity = Math.min((Number(existing.quantity) || 1) + normalizedQuantity, Math.max(scopedMaxSlots, 1))
+      const mergedMeta = buildBookingMeta({
+        bookingType: existingNormalized.bookingType,
+        startDate: existingNormalized.startDate,
+        endDate: existingNormalized.endDate,
+        quantity: mergedQuantity,
+        bookingMeta: existingNormalized.bookingMeta
       })
+
+      existing.bookingType = existingNormalized.bookingType
+      existing.bookingMeta = mergedMeta
+      existing.quantity = mergedQuantity
+      existing.startDate = existingNormalized.startDate
+      existing.endDate = existingNormalized.endDate
+      existing.travelDate = existingNormalized.startDate
+    } else {
+      state.cart.push(candidate)
     }
 
     persistScoped(STORAGE_KEYS.cart, state.cart)
   }
 
-  const updateCartQuantity = (serviceId, startDate, quantity, endDate = '') => {
+  const updateCartQuantity = (
+    serviceId,
+    startDate,
+    quantity,
+    endDate = '',
+    bookingType = '',
+    bookingMeta = null
+  ) => {
     syncScopeFromSession()
     const service = state.services.find((entry) => entry.id === serviceId)
-    const maxSlots = service?.availableSlots || 0
     const normalizedQuantity = Number(quantity)
-    const normalizedStartDate = startDate || ''
-    const normalizedEndDate = endDate || ''
+    const targetBookingType = bookingType || getBookingType(service)
+    const targetMeta = buildBookingMeta({
+      bookingType: targetBookingType,
+      startDate: startDate || '',
+      endDate: endDate || '',
+      quantity: normalizedQuantity > 0 ? normalizedQuantity : 1,
+      bookingMeta: bookingMeta || {}
+    })
+    const targetDates = extractDateRangeFromBookingMeta(targetBookingType, targetMeta)
+    const targetIdentity = getCartIdentity({
+      serviceId,
+      bookingType: targetBookingType,
+      bookingMeta: targetMeta,
+      startDate: targetDates.startDate || startDate || '',
+      endDate: targetDates.endDate || endDate || ''
+    })
+
+    const isTargetItem = (item) => {
+      const normalizedItem = normalizeCartItem(item, state.services)
+      return normalizedItem.serviceId === serviceId && getCartIdentity(normalizedItem) === targetIdentity
+    }
 
     if (normalizedQuantity <= 0) {
-      state.cart = state.cart.filter((item) => !(
-        item.serviceId === serviceId
-        && (item.startDate || item.travelDate || '') === normalizedStartDate
-        && (item.endDate || '') === normalizedEndDate
-      ))
+      state.cart = state.cart.filter((item) => !isTargetItem(item))
     } else {
       state.cart = state.cart.map((item) =>
-        item.serviceId === serviceId
-        && (item.startDate || item.travelDate || '') === normalizedStartDate
-        && (item.endDate || '') === normalizedEndDate
-          ? { ...item, quantity: Math.min(normalizedQuantity, Math.max(maxSlots, 1)) }
+        isTargetItem(item)
+          ? (() => {
+            const normalizedItem = normalizeCartItem(item, state.services)
+            const maxSlots = resolveItemMaxSlots(service, normalizedItem)
+            const cappedQuantity = Math.min(normalizedQuantity, Math.max(maxSlots, 1))
+            const nextMeta = buildBookingMeta({
+              bookingType: normalizedItem.bookingType,
+              startDate: normalizedItem.startDate,
+              endDate: normalizedItem.endDate,
+              quantity: cappedQuantity,
+              bookingMeta: normalizedItem.bookingMeta
+            })
+
+            return {
+              ...item,
+              bookingType: normalizedItem.bookingType,
+              bookingMeta: nextMeta,
+              quantity: cappedQuantity,
+              startDate: normalizedItem.startDate,
+              endDate: normalizedItem.endDate,
+              travelDate: normalizedItem.startDate
+            }
+          })()
           : item
       )
     }
+
     persistScoped(STORAGE_KEYS.cart, state.cart)
   }
 
-  const removeCartItem = (serviceId, startDate, endDate = '') => {
+  const removeCartItem = (
+    serviceId,
+    startDate,
+    endDate = '',
+    bookingType = '',
+    bookingMeta = null
+  ) => {
     syncScopeFromSession()
-    const normalizedStartDate = startDate || ''
-    const normalizedEndDate = endDate || ''
-    state.cart = state.cart.filter((item) => !(
-      item.serviceId === serviceId
-      && (item.startDate || item.travelDate || '') === normalizedStartDate
-      && (item.endDate || '') === normalizedEndDate
-    ))
+    const service = state.services.find((entry) => entry.id === serviceId)
+    const targetBookingType = bookingType || getBookingType(service)
+    const targetMeta = buildBookingMeta({
+      bookingType: targetBookingType,
+      startDate: startDate || '',
+      endDate: endDate || '',
+      quantity: 1,
+      bookingMeta: bookingMeta || {}
+    })
+    const targetDates = extractDateRangeFromBookingMeta(targetBookingType, targetMeta)
+    const targetIdentity = getCartIdentity({
+      serviceId,
+      bookingType: targetBookingType,
+      bookingMeta: targetMeta,
+      startDate: targetDates.startDate || startDate || '',
+      endDate: targetDates.endDate || endDate || ''
+    })
+
+    state.cart = state.cart.filter((item) => {
+      const normalizedItem = normalizeCartItem(item, state.services)
+      return !(normalizedItem.serviceId === serviceId && getCartIdentity(normalizedItem) === targetIdentity)
+    })
+
     persistScoped(STORAGE_KEYS.cart, state.cart)
   }
 
@@ -293,12 +599,12 @@ export const useTravelStore = () => {
     }
 
     state.services = state.services.map((service) => {
-      const item = items.find((entry) => entry.serviceId === service.id)
-      if (!item) return service
-      return {
-        ...service,
-        availableSlots: Math.max(0, service.availableSlots - item.quantity)
-      }
+      const relatedItems = items.filter((entry) => entry.serviceId === service.id)
+      if (!relatedItems.length) return service
+
+      return relatedItems.reduce((currentService, item) =>
+        applyServiceSlotDelta(currentService, item, -Math.max(0, Number(item.quantity || 0))),
+      service)
     })
 
     state.bookings = [booking, ...state.bookings]
@@ -356,12 +662,12 @@ export const useTravelStore = () => {
 
     if (shouldRestoreSlots) {
       state.services = state.services.map((service) => {
-        const item = existing.items.find((entry) => entry.serviceId === service.id)
-        if (!item) return service
-        return {
-          ...service,
-          availableSlots: service.availableSlots + item.quantity
-        }
+        const relatedItems = existing.items.filter((entry) => entry.serviceId === service.id)
+        if (!relatedItems.length) return service
+
+        return relatedItems.reduce((currentService, item) =>
+          applyServiceSlotDelta(currentService, item, Math.max(0, Number(item.quantity || 0))),
+        service)
       })
       persistServices()
     }

@@ -55,9 +55,9 @@
     <aside class="summary-card sticky-card">
       <p class="eyebrow">Đơn hàng của bạn</p>
 
-      <div v-for="item in checkoutItems" :key="`${item.serviceId}-${item.startDate}-${item.endDate}`" class="mini-booking-item">
+      <div v-for="item in checkoutItems" :key="item.identityKey || `${item.serviceId}-${item.startDate}-${item.endDate}`" class="mini-booking-item">
         <strong>{{ item.service?.name }}</strong>
-        <p class="muted">{{ formatDateRangeVN(item.startDate, item.endDate) }} · {{ item.quantity }} khách</p>
+        <p class="muted">{{ item.bookingSummary || formatDateRangeVN(item.startDate, item.endDate) }}</p>
         <span>{{ formatCurrencyVND(item.lineTotal) }}</span>
       </div>
 
@@ -87,15 +87,18 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { destinations } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
 const store = useTravelStore()
+const authStore = useAuthStore()
 
 const cartItems = computed(() => store.cartItems.value)
 const isDirectCheckout = computed(() => route.query.mode === 'direct')
@@ -106,17 +109,76 @@ const directCheckoutItem = computed(() => {
   const service = store.state.services.find((entry) => entry.id === serviceId)
   if (!service) return null
 
-  const quantity = Math.max(1, Math.min(Number(route.query.quantity) || 1, service.availableSlots || 1))
-  const startDate = String(route.query.startDate || '')
-  const endDate = service.categoryId === 'ticket' ? '' : String(route.query.endDate || '')
+  const bookingType = service.categoryId
+  const quantity = bookingType === 'ticket'
+    ? Math.max(1, Math.min(Number(route.query.ticketQuantity || route.query.quantity) || 1, service.availableSlots || 1))
+    : Math.max(1, Math.min(Number(route.query.travelers || route.query.guests || route.query.quantity) || 1, service.availableSlots || 1))
+
+  const startDate = bookingType === 'hotel'
+    ? String(route.query.checkInDate || route.query.startDate || '')
+    : bookingType === 'ticket'
+      ? String(route.query.useDate || route.query.startDate || '')
+      : bookingType === 'tour'
+        ? String(route.query.departureDate || route.query.startDate || '')
+        : String(route.query.applyDate || route.query.startDate || '')
+  const endDate = bookingType === 'hotel'
+    ? String(route.query.checkOutDate || route.query.endDate || '')
+    : ''
+
+  const bookingMeta = bookingType === 'hotel'
+    ? {
+      checkInDate: startDate,
+      checkOutDate: endDate,
+      guests: quantity,
+      rooms: Math.max(1, Number(route.query.rooms || 1) || 1),
+      durationLabel: String(route.query.durationLabel || ''),
+      unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
+    }
+    : bookingType === 'ticket'
+      ? {
+        useDate: startDate,
+        ticketQuantity: quantity,
+        durationLabel: String(route.query.durationLabel || ''),
+        unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
+      }
+      : bookingType === 'tour'
+        ? {
+          departureDate: startDate,
+          departureId: String(route.query.departureId || ''),
+          travelers: quantity,
+          durationLabel: String(route.query.durationLabel || ''),
+          unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
+        }
+        : {
+          applyDate: startDate,
+          packageId: String(route.query.packageId || ''),
+          departureId: String(route.query.departureId || ''),
+          travelers: quantity,
+          durationLabel: String(route.query.durationLabel || ''),
+          unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
+        }
+
+  const durationSuffix = bookingMeta.durationLabel ? ` · ${bookingMeta.durationLabel}` : ''
+
+  const bookingSummary = bookingType === 'hotel'
+    ? `${bookingMeta.checkInDate || 'Chưa chọn ngày'} - ${bookingMeta.checkOutDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.guests} khách · ${bookingMeta.rooms} phòng`
+    : bookingType === 'ticket'
+      ? `${bookingMeta.useDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.ticketQuantity} vé`
+      : bookingType === 'tour'
+        ? `Khởi hành ${bookingMeta.departureDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.travelers} người`
+        : `Áp dụng ${bookingMeta.applyDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.travelers} người`
 
   return {
     serviceId,
+    bookingType,
+    bookingMeta,
     service,
     quantity,
     startDate,
     endDate,
-    lineTotal: (service.salePrice || 0) * quantity
+    bookingSummary,
+    identityKey: `direct-${serviceId}-${startDate}-${endDate}-${quantity}`,
+    lineTotal: (Number(bookingMeta.unitPrice || 0) || Number(service.salePrice || 0) || 0) * quantity
   }
 })
 const checkoutItems = computed(() => directCheckoutItem.value ? [directCheckoutItem.value] : cartItems.value)
@@ -126,13 +188,45 @@ const subtotal = computed(() =>
 const discount = computed(() => isDirectCheckout.value ? 0 : store.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
+const getSlotValidationError = (item) => {
+  const bookingType = item.bookingType || item.service?.categoryId || ''
+  const bookingMeta = item.bookingMeta || {}
+
+  if (bookingType === 'tour') {
+    const departureId = bookingMeta.departureId
+    if (!departureId) return 'Tour chưa chọn lịch khởi hành hợp lệ.'
+    const departure = (item.service?.departures || []).find((entry) => entry.departureId === departureId)
+    if (!departure) return 'Lịch khởi hành tour không còn khả dụng.'
+    const remaining = Number(departure.remainingSlots || 0)
+    if (remaining < item.quantity) {
+      return `Lịch tour chỉ còn ${remaining} chỗ, không đủ cho ${item.quantity} khách.`
+    }
+  }
+
+  if (bookingType === 'combo' && item.service?.isFixedSchedule !== false) {
+    const packageId = bookingMeta.packageId
+    if (!packageId) return 'Combo chưa chọn gói áp dụng hợp lệ.'
+    const pkg = (item.service?.packages || []).find((entry) => entry.packageId === packageId)
+    if (!pkg) return 'Gói combo đã hết hoặc không còn hiệu lực.'
+    const remaining = Number(pkg.remainingSlots || 0)
+    if (remaining < item.quantity) {
+      return `Gói combo chỉ còn ${remaining} suất, không đủ cho ${item.quantity} khách.`
+    }
+  }
+
+  return ''
+}
+
+const slotValidationMessage = computed(() =>
+  checkoutItems.value.map((item) => getSlotValidationError(item)).find(Boolean) || ''
+)
 const hasInvalidCartItems = computed(() =>
   checkoutItems.value.some((item) => {
-    const needsEndDate = item.service?.categoryId !== 'ticket'
-    if (!item.startDate) return true
-    if (needsEndDate && !item.endDate) return true
-    if (item.endDate && item.startDate && new Date(item.endDate) < new Date(item.startDate)) return true
-    return false
+    return isDateSelectionInvalid({
+      startDate: item.startDate,
+      endDate: item.endDate,
+      service: item.service
+    })
   })
 )
 
@@ -159,8 +253,8 @@ const validate = () => {
   errors.phone = /^0\d{9,10}$/.test(form.phone) ? '' : 'Số điện thoại phải bắt đầu bằng 0 và có 10-11 số.'
   errors.city = form.city ? '' : 'Vui lòng chọn tỉnh/thành.'
   errors.cart = hasInvalidCartItems.value
-    ? 'Giỏ hàng còn dịch vụ thiếu ngày đi/ngày về hợp lệ. Vui lòng quay lại giỏ để chỉnh sửa.'
-    : ''
+    ? 'Giỏ hàng còn dịch vụ thiếu ngày hợp lệ. Vui lòng quay lại giỏ để chỉnh sửa.'
+    : slotValidationMessage.value
 
   return !errors.fullName && !errors.email && !errors.phone && !errors.city && !errors.cart
 }
@@ -183,4 +277,15 @@ const handleCheckout = () => {
 
   router.push({ name: 'booking-success', query: { code: booking.code } })
 }
+
+// Auto-fill form data when user is logged in
+onMounted(() => {
+  if (authStore.state.currentUser) {
+    const user = authStore.state.currentUser
+    form.fullName = user.fullName || ''
+    form.email = user.email || ''
+    form.phone = user.phone || ''
+    form.address = user.address || ''
+  }
+})
 </script>

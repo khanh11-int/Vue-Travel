@@ -30,6 +30,10 @@ export const services = [
     salePrice: 3590000,
     rating: 4.8,
     availableSlots: 12,
+    departures: [
+      { departureId: 'T101-2026-07-20', startDate: '2026-07-20', endDate: '2026-07-21', durationDays: 2, durationNights: 1, remainingSlots: 6 },
+      { departureId: 'T101-2026-07-27', startDate: '2026-07-27', endDate: '2026-07-28', durationDays: 2, durationNights: 1, remainingSlots: 4 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -102,6 +106,11 @@ export const services = [
     salePrice: 2990000,
     rating: 4.6,
     availableSlots: 16,
+    isFixedSchedule: true,
+    packages: [
+      { packageId: 'C104-JUL-A', name: 'Đợt tháng 7 (tuần 1)', applyFrom: '2026-07-01', applyTo: '2026-07-31', startDate: '2026-07-05', endDate: '2026-07-07', durationDays: 3, durationNights: 2, remainingSlots: 8, packagePrice: 2990000 },
+      { packageId: 'C104-JUL-B', name: 'Đợt tháng 7 (tuần 3)', applyFrom: '2026-07-01', applyTo: '2026-07-31', startDate: '2026-07-19', endDate: '2026-07-21', durationDays: 3, durationNights: 2, remainingSlots: 6, packagePrice: 3090000 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -149,6 +158,10 @@ export const services = [
     salePrice: 4250000,
     rating: 4.9,
     availableSlots: 9,
+    departures: [
+      { departureId: 'T106-2026-07-18', startDate: '2026-07-18', endDate: '2026-07-20', durationDays: 3, durationNights: 2, remainingSlots: 5 },
+      { departureId: 'T106-2026-07-25', startDate: '2026-07-25', endDate: '2026-07-27', durationDays: 3, durationNights: 2, remainingSlots: 4 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -196,6 +209,11 @@ export const services = [
     salePrice: 3790000,
     rating: 4.7,
     availableSlots: 11,
+    isFixedSchedule: true,
+    packages: [
+      { packageId: 'C108-AUG-A', name: 'Đợt đầu tháng 8', applyFrom: '2026-08-01', applyTo: '2026-08-31', startDate: '2026-08-04', endDate: '2026-08-06', durationDays: 3, durationNights: 2, remainingSlots: 6, packagePrice: 3790000 },
+      { packageId: 'C108-AUG-B', name: 'Đợt giữa tháng 8', applyFrom: '2026-08-01', applyTo: '2026-08-31', startDate: '2026-08-18', endDate: '2026-08-20', durationDays: 3, durationNights: 2, remainingSlots: 5, packagePrice: 3890000 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -220,6 +238,10 @@ export const services = [
     salePrice: 990000,
     rating: 4.4,
     availableSlots: 22,
+    departures: [
+      { departureId: 'T109-2026-07-12', startDate: '2026-07-12', endDate: '2026-07-12', durationDays: 1, durationNights: 0, remainingSlots: 12 },
+      { departureId: 'T109-2026-07-19', startDate: '2026-07-19', endDate: '2026-07-19', durationDays: 1, durationNights: 0, remainingSlots: 10 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -267,6 +289,10 @@ export const services = [
     salePrice: 1190000,
     rating: 4.7,
     availableSlots: 26,
+    departures: [
+      { departureId: 'T111-2026-07-06', startDate: '2026-07-06', endDate: '2026-07-06', durationDays: 1, durationNights: 0, remainingSlots: 14 },
+      { departureId: 'T111-2026-07-13', startDate: '2026-07-13', endDate: '2026-07-13', durationDays: 1, durationNights: 0, remainingSlots: 12 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -291,6 +317,11 @@ export const services = [
     salePrice: 5990000,
     rating: 4.8,
     availableSlots: 13,
+    isFixedSchedule: true,
+    packages: [
+      { packageId: 'C112-AUG-A', name: 'Đợt đầu tháng 8', applyFrom: '2026-08-01', applyTo: '2026-08-31', startDate: '2026-08-07', endDate: '2026-08-10', durationDays: 4, durationNights: 3, remainingSlots: 7, packagePrice: 5990000 },
+      { packageId: 'C112-AUG-B', name: 'Đợt cuối tháng 8', applyFrom: '2026-08-01', applyTo: '2026-08-31', startDate: '2026-08-22', endDate: '2026-08-25', durationDays: 4, durationNights: 3, remainingSlots: 6, packagePrice: 6190000 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -362,6 +393,10 @@ export const services = [
     salePrice: 1350000,
     rating: 4.5,
     availableSlots: 20,
+    departures: [
+      { departureId: 'T115-2026-07-10', startDate: '2026-07-10', endDate: '2026-07-10', durationDays: 1, durationNights: 0, remainingSlots: 10 },
+      { departureId: 'T115-2026-07-17', startDate: '2026-07-17', endDate: '2026-07-17', durationDays: 1, durationNights: 0, remainingSlots: 10 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=900&q=80',
     gallery: [
@@ -409,6 +444,11 @@ export const services = [
     salePrice: 3350000,
     rating: 4.6,
     availableSlots: 17,
+    isFixedSchedule: true,
+    packages: [
+      { packageId: 'C117-SEP-A', name: 'Đợt đầu tháng 9', applyFrom: '2026-09-01', applyTo: '2026-09-30', startDate: '2026-09-05', endDate: '2026-09-07', durationDays: 3, durationNights: 2, remainingSlots: 9, packagePrice: 3350000 },
+      { packageId: 'C117-SEP-B', name: 'Đợt giữa tháng 9', applyFrom: '2026-09-01', applyTo: '2026-09-30', startDate: '2026-09-16', endDate: '2026-09-18', durationDays: 3, durationNights: 2, remainingSlots: 8, packagePrice: 3450000 }
+    ],
     status: 'active',
     image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80',
     gallery: [

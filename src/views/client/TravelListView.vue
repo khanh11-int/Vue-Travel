@@ -65,10 +65,7 @@
         <div>
           <p class="eyebrow">Khám phá dịch vụ</p>
           <h1>{{ filteredServices.length }} lựa chọn du lịch nội địa Việt Nam</h1>
-          <p class="muted">
-            Ngày đi: {{ selectedStartDate || 'Chưa chọn' }} · Ngày về: {{ selectedEndDate || 'Chưa chọn' }} ·
-            {{ guestLabel }}
-          </p>
+          <p class="muted">{{ searchContextSummary }}</p>
         </div>
       </div>
 
@@ -96,6 +93,15 @@ import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { categories, destinations } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
+import { serviceRequiresEndDate } from '@/utils/bookingRules'
+import { getDetailRouteLocation } from '@/utils/serviceRouting'
+import {
+  resolveCategoryFromQuery,
+  resolveEndDateByCategory,
+  resolveQuantityByCategory,
+  resolveSearchSummary,
+  resolveStartDateByCategory
+} from '@/utils/searchContext'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,8 +120,11 @@ const createInitialFilters = () => ({
 
 const filters = reactive(createInitialFilters())
 
-const selectedStartDate = computed(() => route.query.startDate || route.query.date || '')
-const selectedEndDate = computed(() => route.query.endDate || route.query.returnDate || '')
+const selectedCategory = computed(() => resolveCategoryFromQuery(route.query, filters.categoryId))
+
+const selectedStartDate = computed(() => resolveStartDateByCategory(route.query, selectedCategory.value))
+
+const selectedEndDate = computed(() => resolveEndDateByCategory(route.query, selectedCategory.value))
 
 watch(
   () => route.query,
@@ -126,7 +135,9 @@ watch(
   }
 )
 
-const guestLabel = computed(() => `${route.query.guests || 1} khách`)
+const selectedQuantity = computed(() => resolveQuantityByCategory(route.query, selectedCategory.value))
+
+const searchContextSummary = computed(() => resolveSearchSummary(route.query, selectedCategory.value))
 
 const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
@@ -167,24 +178,84 @@ const filteredServices = computed(() => {
 })
 
 const handleBookNow = (service) => {
-  const requiresEndDate = service.categoryId !== 'ticket'
+  const requiresEndDate = serviceRequiresEndDate(service)
+  const category = service.categoryId
+  const defaultQuantity = Math.max(1, Number(selectedQuantity.value) || 1)
 
-  if (!selectedStartDate.value || (requiresEndDate && !selectedEndDate.value)) {
+  if (category === 'tour' || category === 'combo') {
     router.push({
-      name: 'travel-detail',
-      params: { slug: service.slug },
-      query: {
-        startDate: selectedStartDate.value || undefined,
-        endDate: selectedEndDate.value || undefined,
-        guests: Number(route.query.guests || 1) || 1
-      }
+      ...getDetailRouteLocation(service),
+      query: category === 'tour'
+        ? {
+          departureDate: selectedStartDate.value || undefined,
+          travelers: defaultQuantity
+        }
+        : {
+          applyDate: selectedStartDate.value || undefined,
+          travelers: defaultQuantity
+        }
     })
+    return
+  }
+
+  if (category === 'hotel') {
+    if (!selectedStartDate.value || !selectedEndDate.value) {
+      router.push({
+        ...getDetailRouteLocation(service),
+        query: {
+          checkInDate: selectedStartDate.value || undefined,
+          checkOutDate: selectedEndDate.value || undefined,
+          guests: defaultQuantity,
+          rooms: Number(route.query.rooms || 1) || 1
+        }
+      })
+      return
+    }
+  } else if (!selectedStartDate.value) {
+    const query = {
+      guests: defaultQuantity
+    }
+
+    if (category === 'ticket') {
+      query.useDate = selectedStartDate.value || undefined
+      query.ticketQuantity = defaultQuantity
+    } else if (category === 'tour') {
+      query.departureDate = selectedStartDate.value || undefined
+      query.travelers = defaultQuantity
+    } else if (category === 'combo') {
+      query.applyDate = selectedStartDate.value || undefined
+      query.travelers = defaultQuantity
+    }
+
+    router.push(getDetailRouteLocation(service, query))
     return
   }
 
   store.addToCart({
     serviceId: service.id,
-    quantity: Number(route.query.guests || 1),
+    quantity: defaultQuantity,
+    bookingType: category,
+    bookingMeta: category === 'hotel'
+      ? {
+        checkInDate: selectedStartDate.value,
+        checkOutDate: selectedEndDate.value,
+        guests: defaultQuantity,
+        rooms: Number(route.query.rooms || 1) || 1
+      }
+      : category === 'ticket'
+        ? {
+          useDate: selectedStartDate.value,
+          ticketQuantity: defaultQuantity
+        }
+        : category === 'tour'
+          ? {
+            departureDate: selectedStartDate.value,
+            travelers: defaultQuantity
+          }
+          : {
+            applyDate: selectedStartDate.value,
+            travelers: defaultQuantity
+          },
     startDate: selectedStartDate.value,
     endDate: requiresEndDate ? selectedEndDate.value : ''
   })

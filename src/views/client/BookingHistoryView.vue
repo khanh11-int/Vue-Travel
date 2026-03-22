@@ -37,9 +37,9 @@
           <div>
             <h3>Dịch vụ trong đơn</h3>
             <ul class="booking-detail-list">
-              <li v-for="item in booking.items" :key="`${booking.id}-${item.serviceId}-${item.startDate || item.travelDate}-${item.endDate || ''}`">
+              <li v-for="item in booking.items" :key="`${booking.id}-${item.serviceId}-${item.bookingType || item.service?.categoryId || ''}-${item.startDate || item.travelDate || ''}-${item.endDate || ''}`">
                 <strong>{{ item.service?.name }}</strong>
-                <span>{{ formatDateRangeVN(item.startDate || item.travelDate, item.endDate) }} · {{ item.quantity }} khách · {{ formatCurrencyVND(item.lineTotal) }}</span>
+                <span>{{ getBookingSummary(item) }} · {{ formatCurrencyVND(item.lineTotal) }}</span>
               </li>
             </ul>
           </div>
@@ -64,5 +64,32 @@ const expandedBookingId = ref(null)
 
 const toggleExpandedBooking = (bookingId) => {
   expandedBookingId.value = expandedBookingId.value === bookingId ? null : bookingId
+}
+
+const getBookingSummary = (item) => {
+  const bookingType = item.bookingType || item.service?.categoryId || 'hotel'
+  const bookingMeta = item.bookingMeta || {}
+  const startDate = item.startDate || item.travelDate || ''
+  const endDate = item.endDate || ''
+  const durationSuffix = bookingMeta.durationLabel ? ` · ${bookingMeta.durationLabel}` : ''
+
+  if (bookingType === 'hotel') {
+    const guests = bookingMeta.guests || item.quantity || 1
+    const rooms = bookingMeta.rooms || 1
+    return `${formatDateRangeVN(bookingMeta.checkInDate || startDate, bookingMeta.checkOutDate || endDate)}${durationSuffix} · ${guests} khách · ${rooms} phòng`
+  }
+
+  if (bookingType === 'ticket') {
+    const ticketQuantity = bookingMeta.ticketQuantity || item.quantity || 1
+    return `${formatDateVN(bookingMeta.useDate || startDate)}${durationSuffix} · ${ticketQuantity} vé`
+  }
+
+  if (bookingType === 'tour') {
+    const travelers = bookingMeta.travelers || item.quantity || 1
+    return `Khởi hành ${formatDateVN(bookingMeta.departureDate || startDate)}${durationSuffix} · ${travelers} người`
+  }
+
+  const travelers = bookingMeta.travelers || item.quantity || 1
+  return `Áp dụng ${formatDateVN(bookingMeta.applyDate || startDate)}${durationSuffix} · ${travelers} người`
 }
 </script>

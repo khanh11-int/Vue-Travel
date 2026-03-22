@@ -10,7 +10,7 @@
       </div>
 
       <div v-if="cartItems.length" class="cart-list">
-        <article v-for="item in cartItems" :key="`${item.serviceId}-${item.startDate}-${item.endDate}`" class="cart-item-card">
+        <article v-for="item in cartItems" :key="item.identityKey" class="cart-item-card">
           <img :src="item.service?.image" :alt="item.service?.name" class="cart-item-image" />
 
           <div class="cart-item-main">
@@ -19,34 +19,26 @@
                 <p class="eyebrow eyebrow--blue">{{ getCategoryLabel(item.service?.categoryId) }}</p>
                 <h3>{{ item.service?.name }}</h3>
                 <p class="muted">
-                  {{ item.service?.destination }}, {{ item.service?.province }} · {{ formatDateRangeVN(item.startDate, item.endDate) }}
+                  {{ item.service?.destination }}, {{ item.service?.province }} · {{ item.bookingSummary || formatDateRangeVN(item.startDate, item.endDate) }}
                 </p>
                 <router-link
                   v-if="isItemDateInvalid(item) && item.service?.slug"
                   class="ghost-button cart-fix-date-button"
-                  :to="{
-                    name: 'travel-detail',
-                    params: { slug: item.service.slug },
-                    query: {
-                      startDate: item.startDate || undefined,
-                      endDate: item.endDate || undefined,
-                      guests: item.quantity || 1
-                    }
-                  }"
+                  :to="getDetailRoute(item.service, getEditQuery(item))"
                 >
                   Sửa ngày
                 </router-link>
               </div>
-              <button class="icon-button" type="button" @click="store.removeCartItem(item.serviceId, item.startDate, item.endDate)">
+              <button class="icon-button" type="button" @click="store.removeCartItem(item.serviceId, item.startDate, item.endDate, item.bookingType, item.bookingMeta)">
                 ✕
               </button>
             </div>
 
             <div class="cart-item-footer">
               <div class="quantity-box compact">
-                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity - 1, item.endDate)">-</button>
+                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity - 1, item.endDate, item.bookingType, item.bookingMeta)">-</button>
                 <span>{{ item.quantity }}</span>
-                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity + 1, item.endDate)">+</button>
+                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity + 1, item.endDate, item.bookingType, item.bookingMeta)">+</button>
               </div>
 
               <div class="price-stack">
@@ -92,7 +84,7 @@
       </div>
 
       <small v-if="hasInvalidCartItems" class="error-text">
-        Có dịch vụ chưa chọn đủ ngày đi/ngày về hợp lệ. Vui lòng chỉnh lại trước khi thanh toán.
+        Có dịch vụ chưa chọn đủ ngày hợp lệ. Vui lòng chỉnh lại trước khi thanh toán.
       </small>
 
       <button v-if="cartItems.length" class="primary-button full-width" type="button" :disabled="hasInvalidCartItems" @click="handleProceedCheckout">
@@ -110,7 +102,9 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { categories } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
+import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
+import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
 const store = useTravelStore()
@@ -128,12 +122,44 @@ const hasInvalidCartItems = computed(() =>
 )
 
 const isItemDateInvalid = (item) => {
-  const needsEndDate = item.service?.categoryId !== 'ticket'
-  if (!item.startDate) return true
-  if (needsEndDate && !item.endDate) return true
-  if (item.endDate && item.startDate && new Date(item.endDate) < new Date(item.startDate)) return true
-  return false
+  return isDateSelectionInvalid({
+    startDate: item.startDate,
+    endDate: item.endDate,
+    service: item.service
+  })
 }
+
+const getEditQuery = (item) => {
+  if (item.bookingType === 'hotel') {
+    return {
+      checkInDate: item.bookingMeta?.checkInDate || item.startDate || undefined,
+      checkOutDate: item.bookingMeta?.checkOutDate || item.endDate || undefined,
+      guests: item.bookingMeta?.guests || item.quantity || 1,
+      rooms: item.bookingMeta?.rooms || 1
+    }
+  }
+
+  if (item.bookingType === 'ticket') {
+    return {
+      useDate: item.bookingMeta?.useDate || item.startDate || undefined,
+      ticketQuantity: item.bookingMeta?.ticketQuantity || item.quantity || 1
+    }
+  }
+
+  if (item.bookingType === 'tour') {
+    return {
+      departureDate: item.bookingMeta?.departureDate || item.startDate || undefined,
+      travelers: item.bookingMeta?.travelers || item.quantity || 1
+    }
+  }
+
+  return {
+    applyDate: item.bookingMeta?.applyDate || item.startDate || undefined,
+    travelers: item.bookingMeta?.travelers || item.quantity || 1
+  }
+}
+
+const getDetailRoute = (service, query = {}) => getDetailRouteLocation(service, query)
 
 const getCategoryLabel = (categoryId) =>
   categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'

@@ -28,7 +28,7 @@
       </div>
 
       <div class="travel-card__actions">
-        <router-link :to="`/dich-vu/${service.slug}`" class="secondary-button travel-card__action">Xem chi tiết</router-link>
+        <router-link :to="detailRoute" class="secondary-button travel-card__action">Xem chi tiết</router-link>
         <button class="primary-button travel-card__action" type="button" @click="$emit('book-now', service)">
           Đặt ngay
         </button>
@@ -43,6 +43,7 @@ import { computed } from 'vue'
 import RatingStars from '@/components/common/RatingStars.vue'
 import { categories } from '@/data/mockData'
 import { formatCurrencyVND } from '@/utils/formatters'
+import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const props = defineProps({
   service: {
@@ -60,4 +61,6 @@ defineEmits(['toggle-wishlist', 'book-now'])
 const categoryLabel = computed(() =>
   categories.find((category) => category.id === props.service.categoryId)?.name || 'Dịch vụ'
 )
+
+const detailRoute = computed(() => getDetailRouteLocation(props.service))
 </script>

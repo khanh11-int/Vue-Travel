@@ -187,9 +187,13 @@ const validate = () => {
   } else {
     errors.email = ''
   }
-  errors.password = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,32}$/.test(form.password)
-    ? ''
-    : 'Mật khẩu 8-32 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'
+  if (mode.value === 'register') {
+    errors.password = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,32}$/.test(form.password)
+      ? ''
+      : 'Mật khẩu 8-32 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'
+  } else {
+    errors.password = form.password ? '' : 'Vui lòng nhập mật khẩu.'
+  }
   errors.confirmPassword = mode.value === 'register' && form.confirmPassword !== form.password
     ? 'Mật khẩu xác nhận chưa khớp.'
     : ''

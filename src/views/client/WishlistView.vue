@@ -30,16 +30,13 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useTravelStore } from '@/stores/useTravelStore'
+import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
 const store = useTravelStore()
 const wishlistItems = computed(() => store.wishlistItems.value)
 
 const handleBookNow = (service) => {
-  router.push({
-    name: 'travel-detail',
-    params: { slug: service.slug },
-    query: { guests: 1 }
-  })
+  router.push(getDetailRouteLocation(service, { guests: 1 }))
 }
 </script>

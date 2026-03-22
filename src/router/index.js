@@ -2,8 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 import ClientLayout from '@/layouts/ClientLayout.vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import HomeView from '@/views/client/HomeView.vue'
+import HotelSearchView from '@/views/client/hotel/HotelSearchView.vue'
+import HotelDetailView from '@/views/client/hotel/HotelDetailView.vue'
+import TicketSearchView from '@/views/client/ticket/TicketSearchView.vue'
+import TicketDetailView from '@/views/client/ticket/TicketDetailView.vue'
+import TourSearchView from '@/views/client/tour/TourSearchView.vue'
+import TourDetailView from '@/views/client/tour/TourDetailView.vue'
+import ComboSearchView from '@/views/client/combo/ComboSearchView.vue'
+import ComboDetailView from '@/views/client/combo/ComboDetailView.vue'
 import TravelListView from '@/views/client/TravelListView.vue'
-import TravelDetailView from '@/views/client/TravelDetailView.vue'
 import WishlistView from '@/views/client/WishlistView.vue'
 import CartView from '@/views/client/CartView.vue'
 import CheckoutView from '@/views/client/CheckoutView.vue'
@@ -35,11 +42,56 @@ const routes = [
         meta: { title: 'Khám phá dịch vụ du lịch Việt Nam' }
       },
       {
-        path: 'dich-vu/:slug',
-        name: 'travel-detail',
-        component: TravelDetailView,
+        path: 'khach-san',
+        name: 'hotel-search',
+        component: HotelSearchView,
+        meta: { title: 'Tìm khách sạn nội địa' }
+      },
+      {
+        path: 'khach-san/:slug',
+        name: 'hotel-detail',
+        component: HotelDetailView,
         props: true,
-        meta: { title: 'Chi tiết dịch vụ du lịch' }
+        meta: { title: 'Chi tiết khách sạn' }
+      },
+      {
+        path: 've-tham-quan',
+        name: 'ticket-search',
+        component: TicketSearchView,
+        meta: { title: 'Tìm vé tham quan nội địa' }
+      },
+      {
+        path: 've-tham-quan/:slug',
+        name: 'ticket-detail',
+        component: TicketDetailView,
+        props: true,
+        meta: { title: 'Chi tiết vé tham quan' }
+      },
+      {
+        path: 'tour',
+        name: 'tour-search',
+        component: TourSearchView,
+        meta: { title: 'Tìm tour nội địa' }
+      },
+      {
+        path: 'tour/:slug',
+        name: 'tour-detail',
+        component: TourDetailView,
+        props: true,
+        meta: { title: 'Chi tiết tour' }
+      },
+      {
+        path: 'combo',
+        name: 'combo-search',
+        component: ComboSearchView,
+        meta: { title: 'Tìm combo du lịch' }
+      },
+      {
+        path: 'combo/:slug',
+        name: 'combo-detail',
+        component: ComboDetailView,
+        props: true,
+        meta: { title: 'Chi tiết combo' }
       },
       {
         path: 'wishlist',
@@ -121,8 +173,16 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
-    return { top: 0 }
+  scrollBehavior(to) {
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth',
+        top: 8
+      }
+    }
+
+    return { top: 0, behavior: 'smooth' }
   }
 })
 

@@ -1,15 +1,19 @@
 import { computed, reactive, readonly } from 'vue'
-import { comments as seedComments, promotions as seedPromotions, services as seedServices } from '@/data/mockData'
+import { defineStore } from 'pinia'
+import { fetchTravelBootstrap } from '@/services/travelApi'
 import { serviceRequiresEndDate } from '@/utils/bookingRules'
 
 const STORAGE_KEYS = {
+  categories: 'vietvoyage_categories',
+  destinations: 'vietvoyage_destinations',
   wishlist: 'vietvoyage_wishlist',
   cart: 'vietvoyage_cart',
   comments: 'vietvoyage_comments',
   bookings: 'vietvoyage_bookings',
   services: 'vietvoyage_services',
   promotions: 'vietvoyage_promotions',
-  appliedPromotion: 'vietvoyage_applied_promotion'
+  appliedPromotion: 'vietvoyage_applied_promotion',
+  adminSummary: 'vietvoyage_admin_summary'
 }
 
 const SESSION_KEY = 'vietvoyage_session'
@@ -248,71 +252,6 @@ const normalizeCartItem = (item, services) => {
   }
 }
 
-const state = reactive({
-  activeUserId: GUEST_SCOPE,
-  services: seedServices,
-  wishlist: [],
-  cart: [],
-  comments: [],
-  bookings: [],
-  promotions: seedPromotions,
-  appliedPromotion: null
-})
-
-const loadUserScopedState = (userId) => {
-  const scope = userId || GUEST_SCOPE
-  state.activeUserId = scope
-  state.wishlist = readStorage(getScopedKey(STORAGE_KEYS.wishlist, scope), [])
-  const rawCart = readStorage(getScopedKey(STORAGE_KEYS.cart, scope), [])
-  state.cart = rawCart.map((item) => normalizeCartItem(item, state.services))
-  state.bookings = readStorage(getScopedKey(STORAGE_KEYS.bookings, scope), [])
-  state.appliedPromotion = readStorage(getScopedKey(STORAGE_KEYS.appliedPromotion, scope), null)
-
-  persistStorage(getScopedKey(STORAGE_KEYS.cart, scope), state.cart)
-}
-
-const bootstrapState = () => {
-  if (typeof window === 'undefined') return
-  state.services = readStorage(STORAGE_KEYS.services, seedServices)
-  state.comments = readStorage(STORAGE_KEYS.comments, seedComments)
-  state.promotions = readStorage(STORAGE_KEYS.promotions, seedPromotions)
-  loadUserScopedState(getActiveUserId())
-}
-
-bootstrapState()
-
-const persistServices = () => {
-  persistStorage(STORAGE_KEYS.services, state.services)
-}
-
-const persistPromotions = () => {
-  persistStorage(STORAGE_KEYS.promotions, state.promotions)
-}
-
-const persistScoped = (baseKey, value) => {
-  persistStorage(getScopedKey(baseKey, state.activeUserId), value)
-}
-
-const syncScopeFromSession = () => {
-  if (typeof window === 'undefined') return
-  const nextUserId = getActiveUserId()
-  if (nextUserId !== state.activeUserId) {
-    loadUserScopedState(nextUserId)
-  }
-}
-
-let authEventBound = false
-const bindAuthSync = () => {
-  if (typeof window === 'undefined' || authEventBound) return
-
-  window.addEventListener(AUTH_CHANGED_EVENT, (event) => {
-    const userId = event.detail?.id ? String(event.detail.id) : GUEST_SCOPE
-    loadUserScopedState(userId)
-  })
-
-  authEventBound = true
-}
-
 const BOOKING_STATUS_LABELS = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
@@ -321,9 +260,132 @@ const BOOKING_STATUS_LABELS = {
   cancelled: 'Hủy'
 }
 
-export const useTravelStore = () => {
-  syncScopeFromSession()
-  bindAuthSync()
+let authEventBound = false
+let initializePromise = null
+
+export const useTravelStore = defineStore('travel', () => {
+  const state = reactive({
+    isReady: false,
+    isLoading: false,
+    loadError: '',
+    activeUserId: GUEST_SCOPE,
+    categories: [],
+    destinations: [],
+    services: [],
+    wishlist: [],
+    cart: [],
+    comments: [],
+    bookings: [],
+    promotions: [],
+    appliedPromotion: null,
+    adminSummaryMeta: {
+      totalBookings: 0,
+      monthlyRevenue: 0,
+      pendingBookings: 0,
+      revenueSeries: [],
+      bookingSeries: []
+    }
+  })
+
+  const persistServices = () => {
+    persistStorage(STORAGE_KEYS.services, state.services)
+  }
+
+  const persistPromotions = () => {
+    persistStorage(STORAGE_KEYS.promotions, state.promotions)
+  }
+
+  const persistScoped = (baseKey, value) => {
+    persistStorage(getScopedKey(baseKey, state.activeUserId), value)
+  }
+
+  const loadUserScopedState = (userId) => {
+    const scope = userId || GUEST_SCOPE
+    state.activeUserId = scope
+    state.wishlist = readStorage(getScopedKey(STORAGE_KEYS.wishlist, scope), [])
+    const rawCart = readStorage(getScopedKey(STORAGE_KEYS.cart, scope), [])
+    state.cart = rawCart.map((item) => normalizeCartItem(item, state.services))
+    state.bookings = readStorage(getScopedKey(STORAGE_KEYS.bookings, scope), [])
+    state.appliedPromotion = readStorage(getScopedKey(STORAGE_KEYS.appliedPromotion, scope), null)
+
+    persistStorage(getScopedKey(STORAGE_KEYS.cart, scope), state.cart)
+  }
+
+  const syncScopeFromSession = () => {
+    if (typeof window === 'undefined') return
+    const nextUserId = getActiveUserId()
+    if (nextUserId !== state.activeUserId) {
+      loadUserScopedState(nextUserId)
+    }
+  }
+
+  const bindAuthSync = () => {
+    if (typeof window === 'undefined' || authEventBound) return
+
+    window.addEventListener(AUTH_CHANGED_EVENT, (event) => {
+      const userId = event.detail?.id ? String(event.detail.id) : GUEST_SCOPE
+      loadUserScopedState(userId)
+    })
+
+    authEventBound = true
+  }
+
+  const initialize = async () => {
+    if (state.isReady) return
+    if (initializePromise) {
+      await initializePromise
+      return
+    }
+
+    initializePromise = (async () => {
+      if (typeof window === 'undefined') {
+        state.isReady = true
+        return
+      }
+
+      state.isLoading = true
+      state.loadError = ''
+
+      try {
+        const bootstrapData = await fetchTravelBootstrap()
+
+        state.categories = readStorage(STORAGE_KEYS.categories, bootstrapData.categories || [])
+        state.destinations = readStorage(STORAGE_KEYS.destinations, bootstrapData.destinations || [])
+        state.services = readStorage(STORAGE_KEYS.services, bootstrapData.services || [])
+        state.comments = readStorage(STORAGE_KEYS.comments, bootstrapData.comments || [])
+        state.promotions = readStorage(STORAGE_KEYS.promotions, bootstrapData.promotions || [])
+        state.adminSummaryMeta = readStorage(STORAGE_KEYS.adminSummary, {
+          totalBookings: bootstrapData.adminSummary?.totalBookings || 0,
+          monthlyRevenue: bootstrapData.adminSummary?.monthlyRevenue || 0,
+          pendingBookings: bootstrapData.adminSummary?.pendingBookings || 0,
+          revenueSeries: bootstrapData.adminSummary?.revenueSeries || [],
+          bookingSeries: bootstrapData.adminSummary?.bookingSeries || []
+        })
+
+        persistStorage(STORAGE_KEYS.categories, state.categories)
+        persistStorage(STORAGE_KEYS.destinations, state.destinations)
+        persistServices()
+        persistStorage(STORAGE_KEYS.comments, state.comments)
+        persistPromotions()
+        persistStorage(STORAGE_KEYS.adminSummary, state.adminSummaryMeta)
+      } catch (error) {
+        state.loadError = 'Không thể tải dữ liệu du lịch từ json-server.'
+        state.categories = readStorage(STORAGE_KEYS.categories, [])
+        state.destinations = readStorage(STORAGE_KEYS.destinations, [])
+        state.services = readStorage(STORAGE_KEYS.services, [])
+        state.comments = readStorage(STORAGE_KEYS.comments, [])
+        state.promotions = readStorage(STORAGE_KEYS.promotions, [])
+        state.adminSummaryMeta = readStorage(STORAGE_KEYS.adminSummary, state.adminSummaryMeta)
+      } finally {
+        loadUserScopedState(getActiveUserId())
+        bindAuthSync()
+        state.isLoading = false
+        state.isReady = true
+      }
+    })()
+
+    await initializePromise
+  }
 
   const featuredServices = computed(() => state.services.filter((service) => service.featured))
 
@@ -368,6 +430,16 @@ export const useTravelStore = () => {
   const visibleComments = computed(() =>
     state.comments.filter((comment) => comment.visible !== false)
   )
+
+  const adminSummary = computed(() => ({
+    totalServices: state.services.length,
+    totalBookings: state.adminSummaryMeta.totalBookings,
+    monthlyRevenue: state.adminSummaryMeta.monthlyRevenue,
+    pendingBookings: state.adminSummaryMeta.pendingBookings,
+    lowStockServices: state.services.filter((service) => service.availableSlots <= 5),
+    revenueSeries: state.adminSummaryMeta.revenueSeries,
+    bookingSeries: state.adminSummaryMeta.bookingSeries
+  }))
 
   const getServiceBySlug = (slug) => state.services.find((service) => service.slug === slug)
 
@@ -775,6 +847,8 @@ export const useTravelStore = () => {
     cartTotal,
     bookingHistory,
     activePromotions,
+    adminSummary,
+    initialize,
     getServiceBySlug,
     getCommentsByService,
     toggleWishlist,
@@ -795,4 +869,4 @@ export const useTravelStore = () => {
     deleteComment,
     addComment
   }
-}
+})

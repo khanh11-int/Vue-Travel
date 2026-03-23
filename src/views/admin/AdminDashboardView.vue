@@ -50,6 +50,10 @@
 </template>
 
 <script setup>
-import { adminSummary } from '@/data/mockData'
+import { computed } from 'vue'
+import { useTravelStore } from '@/stores/useTravelStore'
 import { formatCurrencyVND } from '@/utils/formatters'
+
+const store = useTravelStore()
+const adminSummary = computed(() => store.adminSummary)
 </script>

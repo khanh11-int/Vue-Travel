@@ -1,31 +1,12 @@
 import { computed, reactive, readonly } from 'vue'
+import { defineStore } from 'pinia'
+import { fetchUsers } from '@/services/authApi'
 
 const STORAGE_KEYS = {
   session: 'vietvoyage_session',
   users: 'vietvoyage_users',
   user: 'vietvoyage_user'
 }
-
-const defaultUsers = [
-  {
-    id: 1,
-    fullName: 'Admin Việt Voyage',
-    email: 'admin@vietvoyage.vn',
-    password: '123456',
-    role: 'admin',
-    phone: '0912345678',
-    address: 'Quận 1, TP.HCM'
-  },
-  {
-    id: 2,
-    fullName: 'Khách du lịch Việt',
-    email: 'user@vietvoyage.vn',
-    password: '123456',
-    role: 'customer',
-    phone: '0987654321',
-    address: 'Cầu Giấy, Hà Nội'
-  }
-]
 
 const normalizeEmail = (email = '') => email.trim().toLowerCase()
 const normalizePhone = (phone = '') => phone.replace(/\D/g, '')
@@ -55,29 +36,17 @@ const persistStorage = (key, value) => {
   window.localStorage.setItem(key, JSON.stringify(value))
 }
 
-const state = reactive({
-  currentUser: null,
-  users: defaultUsers
-})
+let initializePromise = null
 
-const bootstrapState = () => {
-  if (typeof window === 'undefined') return
-  state.users = readStorage(STORAGE_KEYS.users, defaultUsers)
+export const useAuthStore = defineStore('auth', () => {
+  const state = reactive({
+    currentUser: null,
+    users: [],
+    isReady: false,
+    isLoading: false,
+    loadError: ''
+  })
 
-  const savedSession = readStorage(STORAGE_KEYS.session, null)
-  if (savedSession?.user?.id) {
-    const matchedUser = state.users.find((entry) => entry.id === savedSession.user.id)
-    state.currentUser = toPublicUser(matchedUser || savedSession.user)
-    return
-  }
-
-  // Backward compatibility with old key.
-  state.currentUser = readStorage(STORAGE_KEYS.user, null)
-}
-
-bootstrapState()
-
-export const useAuthStore = () => {
   const isLoggedIn = computed(() => Boolean(state.currentUser))
   const isAdmin = computed(() => state.currentUser?.role === 'admin')
 
@@ -91,6 +60,51 @@ export const useAuthStore = () => {
     })
 
     window.dispatchEvent(new CustomEvent('vietvoyage:auth-changed', { detail: publicUser }))
+  }
+
+  const initialize = async () => {
+    if (state.isReady) return
+    if (initializePromise) {
+      await initializePromise
+      return
+    }
+
+    initializePromise = (async () => {
+      if (typeof window === 'undefined') {
+        state.isReady = true
+        return
+      }
+
+      state.isLoading = true
+      state.loadError = ''
+
+      try {
+        const apiUsers = await fetchUsers()
+        const storedUsers = readStorage(STORAGE_KEYS.users, null)
+        state.users = storedUsers || apiUsers || []
+
+        if (!storedUsers && apiUsers?.length) {
+          persistStorage(STORAGE_KEYS.users, state.users)
+        }
+
+        const savedSession = readStorage(STORAGE_KEYS.session, null)
+        if (savedSession?.user?.id) {
+          const matchedUser = state.users.find((entry) => entry.id === savedSession.user.id)
+          state.currentUser = toPublicUser(matchedUser || savedSession.user)
+        } else {
+          state.currentUser = readStorage(STORAGE_KEYS.user, null)
+        }
+      } catch (error) {
+        state.loadError = 'Không thể tải dữ liệu tài khoản.'
+        state.users = readStorage(STORAGE_KEYS.users, [])
+        state.currentUser = readStorage(STORAGE_KEYS.user, null)
+      } finally {
+        state.isLoading = false
+        state.isReady = true
+      }
+    })()
+
+    await initializePromise
   }
 
   const login = ({ email, password }) => {
@@ -125,7 +139,6 @@ export const useAuthStore = () => {
     }
 
     const exists = state.users.some((entry) => entry.email.toLowerCase() === normalizedEmail)
-
     if (exists) {
       return {
         success: false,
@@ -173,8 +186,9 @@ export const useAuthStore = () => {
     state: readonly(state),
     isLoggedIn,
     isAdmin,
+    initialize,
     login,
     register,
     logout
   }
-}
+})

@@ -84,7 +84,7 @@ const statusOptions = [
 
 const filteredBookings = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
-  return store.bookingHistory.value.filter((booking) => {
+  return store.bookingHistory.filter((booking) => {
     const matchesKeyword = !keyword || [booking.code, booking.customer.fullName]
       .join(' ')
       .toLowerCase()

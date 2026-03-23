@@ -34,7 +34,7 @@ import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
 const store = useTravelStore()
-const wishlistItems = computed(() => store.wishlistItems.value)
+const wishlistItems = computed(() => store.wishlistItems)
 
 const handleBookNow = (service) => {
   router.push(getDetailRouteLocation(service, { guests: 1 }))

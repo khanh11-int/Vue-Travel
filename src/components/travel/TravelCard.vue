@@ -41,7 +41,7 @@
 /* global defineProps, defineEmits */
 import { computed } from 'vue'
 import RatingStars from '@/components/common/RatingStars.vue'
-import { categories } from '@/data/mockData'
+import { useTravelStore } from '@/stores/useTravelStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
@@ -58,8 +58,10 @@ const props = defineProps({
 
 defineEmits(['toggle-wishlist', 'book-now'])
 
+const store = useTravelStore()
+
 const categoryLabel = computed(() =>
-  categories.find((category) => category.id === props.service.categoryId)?.name || 'Dịch vụ'
+  store.state.categories.find((category) => category.id === props.service.categoryId)?.name || 'Dịch vụ'
 )
 
 const detailRoute = computed(() => getDetailRouteLocation(props.service))

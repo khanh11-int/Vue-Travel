@@ -100,7 +100,6 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { categories } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
@@ -112,8 +111,8 @@ const promotionCode = ref(store.state.appliedPromotion?.code || '')
 const promotionFeedback = ref('')
 const promotionSuccess = ref(false)
 
-const cartItems = computed(() => store.cartItems.value)
-const subtotal = computed(() => store.cartTotal.value)
+const cartItems = computed(() => store.cartItems)
+const subtotal = computed(() => store.cartTotal)
 const discount = computed(() => store.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
@@ -162,7 +161,7 @@ const getEditQuery = (item) => {
 const getDetailRoute = (service, query = {}) => getDetailRouteLocation(service, query)
 
 const getCategoryLabel = (categoryId) =>
-  categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
+  store.state.categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
 
 const handleApplyPromotion = () => {
   const result = store.applyPromotionCode(promotionCode.value, subtotal.value)

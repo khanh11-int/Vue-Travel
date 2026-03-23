@@ -32,7 +32,7 @@
             <label>Tỉnh / Thành phố</label>
             <select v-model="form.city">
               <option value="">Chọn tỉnh / thành</option>
-              <option v-for="destination in destinations" :key="destination.id" :value="destination.province">
+              <option v-for="destination in store.state.destinations" :key="destination.id" :value="destination.province">
                 {{ destination.province }}
               </option>
             </select>
@@ -89,7 +89,6 @@
 <script setup>
 import { computed, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { destinations } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
@@ -100,7 +99,7 @@ const router = useRouter()
 const store = useTravelStore()
 const authStore = useAuthStore()
 
-const cartItems = computed(() => store.cartItems.value)
+const cartItems = computed(() => store.cartItems)
 const isDirectCheckout = computed(() => route.query.mode === 'direct')
 const directCheckoutItem = computed(() => {
   if (!isDirectCheckout.value) return null

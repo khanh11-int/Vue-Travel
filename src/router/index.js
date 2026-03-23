@@ -186,20 +186,24 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  if (!authStore.state.isReady) {
+    await authStore.initialize()
+  }
 
   if (to.meta?.title) {
     document.title = to.meta.title
   }
 
-  if (to.meta?.requiresAuth && !authStore.isLoggedIn.value) {
+  if (to.meta?.requiresAuth && !authStore.isLoggedIn) {
     next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }
 
   if (to.meta?.requiresAdmin) {
-    if (!authStore.isAdmin.value) {
+    if (!authStore.isAdmin) {
       next({ name: 'login', query: { redirect: to.fullPath } })
       return
     }

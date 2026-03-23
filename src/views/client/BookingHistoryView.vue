@@ -59,7 +59,7 @@ import { useTravelStore } from '@/stores/useTravelStore'
 import { formatCurrencyVND, formatDateVN, formatDateRangeVN } from '@/utils/formatters'
 
 const store = useTravelStore()
-const bookings = computed(() => store.bookingHistory.value)
+const bookings = computed(() => store.bookingHistory)
 const expandedBookingId = ref(null)
 
 const toggleExpandedBooking = (bookingId) => {

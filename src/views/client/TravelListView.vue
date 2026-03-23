@@ -10,7 +10,7 @@
         <label>Danh mục</label>
         <select v-model="filters.categoryId">
           <option value="">Tất cả</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
+          <option v-for="category in store.state.categories" :key="category.id" :value="category.id">
             {{ category.name }}
           </option>
         </select>
@@ -19,7 +19,7 @@
         <label>Tỉnh / Thành</label>
         <select v-model="filters.province">
           <option value="">Tất cả</option>
-          <option v-for="destination in destinations" :key="destination.id" :value="destination.province">
+          <option v-for="destination in store.state.destinations" :key="destination.id" :value="destination.province">
             {{ destination.province }}
           </option>
         </select>
@@ -91,7 +91,6 @@
 import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { categories, destinations } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
 import { serviceRequiresEndDate } from '@/utils/bookingRules'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'

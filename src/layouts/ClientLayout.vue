@@ -60,8 +60,8 @@ const router = useRouter()
 const store = useTravelStore()
 const authStore = useAuthStore()
 
-const wishlistCount = computed(() => store.wishlistItems.value.length)
-const isLoggedIn = computed(() => authStore.isLoggedIn.value)
+const wishlistCount = computed(() => store.wishlistItems.length)
+const isLoggedIn = computed(() => authStore.isLoggedIn)
 const currentUserLabel = computed(() => {
   if (!authStore.state.currentUser) return 'Tài khoản'
   return authStore.state.currentUser.fullName

@@ -119,11 +119,12 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { categories } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
 const store = useTravelStore()
+const categories = computed(() => store.state.categories)
+
 const filters = reactive({
   keyword: '',
   categoryId: '',
@@ -180,7 +181,7 @@ const filteredServices = computed(() => {
 })
 
 const getCategoryLabel = (categoryId) =>
-  categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
+  store.state.categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
 
 const resetServiceForm = () => {
   Object.assign(serviceForm, defaultForm())

@@ -156,7 +156,6 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { destinations } from '@/data/mockData'
 import { useTravelStore } from '@/stores/useTravelStore'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
@@ -203,9 +202,9 @@ const comboForm = ref({
   travelers: 2
 })
 
-const featuredServices = computed(() => store.featuredServices.value)
-const activePromotions = computed(() => store.activePromotions.value.slice(0, 3))
-const featuredDestinations = computed(() => destinations.slice(0, 6))
+const featuredServices = computed(() => store.featuredServices)
+const activePromotions = computed(() => store.activePromotions.slice(0, 3))
+const featuredDestinations = computed(() => store.state.destinations.slice(0, 6))
 
 const searchButtonLabel = computed(() => {
   if (activeService.value === 'hotel') return 'Tìm khách sạn'

@@ -120,12 +120,12 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { useAdminStore } from '@/stores/useAdminStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
 const store = useAdminStore()
-const contextStore = useTravelContextStore()
-const categories = computed(() => contextStore.state.categories)
+const serviceStore = useServiceStore()
+const categories = computed(() => serviceStore.categories)
 const filters = reactive({
   keyword: '',
   categoryId: '',
@@ -164,12 +164,12 @@ const packagesInput = ref('[]')
 const formError = ref('')
 
 const provinceOptions = computed(() =>
-  [...new Set(contextStore.state.services.map((service) => service.province))].sort((left, right) => left.localeCompare(right, 'vi'))
+  [...new Set(serviceStore.services.map((service) => service.province))].sort((left, right) => left.localeCompare(right, 'vi'))
 )
 
 const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
-  return contextStore.state.services.filter((service) => {
+  return serviceStore.services.filter((service) => {
     const matchesKeyword = !keyword || [service.name, service.destination, service.province]
       .join(' ')
       .toLowerCase()

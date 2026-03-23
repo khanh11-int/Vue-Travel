@@ -52,14 +52,14 @@
 <script setup>
 import { computed } from 'vue'
 import { useBookingStore } from '@/stores/useBookingStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
-const contextStore = useTravelContextStore()
+const serviceStore = useServiceStore()
 const bookingStore = useBookingStore()
 
 const adminSummary = computed(() => {
-  const services = contextStore.state.services
+  const services = serviceStore.services
   const bookings = bookingStore.adminBookingHistory
   const now = new Date()
 

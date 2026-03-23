@@ -103,8 +103,8 @@
         v-for="service in featuredServices"
         :key="service.id"
         :service="service"
-        :is-wishlisted="contextStore.state.wishlist.includes(service.id)"
-        @toggle-wishlist="catalogStore.toggleWishlist"
+        :is-wishlisted="isWishlisted(service.id)"
+        @toggle-wishlist="handleToggleWishlist"
         @book-now="handleBookNow"
       />
     </div>
@@ -156,13 +156,13 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useCatalogStore } from '@/stores/useCatalogStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useServiceStore } from '@/stores/useServiceStore'
+import { useWishlistStore } from '@/stores/useWishlistStore'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
-const catalogStore = useCatalogStore()
-const contextStore = useTravelContextStore()
+const serviceStore = useServiceStore()
+const wishlistStore = useWishlistStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -204,9 +204,14 @@ const comboForm = ref({
   travelers: 2
 })
 
-const featuredServices = computed(() => (Array.isArray(catalogStore.featuredServices) ? catalogStore.featuredServices : []))
-const activePromotions = computed(() => (Array.isArray(catalogStore.activePromotions) ? catalogStore.activePromotions : []).slice(0, 3))
-const featuredDestinations = computed(() => (Array.isArray(contextStore.state.destinations) ? contextStore.state.destinations : []).slice(0, 6))
+const featuredServices = computed(() => (Array.isArray(serviceStore.featuredServices) ? serviceStore.featuredServices : []))
+const activePromotions = computed(() => (Array.isArray(serviceStore.activePromotions) ? serviceStore.activePromotions : []).slice(0, 3))
+const featuredDestinations = computed(() => (Array.isArray(serviceStore.destinations) ? serviceStore.destinations : []).slice(0, 6))
+
+const isWishlisted = (serviceId) => wishlistStore.isInWishlist(serviceId)
+const handleToggleWishlist = (serviceId) => {
+  wishlistStore.toggleWishlist(serviceId)
+}
 
 const searchButtonLabel = computed(() => {
   if (activeService.value === 'hotel') return 'Tìm khách sạn'

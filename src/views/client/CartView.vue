@@ -59,7 +59,7 @@
       <div class="field-group">
         <label>Mã khuyến mãi</label>
         <div class="voucher-row">
-          <input v-model="promotionCode" type="text" placeholder="Ví dụ: VIETVOYAGE10" />
+          <input v-model="promotionCode" type="text" placeholder="Ví dụ: VTRAVEL10" />
           <button class="secondary-button" type="button" @click="handleApplyPromotion">Áp dụng</button>
         </div>
         <small v-if="promotionFeedback" :class="promotionSuccess ? 'success-text' : 'error-text'">{{ promotionFeedback }}</small>
@@ -98,21 +98,21 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTravelCartStore } from '@/stores/useCartStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useCartStore } from '@/stores/useCartStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
-const store = useTravelCartStore()
-const contextStore = useTravelContextStore()
-const categories = computed(() => contextStore.state.categories)
-const promotionCode = ref(contextStore.state.appliedPromotion?.code || '')
+const store = useCartStore()
+const serviceStore = useServiceStore()
+const categories = computed(() => serviceStore.categories)
+const promotionCode = ref(store.appliedPromotion?.code || '')
 const promotionFeedback = ref('')
 const promotionSuccess = ref(false)
 
-const cartItems = computed(() => store.cartItems)
+const cartItems = computed(() => store.enrichedCartItems)
 const subtotal = computed(() => store.cartTotal)
 const discount = computed(() => store.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
@@ -180,8 +180,8 @@ const getDetailRoute = (service, query = {}) => getDetailRouteLocation(service, 
 const getCategoryLabel = (categoryId) =>
   categories.value.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
 
-const handleApplyPromotion = () => {
-  const result = store.applyPromotionCode(promotionCode.value, subtotal.value)
+const handleApplyPromotion = async () => {
+  const result = await store.applyPromotionCode(promotionCode.value, subtotal.value)
   promotionSuccess.value = result.success
   promotionFeedback.value = result.success
     ? `Áp dụng thành công mã ${result.promotion.code}.`

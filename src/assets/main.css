@@ -810,6 +810,9 @@ p {
 
 .travel-card {
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .travel-card__image-wrapper {
@@ -837,8 +840,10 @@ p {
 
 .travel-card__body {
   padding: 20px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  flex: 1;
 }
 
 .travel-card__top,
@@ -860,6 +865,10 @@ p {
   min-height: 48px;
   color: var(--muted);
   margin: 0;
+}
+
+.travel-card__price-row {
+  margin-top: auto;
 }
 
 .badge,
@@ -892,6 +901,8 @@ p {
   letter-spacing: 0.01em;
   color: #0a5fbd;
   text-shadow: 0 6px 16px rgba(10, 109, 217, 0.16);
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .primary-button,
@@ -950,8 +961,18 @@ p {
   padding: 24px;
 }
 
+.filter-panel {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.filter-panel > .ghost-button {
+  margin-top: 8px;
+}
+
 .field-group + .field-group {
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .detail-layout {
@@ -1587,6 +1608,7 @@ p {
   align-items: baseline;
   gap: 10px;
   min-width: 0;
+  flex-wrap: nowrap;
 }
 
 .price-label {

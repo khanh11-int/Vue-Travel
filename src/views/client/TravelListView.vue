@@ -74,8 +74,8 @@
           v-for="service in filteredServices"
           :key="service.id"
           :service="service"
-          :is-wishlisted="contextStore.state.wishlist.includes(service.id)"
-          @toggle-wishlist="catalogStore.toggleWishlist"
+          :is-wishlisted="isWishlisted(service.id)"
+          @toggle-wishlist="handleToggleWishlist"
           @book-now="handleBookNow"
         />
       </div>
@@ -91,9 +91,9 @@
 import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useCatalogStore } from '@/stores/useCatalogStore'
-import { useTravelCartStore } from '@/stores/useCartStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useCartStore } from '@/stores/useCartStore'
+import { useServiceStore } from '@/stores/useServiceStore'
+import { useWishlistStore } from '@/stores/useWishlistStore'
 import { serviceRequiresEndDate } from '@/utils/bookingRules'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 import {
@@ -106,11 +106,16 @@ import {
 
 const route = useRoute()
 const router = useRouter()
-const catalogStore = useCatalogStore()
-const cartStore = useTravelCartStore()
-const contextStore = useTravelContextStore()
-const categories = computed(() => contextStore.state.categories)
-const destinations = computed(() => contextStore.state.destinations)
+const cartStore = useCartStore()
+const serviceStore = useServiceStore()
+const wishlistStore = useWishlistStore()
+const categories = computed(() => serviceStore.categories)
+const destinations = computed(() => serviceStore.destinations)
+
+const isWishlisted = (serviceId) => wishlistStore.isInWishlist(serviceId)
+const handleToggleWishlist = (serviceId) => {
+  wishlistStore.toggleWishlist(serviceId)
+}
 
 const createInitialFilters = () => ({
   keyword: route.query.destination || '',
@@ -147,7 +152,7 @@ const searchContextSummary = computed(() => resolveSearchSummary(route.query, se
 const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
 
-  const result = contextStore.state.services.filter((service) => {
+  const result = serviceStore.services.filter((service) => {
     const matchesKeyword = !keyword || [service.name, service.destination, service.province]
       .join(' ')
       .toLowerCase()

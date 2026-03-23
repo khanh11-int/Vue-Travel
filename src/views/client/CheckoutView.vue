@@ -18,7 +18,7 @@
 
           <div class="field-group">
             <label>Email</label>
-            <input v-model="form.email" type="email" placeholder="email@vietvoyage.vn" />
+            <input v-model="form.email" type="email" placeholder="email@vtravel.vn" />
             <small v-if="errors.email" class="error-text">{{ errors.email }}</small>
           </div>
 
@@ -91,8 +91,8 @@ import { computed, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useBookingStore } from '@/stores/useBookingStore'
-import { useTravelCartStore } from '@/stores/useCartStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useCartStore } from '@/stores/useCartStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 
@@ -100,11 +100,11 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const bookingStore = useBookingStore()
-const cartStore = useTravelCartStore()
-const contextStore = useTravelContextStore()
-const destinations = computed(() => contextStore.state.destinations)
+const cartStore = useCartStore()
+const serviceStore = useServiceStore()
+const destinations = computed(() => serviceStore.destinations)
 
-const cartItems = computed(() => cartStore.cartItems)
+const cartItems = computed(() => cartStore.enrichedCartItems)
 const isDirectCheckout = computed(() => route.query.mode === 'direct')
 const directRequestedServiceId = computed(() => {
   if (route.query.serviceId === undefined || route.query.serviceId === null) return ''
@@ -114,7 +114,7 @@ const directRequestedServiceId = computed(() => {
 const directCheckoutItem = computed(() => {
   if (!isDirectCheckout.value) return null
 
-  const service = contextStore.state.services.find((entry) => String(entry.id) === directRequestedServiceId.value)
+  const service = serviceStore.services.find((entry) => String(entry.id) === directRequestedServiceId.value)
   if (!service) return null
   const serviceId = service.id
 
@@ -299,17 +299,22 @@ const handleCheckout = () => {
     discount: discount.value,
     serviceFee: serviceFee.value,
     total: total.value,
-    promotion: isDirectCheckout.value ? null : contextStore.state.appliedPromotion,
+    promotion: isDirectCheckout.value ? null : cartStore.appliedPromotion,
     clearCartAfterBooking: !isDirectCheckout.value,
     clearPromotionAfterBooking: !isDirectCheckout.value
   })
+
+  if (!isDirectCheckout.value) {
+    cartStore.clearAppliedPromotion()
+    cartStore.clearCart()
+  }
 
   router.push({ name: 'booking-success', query: { code: booking.code } })
 }
 
 onMounted(() => {
-  if (authStore.state.currentUser) {
-    const user = authStore.state.currentUser
+  if (authStore.currentUser) {
+    const user = authStore.currentUser
     form.fullName = user.fullName || ''
     form.email = user.email || ''
     form.phone = user.phone || ''

@@ -1,7 +1,7 @@
 import axios from 'axios'
-import { APIURL } from '@/constaint'
+import { API_URL } from '@/constants'
 
-const baseURL = process.env.VUE_APP_API_BASE_URL || APIURL
+const baseURL = API_URL
 
 const apiClient = axios.create({
   baseURL,

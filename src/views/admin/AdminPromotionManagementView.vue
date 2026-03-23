@@ -66,11 +66,11 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { useAdminStore } from '@/stores/useAdminStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
 const store = useAdminStore()
-const contextStore = useTravelContextStore()
+const serviceStore = useServiceStore()
 const isEditing = ref(false)
 
 const defaultForm = () => ({
@@ -85,7 +85,7 @@ const defaultForm = () => ({
 })
 
 const promotionForm = reactive(defaultForm())
-const promotions = computed(() => contextStore.state.promotions)
+const promotions = computed(() => serviceStore.promotions)
 
 const resetPromotionForm = () => {
   Object.assign(promotionForm, defaultForm())

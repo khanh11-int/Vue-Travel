@@ -52,7 +52,7 @@
       >
         {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
       </button>
-      <button class="ghost-button full-width" type="button" @click="catalogStore.toggleWishlist(service.id)">
+      <button class="ghost-button full-width" type="button" @click="toggleWishlist(service.id)">
         {{ isWishlisted ? 'Đã lưu wishlist' : 'Thêm vào wishlist' }}
       </button>
     </aside>
@@ -69,9 +69,9 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
 import { useAdminStore } from '@/stores/useAdminStore'
-import { useCatalogStore } from '@/stores/useCatalogStore'
-import { useTravelCartStore } from '@/stores/useCartStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useCartStore } from '@/stores/useCartStore'
+import { useServiceStore } from '@/stores/useServiceStore'
+import { useWishlistStore } from '@/stores/useWishlistStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
 
@@ -110,10 +110,10 @@ const hotelDetailLogic = {
 
 const route = useRoute()
 const router = useRouter()
-const contextStore = useTravelContextStore()
-const catalogStore = useCatalogStore()
-const cartStore = useTravelCartStore()
+const serviceStore = useServiceStore()
+const cartStore = useCartStore()
 const adminStore = useAdminStore()
+const wishlistStore = useWishlistStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -121,18 +121,18 @@ const todayISO = (() => {
 })()
 
 const service = computed(() => {
-  const found = catalogStore.getServiceBySlug(route.params.slug)
+  const found = serviceStore.getServiceBySlug(route.params.slug)
   if (!found || found.categoryId !== 'hotel') return null
   return found
 })
-const serviceComments = computed(() => (service.value ? catalogStore.getCommentsByService(service.value.id) : []))
-const isWishlisted = computed(() => service.value && contextStore.state.wishlist.includes(service.value.id))
+const serviceComments = computed(() => (service.value ? serviceStore.getCommentsByService(service.value.id) : []))
+const isWishlisted = computed(() => wishlistStore.isInWishlist(service.value?.id))
 const primaryDateLabel = computed(() => getPrimaryDateLabel(service.value))
 const quantityLabel = computed(() => hotelDetailLogic.quantityLabel)
 const relatedServices = computed(() => {
   if (!service.value) return []
 
-  return contextStore.state.services
+  return serviceStore.services
     .filter((item) => item.id !== service.value.id)
     .filter((item) => item.categoryId === service.value.categoryId || item.province === service.value.province)
     .slice(0, 3)
@@ -257,6 +257,11 @@ const increaseQuantity = () => {
     return
   }
   bookingForm.quantity += 1
+}
+
+const toggleWishlist = () => {
+  if (!service.value?.id) return
+  wishlistStore.toggleWishlist(service.value.id)
 }
 
 const handleAddToCart = () => {

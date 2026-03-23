@@ -1,29 +1,39 @@
 import { defineStore } from 'pinia'
-import { getTravelContextStore as useTravelContextStore } from '@/stores/getTravelContextStore'
-import {
-  STORAGE_KEYS,
-  buildBookingMeta,
-  buildBookingSummary,
-  extractDateRangeFromBookingMeta,
-  getBookingType,
-  getCartIdentity,
-  normalizeCartItem,
-  resolveItemMaxSlots
-} from '@/stores/travelShared'
+import { promotionsApi } from '@/services/api'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useServiceStore } from '@/stores/useServiceStore'
+import { STORAGE_KEYS, getScopedKey, persistStorage, readStorage, GUEST_SCOPE, removeFromStorage } from '@/utils/travelStorage'
+import { buildBookingMeta, extractDateRangeFromBookingMeta, getBookingType, normalizeCartItem } from '@/utils/travelNormalize'
+import { getCartIdentity, buildBookingSummary, resolveItemMaxSlots } from '@/utils/travelCart'
 import { serviceRequiresEndDate } from '@/utils/bookingRules'
+
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
 const isSameServiceId = (left, right) => String(left) === String(right)
 
-export const useTravelCartStore = defineStore('travelCart', {
-  state: () => ({}),
+const resolveUserId = (authStore) => (authStore.currentUser?.id ? String(authStore.currentUser.id) : GUEST_SCOPE)
+
+export const useCartStore = defineStore('cart', {
+  state: () => {
+    const authStore = useAuthStore()
+    const currentUserId = resolveUserId(authStore)
+
+    return {
+      cartItems: ensureArray(readStorage(getScopedKey(STORAGE_KEYS.cart, currentUserId), [])),
+      appliedPromotion: readStorage(getScopedKey(STORAGE_KEYS.appliedPromotion, currentUserId), null),
+      loading: false,
+      error: null,
+      _currentUserId: currentUserId
+    }
+  },
 
   getters: {
-    cartItems() {
-      const contextStore = useTravelContextStore()
-      const cart = Array.isArray(contextStore.state.cart) ? contextStore.state.cart : []
-      const services = Array.isArray(contextStore.state.services) ? contextStore.state.services : []
+    enrichedCartItems(state) {
+      const cartItems = Array.isArray(state.cartItems) ? state.cartItems : []
+      const serviceStore = useServiceStore()
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
 
-      return cart.map((item) => {
+      return cartItems.map((item) => {
         const normalizedItem = normalizeCartItem(item, services)
         const service = services.find((entry) => isSameServiceId(entry.id, normalizedItem.serviceId))
         const normalizedStartDate = normalizedItem.startDate || normalizedItem.travelDate || ''
@@ -43,11 +53,55 @@ export const useTravelCartStore = defineStore('travelCart', {
     },
 
     cartTotal() {
-      return this.cartItems.reduce((total, item) => total + item.lineTotal, 0)
+      return this.enrichedCartItems.reduce((total, item) => total + item.lineTotal, 0)
+    },
+
+    discountAmount(state) {
+      if (!state.appliedPromotion) return 0
+      const promotion = state.appliedPromotion
+      if (promotion.type === 'percentage' || promotion.type === 'percent') {
+        return this.cartTotal * (promotion.value / 100)
+      }
+      return promotion.value || 0
+    },
+
+    finalTotal() {
+      return Math.max(0, this.cartTotal - this.discountAmount)
     }
   },
 
   actions: {
+    _syncUserId() {
+      const authStore = useAuthStore()
+      const userId = resolveUserId(authStore)
+      if (userId !== this._currentUserId) {
+        this._currentUserId = userId
+        this._loadCartForUser()
+      }
+    },
+
+    _loadCartForUser() {
+      const scopedKey = getScopedKey(STORAGE_KEYS.cart, this._currentUserId)
+      this.cartItems = ensureArray(readStorage(scopedKey, []))
+
+      const promotionKey = getScopedKey(STORAGE_KEYS.appliedPromotion, this._currentUserId)
+      this.appliedPromotion = readStorage(promotionKey, null)
+    },
+
+    _saveCart() {
+      const scopedKey = getScopedKey(STORAGE_KEYS.cart, this._currentUserId)
+      persistStorage(scopedKey, this.cartItems)
+    },
+
+    _savePromotion() {
+      const promotionKey = getScopedKey(STORAGE_KEYS.appliedPromotion, this._currentUserId)
+      if (this.appliedPromotion) {
+        persistStorage(promotionKey, this.appliedPromotion)
+      } else {
+        removeFromStorage(promotionKey)
+      }
+    },
+
     addToCart({
       serviceId,
       quantity = 1,
@@ -55,152 +109,103 @@ export const useTravelCartStore = defineStore('travelCart', {
       startDate = '',
       endDate = '',
       bookingType = '',
-      bookingMeta = null
+      bookingMeta = null,
+      service = null
     }) {
-      const contextStore = useTravelContextStore()
-      contextStore.syncScopeFromSession()
+      this._syncUserId()
 
-      const services = Array.isArray(contextStore.state.services) ? contextStore.state.services : []
-      const service = services.find((entry) => isSameServiceId(entry.id, serviceId))
-      if (!service || service.availableSlots <= 0) return
+      const serviceStore = useServiceStore()
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
+      const targetService = service || services.find((entry) => isSameServiceId(entry.id, serviceId))
 
-      const resolvedBookingType = bookingType || getBookingType(service)
+      if (!targetService || targetService.availableSlots <= 0) {
+        this.error = 'Dịch vụ không có sẵn'
+        return
+      }
+
+      const resolvedBookingType = bookingType || getBookingType(targetService)
       const rawStartDate = startDate || travelDate || ''
-      const rawEndDate = serviceRequiresEndDate(service) ? (endDate || '') : ''
-      const tentativeQuantity = Math.max(1, Number(quantity) || 1)
+      const rawEndDate = serviceRequiresEndDate(targetService) ? (endDate || '') : ''
+      const requestedQuantity = Math.max(1, Number(quantity) || 1)
+
       const normalizedMeta = buildBookingMeta({
         bookingType: resolvedBookingType,
         startDate: rawStartDate,
         endDate: rawEndDate,
-        quantity: tentativeQuantity,
+        quantity: requestedQuantity,
         bookingMeta: bookingMeta || {}
       })
+
       const normalizedDates = extractDateRangeFromBookingMeta(resolvedBookingType, normalizedMeta)
-      const maxSlots = resolveItemMaxSlots(service, {
+
+      const maxSlots = resolveItemMaxSlots(targetService, {
+        serviceId: targetService.id,
         bookingType: resolvedBookingType,
         bookingMeta: normalizedMeta
       })
-      const normalizedQuantity = Math.max(1, Math.min(tentativeQuantity, Math.max(maxSlots, 1)))
+
+      const normalizedQuantity = Math.max(1, Math.min(requestedQuantity, Math.max(maxSlots, 1)))
+
       const candidate = {
-        serviceId,
+        serviceId: targetService.id,
         bookingType: resolvedBookingType,
+        quantity: normalizedQuantity,
+        startDate: normalizedDates.startDate || rawStartDate,
+        endDate: serviceRequiresEndDate(targetService) ? (normalizedDates.endDate || rawEndDate) : '',
+        travelDate: normalizedDates.startDate || rawStartDate,
         bookingMeta: buildBookingMeta({
           bookingType: resolvedBookingType,
           startDate: normalizedDates.startDate || rawStartDate,
           endDate: normalizedDates.endDate || rawEndDate,
           quantity: normalizedQuantity,
           bookingMeta: normalizedMeta
-        }),
-        quantity: normalizedQuantity,
-        startDate: normalizedDates.startDate || rawStartDate,
-        endDate: serviceRequiresEndDate(service) ? (normalizedDates.endDate || rawEndDate) : '',
-        travelDate: normalizedDates.startDate || rawStartDate
-      }
-      const candidateIdentity = getCartIdentity(candidate)
-
-      const cart = Array.isArray(contextStore.state.cart) ? contextStore.state.cart : []
-      const existing = cart.find((item) => {
-        const normalizedItem = normalizeCartItem(item, services)
-        return isSameServiceId(normalizedItem.serviceId, serviceId) && getCartIdentity(normalizedItem) === candidateIdentity
-      })
-
-      if (existing) {
-        const existingNormalized = normalizeCartItem(existing, services)
-        const scopedMaxSlots = resolveItemMaxSlots(service, existingNormalized)
-        const mergedQuantity = Math.min((Number(existing.quantity) || 1) + normalizedQuantity, Math.max(scopedMaxSlots, 1))
-        const mergedMeta = buildBookingMeta({
-          bookingType: existingNormalized.bookingType,
-          startDate: existingNormalized.startDate,
-          endDate: existingNormalized.endDate,
-          quantity: mergedQuantity,
-          bookingMeta: existingNormalized.bookingMeta
         })
-
-        existing.bookingType = existingNormalized.bookingType
-        existing.bookingMeta = mergedMeta
-        existing.quantity = mergedQuantity
-        existing.startDate = existingNormalized.startDate
-        existing.endDate = existingNormalized.endDate
-        existing.travelDate = existingNormalized.startDate
-      } else {
-        contextStore.state.cart = [...cart, candidate]
       }
 
-      contextStore.persistScoped(STORAGE_KEYS.cart, contextStore.state.cart)
+      const candidateIdentity = getCartIdentity(candidate)
+      const existingIndex = this.cartItems.findIndex((item) => getCartIdentity(item) === candidateIdentity)
+
+      if (existingIndex !== -1) {
+        this.cartItems[existingIndex].quantity += normalizedQuantity
+      } else {
+        this.cartItems.push(candidate)
+      }
+
+      this._saveCart()
+      this.error = null
     },
 
-    updateCartQuantity(serviceId, startDate, quantity, endDate = '', bookingType = '', bookingMeta = null) {
-      const contextStore = useTravelContextStore()
-      contextStore.syncScopeFromSession()
+    updateCartQuantity(cartIndex, newQuantity) {
+      this._syncUserId()
 
-      const services = Array.isArray(contextStore.state.services) ? contextStore.state.services : []
-      const service = services.find((entry) => isSameServiceId(entry.id, serviceId))
-      const normalizedQuantity = Number(quantity)
-      const targetBookingType = bookingType || getBookingType(service)
-      const targetMeta = buildBookingMeta({
-        bookingType: targetBookingType,
-        startDate: startDate || '',
-        endDate: endDate || '',
-        quantity: normalizedQuantity > 0 ? normalizedQuantity : 1,
-        bookingMeta: bookingMeta || {}
-      })
-      const targetDates = extractDateRangeFromBookingMeta(targetBookingType, targetMeta)
-      const targetIdentity = getCartIdentity({
-        serviceId,
-        bookingType: targetBookingType,
-        bookingMeta: targetMeta,
-        startDate: targetDates.startDate || startDate || '',
-        endDate: targetDates.endDate || endDate || ''
-      })
+      if (cartIndex < 0 || cartIndex >= this.cartItems.length) return
 
-      const isTargetItem = (item) => {
-        const normalizedItem = normalizeCartItem(item, services)
-        return isSameServiceId(normalizedItem.serviceId, serviceId) && getCartIdentity(normalizedItem) === targetIdentity
-      }
+      const item = this.cartItems[cartIndex]
+      const safeQuantity = Math.max(0, Number(newQuantity) || 0)
 
-      const cart = Array.isArray(contextStore.state.cart) ? contextStore.state.cart : []
-
-      if (normalizedQuantity <= 0) {
-        contextStore.state.cart = cart.filter((item) => !isTargetItem(item))
+      if (safeQuantity === 0) {
+        this.removeCartItem(cartIndex)
       } else {
-        contextStore.state.cart = cart.map((item) =>
-          isTargetItem(item)
-            ? (() => {
-              const normalizedItem = normalizeCartItem(item, services)
-              const maxSlots = resolveItemMaxSlots(service, normalizedItem)
-              const cappedQuantity = Math.min(normalizedQuantity, Math.max(maxSlots, 1))
-              const nextMeta = buildBookingMeta({
-                bookingType: normalizedItem.bookingType,
-                startDate: normalizedItem.startDate,
-                endDate: normalizedItem.endDate,
-                quantity: cappedQuantity,
-                bookingMeta: normalizedItem.bookingMeta
-              })
-
-              return {
-                ...item,
-                bookingType: normalizedItem.bookingType,
-                bookingMeta: nextMeta,
-                quantity: cappedQuantity,
-                startDate: normalizedItem.startDate,
-                endDate: normalizedItem.endDate,
-                travelDate: normalizedItem.startDate
-              }
-            })()
-            : item
-        )
+        item.quantity = safeQuantity
+        this._saveCart()
       }
-
-      contextStore.persistScoped(STORAGE_KEYS.cart, contextStore.state.cart)
     },
 
-    removeCartItem(serviceId, startDate, endDate = '', bookingType = '', bookingMeta = null) {
-      const contextStore = useTravelContextStore()
-      contextStore.syncScopeFromSession()
+    removeCartItem(serviceIdOrIndex, startDate = '', endDate = '', bookingType = '', bookingMeta = null) {
+      this._syncUserId()
 
-      const services = Array.isArray(contextStore.state.services) ? contextStore.state.services : []
-      const service = services.find((entry) => isSameServiceId(entry.id, serviceId))
-      const targetBookingType = bookingType || getBookingType(service)
+      // Backward compatible: support both index and identity-based removal.
+      if (typeof serviceIdOrIndex === 'number' && startDate === '' && endDate === '' && bookingType === '' && bookingMeta === null) {
+        if (serviceIdOrIndex < 0 || serviceIdOrIndex >= this.cartItems.length) return
+        this.cartItems.splice(serviceIdOrIndex, 1)
+        this._saveCart()
+        return
+      }
+
+      const serviceStore = useServiceStore()
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
+      const targetService = services.find((entry) => isSameServiceId(entry.id, serviceIdOrIndex))
+      const targetBookingType = bookingType || getBookingType(targetService)
       const targetMeta = buildBookingMeta({
         bookingType: targetBookingType,
         startDate: startDate || '',
@@ -210,84 +215,94 @@ export const useTravelCartStore = defineStore('travelCart', {
       })
       const targetDates = extractDateRangeFromBookingMeta(targetBookingType, targetMeta)
       const targetIdentity = getCartIdentity({
-        serviceId,
+        serviceId: serviceIdOrIndex,
         bookingType: targetBookingType,
         bookingMeta: targetMeta,
         startDate: targetDates.startDate || startDate || '',
         endDate: targetDates.endDate || endDate || ''
       })
 
-      const cart = Array.isArray(contextStore.state.cart) ? contextStore.state.cart : []
-      contextStore.state.cart = cart.filter((item) => {
+      this.cartItems = this.cartItems.filter((item) => {
         const normalizedItem = normalizeCartItem(item, services)
-        return !(isSameServiceId(normalizedItem.serviceId, serviceId) && getCartIdentity(normalizedItem) === targetIdentity)
+        return !(isSameServiceId(normalizedItem.serviceId, serviceIdOrIndex) && getCartIdentity(normalizedItem) === targetIdentity)
       })
 
-      contextStore.persistScoped(STORAGE_KEYS.cart, contextStore.state.cart)
-    },
-
-    replaceCartItem({ originalItem, nextItem }) {
-      if (!nextItem) return
-
-      const hasOriginalIdentity = originalItem && originalItem.serviceId !== undefined && originalItem.serviceId !== null
-
-      if (hasOriginalIdentity) {
-        this.removeCartItem(
-          originalItem.serviceId,
-          originalItem.startDate || '',
-          originalItem.endDate || '',
-          originalItem.bookingType || '',
-          originalItem.bookingMeta || null
-        )
-      }
-
-      this.addToCart(nextItem)
+      this._saveCart()
     },
 
     clearCart() {
-      const contextStore = useTravelContextStore()
-      contextStore.syncScopeFromSession()
-      contextStore.state.cart = []
-      contextStore.persistScoped(STORAGE_KEYS.cart, contextStore.state.cart)
+      this._syncUserId()
+      this.cartItems = []
+      this._saveCart()
     },
 
-    applyPromotionCode(code, subtotal) {
-      const contextStore = useTravelContextStore()
-      contextStore.syncScopeFromSession()
+    async applyPromotionCode(code, subtotal = 0) {
+      this._syncUserId()
 
-      const promotions = Array.isArray(contextStore.state.promotions) ? contextStore.state.promotions : []
-      const normalizedCode = code.trim().toUpperCase()
-      const promotion = promotions.find((entry) => entry.code === normalizedCode && entry.status === 'active')
-
-      if (!promotion) {
-        contextStore.state.appliedPromotion = null
-        contextStore.persistScoped(STORAGE_KEYS.appliedPromotion, contextStore.state.appliedPromotion)
-        return { success: false, message: 'Mã khuyến mãi không hợp lệ hoặc đã ngưng áp dụng.' }
+      if (!code || code.trim() === '') {
+        this.clearAppliedPromotion()
+        return {
+          success: false,
+          message: 'Vui lòng nhập mã khuyến mãi.'
+        }
       }
 
-      if (promotion.code === 'PHUQUOC500K' && subtotal < 5000000) {
-        return { success: false, message: 'Mã PHUQUOC500K chỉ áp dụng cho đơn từ 5.000.000đ.' }
-      }
+      this.loading = true
+      this.error = null
 
-      contextStore.state.appliedPromotion = promotion
-      contextStore.persistScoped(STORAGE_KEYS.appliedPromotion, contextStore.state.appliedPromotion)
-      return { success: true, promotion }
+      try {
+        const serviceStore = useServiceStore()
+        let promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
+
+        if (!promotions.length) {
+          promotions = await promotionsApi.getAll()
+          if (Array.isArray(promotions)) {
+            serviceStore.promotions = promotions
+          }
+        }
+
+        const found = Array.isArray(promotions)
+          ? promotions.find((p) => p.code.toUpperCase() === code.toUpperCase() && p.status === 'active')
+          : null
+
+        if (!found) {
+          this.error = 'Mã khuyến mãi không hợp lệ'
+          return { success: false, message: this.error }
+        }
+
+        if (found.code === 'PHUQUOC500K' && subtotal < 5000000) {
+          this.error = 'Mã PHUQUOC500K chỉ áp dụng cho đơn từ 5.000.000 VND.'
+          return { success: false, message: this.error }
+        }
+
+        this.appliedPromotion = found
+        this._savePromotion()
+        return { success: true, promotion: found }
+      } catch (error) {
+        this.error = error?.message || 'Lỗi áp dụng mã khuyến mãi'
+        return { success: false, message: this.error }
+      } finally {
+        this.loading = false
+      }
     },
 
     clearAppliedPromotion() {
-      const contextStore = useTravelContextStore()
-      contextStore.syncScopeFromSession()
-      contextStore.state.appliedPromotion = null
-      contextStore.persistScoped(STORAGE_KEYS.appliedPromotion, contextStore.state.appliedPromotion)
+      this._syncUserId()
+      this.appliedPromotion = null
+      this._savePromotion()
     },
 
-    calculatePromotionDiscount(subtotal) {
-      const contextStore = useTravelContextStore()
-      if (!contextStore.state.appliedPromotion) return 0
-      if (contextStore.state.appliedPromotion.type === 'percent') {
-        return Math.round((subtotal * contextStore.state.appliedPromotion.value) / 100)
+    calculatePromotionDiscount(subtotal = this.cartTotal) {
+      if (!this.appliedPromotion) return 0
+      const { type, value } = this.appliedPromotion
+      if (type === 'percentage' || type === 'percent') {
+        return Math.round((subtotal * value) / 100)
       }
-      return Math.min(subtotal, contextStore.state.appliedPromotion.value)
+      return Math.min(subtotal, value || 0)
+    },
+
+    clearError() {
+      this.error = null
     }
   }
 })

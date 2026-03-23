@@ -1,26 +1,34 @@
 import { defineStore } from 'pinia'
 import { commentsApi, promotionsApi, servicesApi } from '@/services/api'
-import { getTravelContextStore as useTravelContextStore } from '@/stores/getTravelContextStore'
-import { STORAGE_KEYS, fireAndForget, persistStorage } from '@/stores/travelShared'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useServiceStore } from '@/stores/useServiceStore'
+import { fireAndForget } from '@/utils/travelBooking'
+
+const toNumber = (value, fallback = 0) => {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue : fallback
+}
 
 export const useAdminStore = defineStore('travelAdmin', {
   state: () => ({}),
 
   actions: {
     saveService(serviceInput) {
-      const contextStore = useTravelContextStore()
+      const serviceStore = useServiceStore()
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
       const payload = {
         ...serviceInput,
-        salePrice: Number(serviceInput.salePrice || 0),
-        price: Number(serviceInput.price || 0),
-        availableSlots: Number(serviceInput.availableSlots || 0),
-        rating: Number(serviceInput.rating || 4.5)
+        salePrice: toNumber(serviceInput.salePrice, 0),
+        price: toNumber(serviceInput.price, 0),
+        availableSlots: toNumber(serviceInput.availableSlots, 0),
+        rating: toNumber(serviceInput.rating, 4.5)
       }
 
       if (payload.id) {
-        contextStore.state.services = contextStore.state.services.map((service) =>
+        const nextServices = services.map((service) =>
           service.id === payload.id ? { ...service, ...payload } : service
         )
+        serviceStore.setServices(nextServices)
         fireAndForget(() => servicesApi.update(payload.id, payload))
       } else {
         const newService = {
@@ -28,24 +36,23 @@ export const useAdminStore = defineStore('travelAdmin', {
           id: Date.now(),
           createdAt: new Date().toISOString()
         }
-        contextStore.state.services = [newService, ...contextStore.state.services]
+        serviceStore.setServices([newService, ...services])
         fireAndForget(() => servicesApi.create(newService))
       }
-
-      contextStore.persistServices()
     },
 
     toggleServiceStatus(serviceId) {
-      const contextStore = useTravelContextStore()
+      const serviceStore = useServiceStore()
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
       let updatedService = null
 
-      contextStore.state.services = contextStore.state.services.map((service) => {
+      const nextServices = services.map((service) => {
         if (service.id !== serviceId) return service
         updatedService = { ...service, status: service.status === 'active' ? 'inactive' : 'active' }
         return updatedService
       })
 
-      contextStore.persistServices()
+      serviceStore.setServices(nextServices)
 
       if (updatedService) {
         fireAndForget(() => servicesApi.update(serviceId, updatedService))
@@ -53,38 +60,39 @@ export const useAdminStore = defineStore('travelAdmin', {
     },
 
     savePromotion(promotionInput) {
-      const contextStore = useTravelContextStore()
+      const serviceStore = useServiceStore()
+      const promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
       const payload = {
         ...promotionInput,
         code: promotionInput.code.trim().toUpperCase(),
-        value: Number(promotionInput.value || 0)
+        value: toNumber(promotionInput.value, 0)
       }
 
       if (payload.id) {
-        contextStore.state.promotions = contextStore.state.promotions.map((promotion) =>
+        const nextPromotions = promotions.map((promotion) =>
           promotion.id === payload.id ? { ...promotion, ...payload } : promotion
         )
+        serviceStore.setPromotions(nextPromotions)
         fireAndForget(() => promotionsApi.update(payload.id, payload))
       } else {
         const newPromotion = { ...payload, id: Date.now() }
-        contextStore.state.promotions = [newPromotion, ...contextStore.state.promotions]
+        serviceStore.setPromotions([newPromotion, ...promotions])
         fireAndForget(() => promotionsApi.create(newPromotion))
       }
-
-      contextStore.persistPromotions()
     },
 
     togglePromotionStatus(promotionId) {
-      const contextStore = useTravelContextStore()
+      const serviceStore = useServiceStore()
+      const promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
       let updatedPromotion = null
 
-      contextStore.state.promotions = contextStore.state.promotions.map((promotion) => {
+      const nextPromotions = promotions.map((promotion) => {
         if (promotion.id !== promotionId) return promotion
         updatedPromotion = { ...promotion, status: promotion.status === 'active' ? 'inactive' : 'active' }
         return updatedPromotion
       })
 
-      contextStore.persistPromotions()
+      serviceStore.setPromotions(nextPromotions)
 
       if (updatedPromotion) {
         fireAndForget(() => promotionsApi.update(promotionId, updatedPromotion))
@@ -92,16 +100,17 @@ export const useAdminStore = defineStore('travelAdmin', {
     },
 
     toggleCommentVisibility(commentId) {
-      const contextStore = useTravelContextStore()
+      const serviceStore = useServiceStore()
+      const comments = Array.isArray(serviceStore.comments) ? serviceStore.comments : []
       let updatedComment = null
 
-      contextStore.state.comments = contextStore.state.comments.map((comment) => {
+      const nextComments = comments.map((comment) => {
         if (comment.id !== commentId) return comment
         updatedComment = { ...comment, visible: comment.visible === false }
         return updatedComment
       })
 
-      persistStorage(STORAGE_KEYS.comments, contextStore.state.comments)
+      serviceStore.setComments(nextComments)
 
       if (updatedComment) {
         fireAndForget(() => commentsApi.update(commentId, updatedComment))
@@ -109,26 +118,29 @@ export const useAdminStore = defineStore('travelAdmin', {
     },
 
     deleteComment(commentId) {
-      const contextStore = useTravelContextStore()
-      contextStore.state.comments = contextStore.state.comments.filter((comment) => comment.id !== commentId)
-      persistStorage(STORAGE_KEYS.comments, contextStore.state.comments)
+      const serviceStore = useServiceStore()
+      const comments = Array.isArray(serviceStore.comments) ? serviceStore.comments : []
+      const nextComments = comments.filter((comment) => comment.id !== commentId)
+      serviceStore.setComments(nextComments)
       fireAndForget(() => commentsApi.remove(commentId))
     },
 
     addComment({ serviceId, userName, rating, content }) {
-      const contextStore = useTravelContextStore()
+      const serviceStore = useServiceStore()
+      const comments = Array.isArray(serviceStore.comments) ? serviceStore.comments : []
+      const authStore = useAuthStore()
+      const currentUser = authStore.currentUser || null
       const newComment = {
         id: Date.now(),
         serviceId,
-        userName,
-        rating,
+        userName: userName || currentUser?.fullName || 'Khách hàng',
+        rating: toNumber(rating, 5),
         content,
         createdAt: new Date().toISOString(),
         visible: true
       }
 
-      contextStore.state.comments = [newComment, ...contextStore.state.comments]
-      persistStorage(STORAGE_KEYS.comments, contextStore.state.comments)
+      serviceStore.setComments([newComment, ...comments])
       fireAndForget(() => commentsApi.create(newComment))
     }
   }

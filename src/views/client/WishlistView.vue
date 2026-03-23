@@ -13,7 +13,7 @@
         :key="service.id"
         :service="service"
         :is-wishlisted="true"
-        @toggle-wishlist="store.toggleWishlist"
+        @toggle-wishlist="handleToggleWishlist"
         @book-now="handleBookNow"
       />
     </div>
@@ -29,12 +29,21 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useCatalogStore } from '@/stores/useCatalogStore'
+import { useServiceStore } from '@/stores/useServiceStore'
+import { useWishlistStore } from '@/stores/useWishlistStore'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
-const store = useCatalogStore()
-const wishlistItems = computed(() => store.wishlistItems)
+const serviceStore = useServiceStore()
+const wishlistStore = useWishlistStore()
+const wishlistItems = computed(() => {
+  const wishlistIds = Array.isArray(wishlistStore.wishlist) ? wishlistStore.wishlist : []
+  return serviceStore.services.filter((service) => wishlistIds.some((id) => Number(id) === Number(service.id)))
+})
+
+const handleToggleWishlist = (serviceId) => {
+  wishlistStore.toggleWishlist(serviceId)
+}
 
 const handleBookNow = (service) => {
   router.push(getDetailRouteLocation(service, { guests: 1 }))

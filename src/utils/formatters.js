@@ -1,9 +1,9 @@
-export const formatCurrencyVND = (value = 0) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
+export const formatCurrencyVND = (value = 0) => {
+  const normalizedValue = Number(value) || 0
+  return `${new Intl.NumberFormat('vi-VN', {
     maximumFractionDigits: 0
-  }).format(value)
+  }).format(normalizedValue)} VND`
+}
 
 export const formatDateVN = (dateValue) => {
   if (!dateValue) return 'Chưa chọn ngày'

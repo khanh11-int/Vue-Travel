@@ -910,7 +910,7 @@
   "promotions": [
     {
       "id": "3001",
-      "code": "VIETVOYAGE10",
+      "code": "VTRAVEL10",
       "type": "percent",
       "value": 10,
       "description": "Giảm 10% cho booking nội địa",
@@ -923,7 +923,7 @@
       "code": "PHUQUOC500K",
       "type": "amount",
       "value": 500000,
-      "description": "Giảm 500.000đ cho đơn từ 5.000.000đ",
+      "description": "Giảm 500.000 VND cho đơn từ 5.000.000 VND",
       "status": "active",
       "startDate": "2026-03-01",
       "endDate": "2026-09-30"
@@ -942,8 +942,8 @@
   "users": [
     {
       "id": "1",
-      "fullName": "Admin Việt Voyage",
-      "email": "admin@vietvoyage.vn",
+      "fullName": "Admin Vtravel",
+      "email": "admin@vtravel.vn",
       "password": "123456",
       "role": "admin",
       "phone": "0912345678",
@@ -952,7 +952,7 @@
     {
       "id": "2",
       "fullName": "Khách du lịch Việt",
-      "email": "user@vietvoyage.vn",
+      "email": "user@vtravel.vn",
       "password": "123456",
       "role": "customer",
       "phone": "0987654321",
@@ -965,7 +965,7 @@
       "code": "VV301013",
       "customer": {
         "fullName": "Khách du lịch Việt",
-        "email": "user@vietvoyage.vn",
+        "email": "user@vtravel.vn",
         "phone": "0987654321",
         "city": "Hà Nội",
         "address": "Cầu Giấy, Hà Nội",
@@ -1068,7 +1068,7 @@
       "code": "VV543009",
       "customer": {
         "fullName": "Khách du lịch Việt",
-        "email": "user@vietvoyage.vn",
+        "email": "user@vtravel.vn",
         "phone": "0987654321",
         "city": "Hà Nội",
         "address": "Cầu Giấy, Hà Nội",

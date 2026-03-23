@@ -3,7 +3,7 @@
     <aside class="admin-sidebar">
       <div>
         <p class="eyebrow">Admin Mock</p>
-        <h2>Việt Voyage CMS</h2>
+        <h2>Vtravel CMS</h2>
       </div>
       <nav>
         <router-link to="/admin">Dashboard</router-link>
@@ -22,7 +22,7 @@
           <p class="eyebrow">Bảng điều khiển</p>
           <h1>Quản trị vận hành du lịch nội địa</h1>
         </div>
-        <button class="ghost-button" type="button">Admin Việt Voyage</button>
+        <button class="ghost-button" type="button">Admin Vtravel</button>
       </header>
       <router-view />
     </section>

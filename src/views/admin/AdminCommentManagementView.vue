@@ -50,10 +50,10 @@
 <script setup>
 import { computed } from 'vue'
 import { useAdminStore } from '@/stores/useAdminStore'
-import { useTravelContextStore } from '@/stores/useTravelContextStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 
 const store = useAdminStore()
-const contextStore = useTravelContextStore()
-const comments = computed(() => contextStore.state.comments)
-const getServiceName = (serviceId) => contextStore.state.services.find((service) => service.id === serviceId)?.name || 'Dịch vụ nội địa'
+const serviceStore = useServiceStore()
+const comments = computed(() => serviceStore.comments)
+const getServiceName = (serviceId) => serviceStore.services.find((service) => service.id === serviceId)?.name || 'Dịch vụ nội địa'
 </script>

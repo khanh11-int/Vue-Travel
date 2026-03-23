@@ -1,11 +1,11 @@
 <template>
   <section class="page-section auth-layout">
     <div class="auth-hero">
-      <p class="eyebrow">Chào mừng đến với Việt Voyage</p>
+      <p class="eyebrow">Chào mừng đến với Vtravel</p>
       <h1>Đăng nhập để lưu wishlist, đặt chỗ và quản lý lịch sử du lịch nội địa.</h1>
       <p>
-        Demo sẵn 2 tài khoản mock: <strong>admin@vietvoyage.vn</strong> / <strong>123456</strong>
-        và <strong>user@vietvoyage.vn</strong> / <strong>123456</strong>.
+        Demo sẵn 2 tài khoản mock: <strong>admin@vtravel.vn</strong> / <strong>123456</strong>
+        và <strong>user@vtravel.vn</strong> / <strong>123456</strong>.
         Quyền truy cập được xác định theo role của tài khoản, không chọn bằng checkbox.
       </p>
     </div>
@@ -94,7 +94,7 @@ const form = reactive({
   fullName: '',
   phone: '',
   address: '',
-  email: 'user@vietvoyage.vn',
+  email: 'user@vtravel.vn',
   password: '123456',
   confirmPassword: ''
 })
@@ -129,7 +129,7 @@ const switchMode = (nextMode) => {
   errors.confirmPassword = ''
 
   if (nextMode === 'login') {
-    form.email = 'user@vietvoyage.vn'
+    form.email = 'user@vtravel.vn'
     form.password = '123456'
   } else {
     form.fullName = ''
@@ -157,9 +157,9 @@ const validate = () => {
   const normalizedPhone = trimmedPhone.replace(/\D/g, '')
   const nameRegex = /^[A-Za-zÀ-ỹ\s]+$/
   const emailExists = mode.value === 'register'
-    && authStore.state.users.some((entry) => entry.email.toLowerCase() === normalizedEmail)
+    && authStore.users.some((entry) => entry.email.toLowerCase() === normalizedEmail)
   const phoneExists = mode.value === 'register'
-    && authStore.state.users.some((entry) => (entry.phone || '').replace(/\D/g, '') === normalizedPhone)
+    && authStore.users.some((entry) => (entry.phone || '').replace(/\D/g, '') === normalizedPhone)
 
   errors.fullName = mode.value === 'register' && (
     trimmedName.length < 2
@@ -201,16 +201,16 @@ const validate = () => {
   return !errors.fullName && !errors.phone && !errors.address && !errors.email && !errors.password && !errors.confirmPassword
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   resetFeedback()
   if (!validate()) return
 
   const result = mode.value === 'login'
-    ? authStore.login({
+    ? await authStore.login({
       email: form.email,
       password: form.password
     })
-    : authStore.register({
+    : await authStore.register({
       fullName: form.fullName.trim(),
       phone: form.phone.trim(),
       address: form.address.trim(),

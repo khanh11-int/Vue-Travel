@@ -1,8 +1,8 @@
 <template>
   <div class="app-shell">
     <header class="ota-top-header">
-      <router-link class="brand" to="/" aria-label="Việt Voyage">
-        <img :src="logoImage" alt="Việt Voyage" class="brand-logo" />
+      <router-link class="brand" to="/" aria-label="Vtravel">
+        <img :src="logoImage" alt="Vtravel" class="brand-logo" />
       </router-link>
       <nav class="ota-utility-nav" aria-label="Tiện ích người dùng">
         <div class="ota-nav-left">
@@ -35,12 +35,12 @@
 
     <footer id="chan-trang-ho-tro" class="main-footer">
       <div>
-        <h3>Việt Voyage</h3>
+        <h3>Vtravel</h3>
         <p>Nền tảng du lịch nội địa Việt Nam lấy cảm hứng từ trải nghiệm OTA hiện đại.</p>
       </div>
       <div>
         <h4>Liên hệ & chính sách</h4>
-        <p>Hotline 1900 6868 · cskh@vietvoyage.vn · Chính sách bảo mật · Điều khoản dịch vụ</p>
+        <p>Hotline 1900 6868 · cskh@vtravel.vn · Chính sách bảo mật · Điều khoản dịch vụ</p>
       </div>
       <div>
         <h4>Thanh toán & hỗ trợ</h4>
@@ -53,22 +53,22 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCatalogStore } from '@/stores/useCatalogStore'
-import { useTravelCartStore } from '@/stores/useCartStore'
+import { useCartStore } from '@/stores/useCartStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useWishlistStore } from '@/stores/useWishlistStore'
 import logoImage from '@/assets/logo.png'
 
 const router = useRouter()
-const catalogStore = useCatalogStore()
-const cartStore = useTravelCartStore()
+const cartStore = useCartStore()
 const authStore = useAuthStore()
+const wishlistStore = useWishlistStore()
 
-const wishlistCount = computed(() => catalogStore.wishlistItems.length)
+const wishlistCount = computed(() => wishlistStore.wishlistCount)
 const cartCount = computed(() => cartStore.cartItems.length)
 const isLoggedIn = computed(() => authStore.isLoggedIn)
 const currentUserLabel = computed(() => {
-  if (!authStore.state.currentUser) return 'Tài khoản'
-  return authStore.state.currentUser.fullName
+  if (!authStore.currentUser) return 'Tài khoản'
+  return authStore.currentUser.fullName
 })
 
 const handleLogout = () => {

@@ -33,7 +33,7 @@ const routes = [
         path: '',
         name: 'home',
         component: HomeView,
-        meta: { title: 'Việt Voyage | Du lịch nội địa Việt Nam' }
+        meta: { title: 'Vtravel | Du lịch nội địa Việt Nam' }
       },
       {
         path: 'dich-vu',
@@ -134,7 +134,7 @@ const routes = [
   {
     path: '/admin',
     component: AdminLayout,
-    meta: { requiresAdmin: true, title: 'Quản trị Việt Voyage' },
+    meta: { requiresAdmin: true, title: 'Quản trị Vtravel' },
     children: [
       {
         path: '',

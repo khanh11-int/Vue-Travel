@@ -1,43 +1,89 @@
 import { defineStore } from 'pinia'
 import { bookingsApi, servicesApi } from '@/services/api'
-import { getTravelContextStore as useTravelContextStore } from '@/stores/getTravelContextStore'
-import { useTravelCartStore } from '@/stores/useCartStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import {
   BOOKING_STATUS_LABELS,
-  STORAGE_KEYS,
   applyServiceSlotDelta,
-  fireAndForget
-} from '@/stores/travelShared'
+  fireAndForget,
+  sortByCreatedAtDesc,
+  upsertBooking
+} from '@/utils/travelBooking'
+import {
+  STORAGE_KEYS,
+  GUEST_SCOPE,
+  getActiveUserId,
+  getScopedKey,
+  persistStorage,
+  readStorage
+} from '@/utils/travelStorage'
 
-const sortByCreatedAtDesc = (bookings = []) =>
-  [...bookings].sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
+const resolveAllBookingsStorageKey = () => STORAGE_KEYS.bookings
 
-const upsertBooking = (bookings, booking) => {
-  const normalizedBookings = Array.isArray(bookings) ? bookings : []
-  const index = normalizedBookings.findIndex((entry) => entry.id === booking.id)
-  if (index === -1) return [booking, ...normalizedBookings]
-
-  const next = [...normalizedBookings]
-  next[index] = booking
-  return next
+const resolveBookingOwnerId = (booking) => {
+  const customerId = booking?.customer?.id ?? booking?.customer?.userId
+  return customerId ? String(customerId) : GUEST_SCOPE
 }
 
+const resolveCurrentUser = (authStore) => authStore?.currentUser || null
+
+const resolveCurrentUserId = (authStore) => {
+  const currentUser = resolveCurrentUser(authStore)
+  if (currentUser?.id) return String(currentUser.id)
+  return getActiveUserId()
+}
+
+const readUserScopedBookings = (userId) =>
+  ensureArray(readStorage(getScopedKey(STORAGE_KEYS.bookings, userId), []))
+
+const persistUserScopedBookings = (userId, bookings) => {
+  persistStorage(getScopedKey(STORAGE_KEYS.bookings, userId), ensureArray(bookings))
+}
+
+const readAllBookings = () => ensureArray(readStorage(resolveAllBookingsStorageKey(), []))
+
+const persistAllBookings = (bookings) => {
+  persistStorage(resolveAllBookingsStorageKey(), ensureArray(bookings))
+}
+
+const updateBookingStatusLabel = (booking, status) => ({
+  ...booking,
+  status,
+  statusLabel: BOOKING_STATUS_LABELS[status] || booking.statusLabel || status
+})
+
 export const useBookingStore = defineStore('travelBooking', {
-  state: () => ({}),
+  state: () => {
+    const authStore = useAuthStore()
+    const currentUserId = resolveCurrentUserId(authStore)
+
+    return {
+      bookings: readUserScopedBookings(currentUserId),
+      allBookings: readAllBookings(),
+      loading: false,
+      error: null
+    }
+  },
 
   getters: {
-    bookingHistory() {
-      const contextStore = useTravelContextStore()
-      return sortByCreatedAtDesc(contextStore.state.bookings)
+    bookingHistory(state) {
+      return sortByCreatedAtDesc(state.bookings)
     },
 
-    adminBookingHistory() {
-      const contextStore = useTravelContextStore()
-      return sortByCreatedAtDesc(contextStore.state.allBookings)
+    adminBookingHistory(state) {
+      return sortByCreatedAtDesc(state.allBookings)
     }
   },
 
   actions: {
+    syncUserScope() {
+      const authStore = useAuthStore()
+      const currentUserId = resolveCurrentUserId(authStore)
+      this.bookings = readUserScopedBookings(currentUserId)
+      return currentUserId
+    },
+
     createBooking({
       customer,
       items,
@@ -49,15 +95,28 @@ export const useBookingStore = defineStore('travelBooking', {
       clearCartAfterBooking = true,
       clearPromotionAfterBooking = true
     }) {
-      const contextStore = useTravelContextStore()
-      const cartStore = useTravelCartStore()
-      contextStore.syncScopeFromSession()
+      const authStore = useAuthStore()
+      const serviceStore = useServiceStore()
+      // Keep arguments for backward-compatible call signatures.
+      void clearCartAfterBooking
+      void clearPromotionAfterBooking
+
+      const currentUser = resolveCurrentUser(authStore)
+      const currentUserId = this.syncUserScope()
+      const sanitizedItems = ensureArray(items)
+      const now = Date.now()
+      const createdAt = new Date().toISOString()
+      const customerPayload = {
+        ...(customer || {}),
+        id: customer?.id ?? currentUser?.id ?? undefined,
+        userId: customer?.userId ?? currentUser?.id ?? currentUserId
+      }
 
       const booking = {
-        id: Date.now(),
-        code: `VV${Date.now().toString().slice(-6)}`,
-        customer,
-        items,
+        id: now,
+        code: `VV${now.toString().slice(-6)}`,
+        customer: customerPayload,
+        items: sanitizedItems,
         subtotal,
         discount,
         serviceFee,
@@ -65,12 +124,13 @@ export const useBookingStore = defineStore('travelBooking', {
         promotion,
         status: 'pending',
         statusLabel: 'Chờ xác nhận',
-        createdAt: new Date().toISOString(),
+        createdAt,
         visible: true
       }
 
-      contextStore.state.services = contextStore.state.services.map((service) => {
-        const relatedItems = items.filter((entry) => String(entry.serviceId) === String(service.id))
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
+      const nextServices = services.map((service) => {
+        const relatedItems = sanitizedItems.filter((entry) => String(entry.serviceId) === String(service.id))
         if (!relatedItems.length) return service
 
         return relatedItems.reduce(
@@ -79,40 +139,92 @@ export const useBookingStore = defineStore('travelBooking', {
         )
       })
 
-      contextStore.state.bookings = [booking, ...contextStore.state.bookings]
-      contextStore.state.allBookings = upsertBooking(contextStore.state.allBookings, booking)
-      contextStore.persistServices()
-      contextStore.persistScoped(STORAGE_KEYS.bookings, contextStore.state.bookings)
-      contextStore.persistAllBookings()
+      this.bookings = upsertBooking(this.bookings, booking)
+      this.allBookings = upsertBooking(this.allBookings, booking)
+
+      persistUserScopedBookings(currentUserId, this.bookings)
+      persistAllBookings(this.allBookings)
+      serviceStore.setServices(nextServices)
 
       fireAndForget(() => bookingsApi.create(booking))
-      fireAndForget(() => Promise.all(contextStore.state.services.map((service) => servicesApi.update(service.id, service))))
-
-      if (clearPromotionAfterBooking) {
-        cartStore.clearAppliedPromotion()
-      }
-
-      if (clearCartAfterBooking) {
-        cartStore.clearCart()
-      }
+      fireAndForget(() => Promise.all(nextServices.map((service) => servicesApi.update(service.id, service))))
 
       return booking
     },
 
+    async fetchMyBookings() {
+      this.loading = true
+      this.error = null
+      const authStore = useAuthStore()
+      const currentUserId = this.syncUserScope()
+
+      try {
+        const apiBookings = await bookingsApi.getAll()
+        const normalizedApiBookings = ensureArray(apiBookings)
+
+        if (normalizedApiBookings.length) {
+          this.allBookings = sortByCreatedAtDesc(normalizedApiBookings)
+          persistAllBookings(this.allBookings)
+        } else {
+          this.allBookings = sortByCreatedAtDesc(readAllBookings())
+        }
+
+        this.bookings = this.allBookings.filter((booking) => {
+          const ownerId = resolveBookingOwnerId(booking)
+          if (ownerId !== GUEST_SCOPE) return ownerId === currentUserId
+
+          const activeUserId = resolveCurrentUserId(authStore)
+          return activeUserId === GUEST_SCOPE
+        })
+
+        persistUserScopedBookings(currentUserId, this.bookings)
+      } catch (error) {
+        this.error = error?.message || 'Không thể tải lịch sử đặt chỗ.'
+        this.bookings = readUserScopedBookings(currentUserId)
+        this.allBookings = readAllBookings()
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchAllBookings() {
+      this.loading = true
+      this.error = null
+      this.syncUserScope()
+
+      try {
+        const apiBookings = await bookingsApi.getAll()
+        const normalizedApiBookings = ensureArray(apiBookings)
+
+        if (normalizedApiBookings.length) {
+          this.allBookings = sortByCreatedAtDesc(normalizedApiBookings)
+          persistAllBookings(this.allBookings)
+        } else {
+          this.allBookings = sortByCreatedAtDesc(readAllBookings())
+        }
+      } catch (error) {
+        this.error = error?.message || 'Không thể tải danh sách booking.'
+        this.allBookings = readAllBookings()
+      } finally {
+        this.loading = false
+      }
+    },
+
     updateBookingStatus(bookingId, status) {
-      const contextStore = useTravelContextStore()
-      contextStore.syncScopeFromSession()
+      const currentUserId = this.syncUserScope()
 
       const existing =
-        contextStore.state.allBookings.find((booking) => booking.id === bookingId)
-        || contextStore.state.bookings.find((booking) => booking.id === bookingId)
+        this.allBookings.find((booking) => booking.id === bookingId)
+        || this.bookings.find((booking) => booking.id === bookingId)
 
       if (!existing || existing.status === 'completed' || existing.status === status) return
 
       const shouldRestoreSlots = status === 'cancelled' && existing.status !== 'cancelled'
 
       if (shouldRestoreSlots) {
-        contextStore.state.services = contextStore.state.services.map((service) => {
+        const serviceStore = useServiceStore()
+        const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
+        const nextServices = services.map((service) => {
           const relatedItems = existing.items.filter((entry) => String(entry.serviceId) === String(service.id))
           if (!relatedItems.length) return service
 
@@ -121,28 +233,33 @@ export const useBookingStore = defineStore('travelBooking', {
             service
           )
         })
-        contextStore.persistServices()
-        fireAndForget(() => Promise.all(contextStore.state.services.map((service) => servicesApi.update(service.id, service))))
+
+        serviceStore.setServices(nextServices)
+        fireAndForget(() => Promise.all(nextServices.map((service) => servicesApi.update(service.id, service))))
       }
 
-      contextStore.state.bookings = contextStore.state.bookings.map((booking) =>
-        booking.id === bookingId
-          ? { ...booking, status, statusLabel: BOOKING_STATUS_LABELS[status] || booking.statusLabel }
-          : booking
+      this.bookings = this.bookings.map((booking) =>
+        booking.id === bookingId ? updateBookingStatusLabel(booking, status) : booking
       )
-      contextStore.state.allBookings = contextStore.state.allBookings.map((booking) =>
-        booking.id === bookingId
-          ? { ...booking, status, statusLabel: BOOKING_STATUS_LABELS[status] || booking.statusLabel }
-          : booking
+      this.allBookings = this.allBookings.map((booking) =>
+        booking.id === bookingId ? updateBookingStatusLabel(booking, status) : booking
       )
 
-      contextStore.persistScoped(STORAGE_KEYS.bookings, contextStore.state.bookings)
-      contextStore.persistAllBookings()
+      const ownerId = resolveBookingOwnerId(existing)
+      persistUserScopedBookings(ownerId, this.allBookings.filter((booking) => resolveBookingOwnerId(booking) === ownerId))
+      if (ownerId === currentUserId) {
+        persistUserScopedBookings(currentUserId, this.bookings)
+      }
+      persistAllBookings(this.allBookings)
 
-      const updatedBooking = contextStore.state.allBookings.find((booking) => booking.id === bookingId)
+      const updatedBooking = this.allBookings.find((booking) => booking.id === bookingId)
       if (updatedBooking) {
         fireAndForget(() => bookingsApi.update(bookingId, updatedBooking))
       }
+    },
+
+    cancelBooking(bookingId) {
+      this.updateBookingStatus(bookingId, 'cancelled')
     }
   }
 })

@@ -47,9 +47,9 @@
         :disabled="maxSelectableSlots <= 0"
         @click="handleAddToCart"
       >
-        Thêm vào giỏ
+        {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
       </button>
-      <button class="ghost-button full-width" type="button" @click="store.toggleWishlist(service.id)">
+      <button class="ghost-button full-width" type="button" @click="catalogStore.toggleWishlist(service.id)">
         {{ isWishlisted ? 'Đã lưu wishlist' : 'Thêm vào wishlist' }}
       </button>
     </aside>
@@ -65,7 +65,10 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useAdminStore } from '@/stores/useAdminStore'
+import { useCatalogStore } from '@/stores/useCatalogStore'
+import { useTravelCartStore } from '@/stores/useCartStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
 
@@ -100,7 +103,10 @@ const ticketDetailLogic = {
 
 const route = useRoute()
 const router = useRouter()
-const store = useTravelStore()
+const contextStore = useTravelContextStore()
+const catalogStore = useCatalogStore()
+const cartStore = useTravelCartStore()
+const adminStore = useAdminStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -108,18 +114,18 @@ const todayISO = (() => {
 })()
 
 const service = computed(() => {
-  const found = store.getServiceBySlug(route.params.slug)
+  const found = catalogStore.getServiceBySlug(route.params.slug)
   if (!found || found.categoryId !== 'ticket') return null
   return found
 })
-const serviceComments = computed(() => (service.value ? store.getCommentsByService(service.value.id) : []))
-const isWishlisted = computed(() => service.value && store.state.wishlist.includes(service.value.id))
+const serviceComments = computed(() => (service.value ? catalogStore.getCommentsByService(service.value.id) : []))
+const isWishlisted = computed(() => service.value && contextStore.state.wishlist.includes(service.value.id))
 const primaryDateLabel = computed(() => getPrimaryDateLabel(service.value))
 const quantityLabel = computed(() => ticketDetailLogic.quantityLabel)
 const relatedServices = computed(() => {
   if (!service.value) return []
 
-  return store.state.services
+  return contextStore.state.services
     .filter((item) => item.id !== service.value.id)
     .filter((item) => item.categoryId === service.value.categoryId || item.province === service.value.province)
     .slice(0, 3)
@@ -133,6 +139,14 @@ const galleryImages = computed(() => {
 
 const displaySalePrice = computed(() => Number(service.value?.salePrice || 0))
 const maxSelectableSlots = computed(() => Math.max(0, Number(service.value?.availableSlots || 0)))
+const isEditingFromCart = computed(() => route.query.edit === '1')
+const originalCartItem = computed(() => ({
+  serviceId: route.query.originServiceId ?? service.value?.id,
+  startDate: String(route.query.originStartDate || ''),
+  endDate: String(route.query.originEndDate || ''),
+  bookingType: String(route.query.originBookingType || 'ticket'),
+  bookingMeta: {}
+}))
 
 const bookingForm = reactive({
   startDate: '',
@@ -181,7 +195,7 @@ const validateBookingInput = () => {
 }
 
 const addToCartWithCurrentSelection = () => {
-  store.addToCart({
+  const nextItem = {
     serviceId: service.value.id,
     quantity: bookingForm.quantity,
     bookingType: 'ticket',
@@ -192,7 +206,21 @@ const addToCartWithCurrentSelection = () => {
     }),
     startDate: bookingForm.startDate,
     endDate: ''
-  })
+  }
+
+  if (isEditingFromCart.value) {
+    cartStore.removeCartItem(
+      originalCartItem.value.serviceId,
+      originalCartItem.value.startDate,
+      originalCartItem.value.endDate,
+      originalCartItem.value.bookingType,
+      originalCartItem.value.bookingMeta
+    )
+    cartStore.addToCart(nextItem)
+    return
+  }
+
+  cartStore.addToCart(nextItem)
 }
 
 const decreaseQuantity = () => {
@@ -214,6 +242,12 @@ const increaseQuantity = () => {
 const handleAddToCart = () => {
   if (!validateBookingInput()) return
   addToCartWithCurrentSelection()
+
+  if (isEditingFromCart.value) {
+    router.push('/gio-hang')
+    return
+  }
+
   bookingSuccess.value = 'Đã thêm dịch vụ vào giỏ đặt chỗ.'
 }
 
@@ -237,7 +271,7 @@ const handleBookNow = () => {
 
 const submitComment = (payload) => {
   if (!service.value) return
-  store.addComment({
+  adminStore.addComment({
     serviceId: service.value.id,
     userName: payload.userName,
     rating: payload.rating,

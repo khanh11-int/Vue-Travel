@@ -13,6 +13,7 @@
 
         <div class="ota-nav-right">
           <router-link to="/wishlist">Đã lưu <span class="nav-pill">{{ wishlistCount }}</span></router-link>
+          <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
           <router-link to="/lich-su-dat-cho">Đặt chỗ của tôi</router-link>
 
           <div v-if="!isLoggedIn" class="ota-account-links">
@@ -52,16 +53,19 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useCatalogStore } from '@/stores/useCatalogStore'
+import { useTravelCartStore } from '@/stores/useCartStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import logoImage from '@/assets/logo.png'
 
 const router = useRouter()
-const store = useTravelStore()
+const catalogStore = useCatalogStore()
+const cartStore = useTravelCartStore()
 const authStore = useAuthStore()
 
-const wishlistCount = computed(() => store.wishlistItems.value.length)
-const isLoggedIn = computed(() => authStore.isLoggedIn.value)
+const wishlistCount = computed(() => catalogStore.wishlistItems.length)
+const cartCount = computed(() => cartStore.cartItems.length)
+const isLoggedIn = computed(() => authStore.isLoggedIn)
 const currentUserLabel = computed(() => {
   if (!authStore.state.currentUser) return 'Tài khoản'
   return authStore.state.currentUser.fullName

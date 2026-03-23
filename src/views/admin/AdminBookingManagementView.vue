@@ -68,10 +68,10 @@
 
 <script setup>
 import { computed, reactive } from 'vue'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useBookingStore } from '@/stores/useBookingStore'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
 
-const store = useTravelStore()
+const store = useBookingStore()
 const filters = reactive({ keyword: '', status: '' })
 
 const statusOptions = [
@@ -84,7 +84,7 @@ const statusOptions = [
 
 const filteredBookings = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
-  return store.bookingHistory.value.filter((booking) => {
+  return store.adminBookingHistory.filter((booking) => {
     const matchesKeyword = !keyword || [booking.code, booking.customer.fullName]
       .join(' ')
       .toLowerCase()

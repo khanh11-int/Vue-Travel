@@ -103,8 +103,8 @@
         v-for="service in featuredServices"
         :key="service.id"
         :service="service"
-        :is-wishlisted="store.state.wishlist.includes(service.id)"
-        @toggle-wishlist="store.toggleWishlist"
+        :is-wishlisted="contextStore.state.wishlist.includes(service.id)"
+        @toggle-wishlist="catalogStore.toggleWishlist"
         @book-now="handleBookNow"
       />
     </div>
@@ -156,12 +156,13 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { destinations } from '@/data/mockData'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useCatalogStore } from '@/stores/useCatalogStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
-const store = useTravelStore()
+const catalogStore = useCatalogStore()
+const contextStore = useTravelContextStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -203,9 +204,9 @@ const comboForm = ref({
   travelers: 2
 })
 
-const featuredServices = computed(() => store.featuredServices.value)
-const activePromotions = computed(() => store.activePromotions.value.slice(0, 3))
-const featuredDestinations = computed(() => destinations.slice(0, 6))
+const featuredServices = computed(() => (Array.isArray(catalogStore.featuredServices) ? catalogStore.featuredServices : []))
+const activePromotions = computed(() => (Array.isArray(catalogStore.activePromotions) ? catalogStore.activePromotions : []).slice(0, 3))
+const featuredDestinations = computed(() => (Array.isArray(contextStore.state.destinations) ? contextStore.state.destinations : []).slice(0, 6))
 
 const searchButtonLabel = computed(() => {
   if (activeService.value === 'hotel') return 'Tìm khách sạn'

@@ -22,11 +22,11 @@
                   {{ item.service?.destination }}, {{ item.service?.province }} · {{ item.bookingSummary || formatDateRangeVN(item.startDate, item.endDate) }}
                 </p>
                 <router-link
-                  v-if="isItemDateInvalid(item) && item.service?.slug"
+                  v-if="item.service?.slug"
                   class="ghost-button cart-fix-date-button"
                   :to="getDetailRoute(item.service, getEditQuery(item))"
                 >
-                  Sửa ngày
+                  {{ isItemDateInvalid(item) ? 'Sửa ngày' : 'Chỉnh sửa dịch vụ' }}
                 </router-link>
               </div>
               <button class="icon-button" type="button" @click="store.removeCartItem(item.serviceId, item.startDate, item.endDate, item.bookingType, item.bookingMeta)">
@@ -35,10 +35,8 @@
             </div>
 
             <div class="cart-item-footer">
-              <div class="quantity-box compact">
-                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity - 1, item.endDate, item.bookingType, item.bookingMeta)">-</button>
-                <span>{{ item.quantity }}</span>
-                <button type="button" @click="store.updateCartQuantity(item.serviceId, item.startDate, item.quantity + 1, item.endDate, item.bookingType, item.bookingMeta)">+</button>
+              <div class="quantity-box compact readonly">
+                <span>Số lượng: {{ item.quantity }}</span>
               </div>
 
               <div class="price-stack">
@@ -100,20 +98,22 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { categories } from '@/data/mockData'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useTravelCartStore } from '@/stores/useCartStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
-const store = useTravelStore()
-const promotionCode = ref(store.state.appliedPromotion?.code || '')
+const store = useTravelCartStore()
+const contextStore = useTravelContextStore()
+const categories = computed(() => contextStore.state.categories)
+const promotionCode = ref(contextStore.state.appliedPromotion?.code || '')
 const promotionFeedback = ref('')
 const promotionSuccess = ref(false)
 
-const cartItems = computed(() => store.cartItems.value)
-const subtotal = computed(() => store.cartTotal.value)
+const cartItems = computed(() => store.cartItems)
+const subtotal = computed(() => store.cartTotal)
 const discount = computed(() => store.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
@@ -130,17 +130,28 @@ const isItemDateInvalid = (item) => {
 }
 
 const getEditQuery = (item) => {
+  const baseEditQuery = {
+    edit: '1',
+    originServiceId: item.serviceId,
+    originStartDate: item.startDate || '',
+    originEndDate: item.endDate || '',
+    originBookingType: item.bookingType || ''
+  }
+
   if (item.bookingType === 'hotel') {
     return {
+      ...baseEditQuery,
       checkInDate: item.bookingMeta?.checkInDate || item.startDate || undefined,
       checkOutDate: item.bookingMeta?.checkOutDate || item.endDate || undefined,
       guests: item.bookingMeta?.guests || item.quantity || 1,
-      rooms: item.bookingMeta?.rooms || 1
+      rooms: item.bookingMeta?.rooms || 1,
+      originRooms: item.bookingMeta?.rooms || 1
     }
   }
 
   if (item.bookingType === 'ticket') {
     return {
+      ...baseEditQuery,
       useDate: item.bookingMeta?.useDate || item.startDate || undefined,
       ticketQuantity: item.bookingMeta?.ticketQuantity || item.quantity || 1
     }
@@ -148,13 +159,18 @@ const getEditQuery = (item) => {
 
   if (item.bookingType === 'tour') {
     return {
+      ...baseEditQuery,
       departureDate: item.bookingMeta?.departureDate || item.startDate || undefined,
+      departureId: item.bookingMeta?.departureId || undefined,
       travelers: item.bookingMeta?.travelers || item.quantity || 1
     }
   }
 
   return {
+    ...baseEditQuery,
     applyDate: item.bookingMeta?.applyDate || item.startDate || undefined,
+    packageId: item.bookingMeta?.packageId || undefined,
+    departureId: item.bookingMeta?.departureId || undefined,
     travelers: item.bookingMeta?.travelers || item.quantity || 1
   }
 }
@@ -162,7 +178,7 @@ const getEditQuery = (item) => {
 const getDetailRoute = (service, query = {}) => getDetailRouteLocation(service, query)
 
 const getCategoryLabel = (categoryId) =>
-  categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
+  categories.value.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
 
 const handleApplyPromotion = () => {
   const result = store.applyPromotionCode(promotionCode.value, subtotal.value)

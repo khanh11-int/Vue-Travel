@@ -119,11 +119,13 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { categories } from '@/data/mockData'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useAdminStore } from '@/stores/useAdminStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
-const store = useTravelStore()
+const store = useAdminStore()
+const contextStore = useTravelContextStore()
+const categories = computed(() => contextStore.state.categories)
 const filters = reactive({
   keyword: '',
   categoryId: '',
@@ -162,12 +164,12 @@ const packagesInput = ref('[]')
 const formError = ref('')
 
 const provinceOptions = computed(() =>
-  [...new Set(store.state.services.map((service) => service.province))].sort((left, right) => left.localeCompare(right, 'vi'))
+  [...new Set(contextStore.state.services.map((service) => service.province))].sort((left, right) => left.localeCompare(right, 'vi'))
 )
 
 const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
-  return store.state.services.filter((service) => {
+  return contextStore.state.services.filter((service) => {
     const matchesKeyword = !keyword || [service.name, service.destination, service.province]
       .join(' ')
       .toLowerCase()
@@ -180,7 +182,7 @@ const filteredServices = computed(() => {
 })
 
 const getCategoryLabel = (categoryId) =>
-  categories.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
+  categories.value.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
 
 const resetServiceForm = () => {
   Object.assign(serviceForm, defaultForm())

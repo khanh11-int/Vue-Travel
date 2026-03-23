@@ -29,12 +29,12 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useCatalogStore } from '@/stores/useCatalogStore'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
-const store = useTravelStore()
-const wishlistItems = computed(() => store.wishlistItems.value)
+const store = useCatalogStore()
+const wishlistItems = computed(() => store.wishlistItems)
 
 const handleBookNow = (service) => {
   router.push(getDetailRouteLocation(service, { guests: 1 }))

@@ -55,11 +55,11 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useBookingStore } from '@/stores/useBookingStore'
 import { formatCurrencyVND, formatDateVN, formatDateRangeVN } from '@/utils/formatters'
 
-const store = useTravelStore()
-const bookings = computed(() => store.bookingHistory.value)
+const store = useBookingStore()
+const bookings = computed(() => store.bookingHistory)
 const expandedBookingId = ref(null)
 
 const toggleExpandedBooking = (bookingId) => {

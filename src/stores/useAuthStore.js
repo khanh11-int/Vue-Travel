@@ -1,4 +1,5 @@
-import { computed, reactive, readonly } from 'vue'
+import { defineStore } from 'pinia'
+import { seedUsersIfEmpty, usersApi } from '@/services/api'
 
 const STORAGE_KEYS = {
   session: 'vietvoyage_session',
@@ -55,126 +56,176 @@ const persistStorage = (key, value) => {
   window.localStorage.setItem(key, JSON.stringify(value))
 }
 
-const state = reactive({
-  currentUser: null,
-  users: defaultUsers
-})
+const fireAndForget = (promiseFactory) => {
+  Promise.resolve()
+    .then(() => promiseFactory())
+    .catch(() => {})
+}
 
-const bootstrapState = () => {
-  if (typeof window === 'undefined') return
-  state.users = readStorage(STORAGE_KEYS.users, defaultUsers)
+const ensureUsersArray = (value) => (Array.isArray(value) ? value : [...defaultUsers])
 
+const resolveInitialUsers = () => ensureUsersArray(readStorage(STORAGE_KEYS.users, defaultUsers))
+
+const resolveInitialCurrentUser = (users) => {
+  const safeUsers = ensureUsersArray(users)
   const savedSession = readStorage(STORAGE_KEYS.session, null)
+
   if (savedSession?.user?.id) {
-    const matchedUser = state.users.find((entry) => entry.id === savedSession.user.id)
-    state.currentUser = toPublicUser(matchedUser || savedSession.user)
-    return
+    const matchedUser = safeUsers.find((entry) => entry.id === savedSession.user.id)
+    return toPublicUser(matchedUser || savedSession.user)
   }
 
   // Backward compatibility with old key.
-  state.currentUser = readStorage(STORAGE_KEYS.user, null)
+  return readStorage(STORAGE_KEYS.user, null)
 }
 
-bootstrapState()
-
-export const useAuthStore = () => {
-  const isLoggedIn = computed(() => Boolean(state.currentUser))
-  const isAdmin = computed(() => state.currentUser?.role === 'admin')
-
-  const syncUser = (user) => {
-    const publicUser = toPublicUser(user)
-    state.currentUser = publicUser
-    persistStorage(STORAGE_KEYS.user, publicUser)
-    persistStorage(STORAGE_KEYS.session, {
-      user: publicUser,
-      loginAt: new Date().toISOString()
-    })
-
-    window.dispatchEvent(new CustomEvent('vietvoyage:auth-changed', { detail: publicUser }))
-  }
-
-  const login = ({ email, password }) => {
-    const normalizedEmail = normalizeEmail(email)
-    const user = state.users.find((entry) => entry.email.toLowerCase() === normalizedEmail)
-
-    if (!user || user.password !== password) {
-      return {
-        success: false,
-        message: 'Email hoặc mật khẩu chưa đúng.'
-      }
-    }
-
-    syncUser(user)
-
+export const useAuthStore = defineStore('auth', {
+  state: () => {
+    const users = resolveInitialUsers()
     return {
-      success: true,
-      user: toPublicUser(user),
-      message: user.role === 'admin' ? 'Đăng nhập admin thành công.' : 'Đăng nhập thành công.'
+      state: {
+        currentUser: resolveInitialCurrentUser(users),
+        users
+      },
+      _bootstrapPromise: null
     }
-  }
+  },
 
-  const register = ({ fullName, email, password, phone = '', address = '' }) => {
-    const normalizedEmail = normalizeEmail(email)
-    const normalizedPhone = normalizePhone(phone)
+  getters: {
+    isLoggedIn(state) {
+      return Boolean(state.state.currentUser)
+    },
 
-    if (!normalizedEmail.endsWith('@gmail.com')) {
-      return {
-        success: false,
-        message: 'Email đăng ký phải có đuôi @gmail.com.'
+    isAdmin(state) {
+      return state.state.currentUser?.role === 'admin'
+    }
+  },
+
+  actions: {
+    persistUsers() {
+      persistStorage(STORAGE_KEYS.users, this.state.users)
+    },
+
+    async bootstrapState() {
+      if (this._bootstrapPromise) return this._bootstrapPromise
+
+      this._bootstrapPromise = (async () => {
+        try {
+          const apiUsers = await seedUsersIfEmpty(defaultUsers)
+          if (Array.isArray(apiUsers) && apiUsers.length > 0) {
+            this.state.users = ensureUsersArray(apiUsers)
+            this.persistUsers()
+          }
+        } catch (error) {
+          this.state.users = ensureUsersArray(this.state.users)
+          this.persistUsers()
+        }
+
+        if (this.state.currentUser?.id) {
+          const matchedUser = this.state.users.find((entry) => entry.id === this.state.currentUser.id)
+          if (matchedUser) {
+            this.state.currentUser = toPublicUser(matchedUser)
+            persistStorage(STORAGE_KEYS.user, this.state.currentUser)
+            persistStorage(STORAGE_KEYS.session, {
+              user: this.state.currentUser,
+              loginAt: new Date().toISOString()
+            })
+          }
+        }
+      })()
+
+      return this._bootstrapPromise
+    },
+
+    syncUser(user) {
+      const publicUser = toPublicUser(user)
+      this.state.currentUser = publicUser
+      persistStorage(STORAGE_KEYS.user, publicUser)
+      persistStorage(STORAGE_KEYS.session, {
+        user: publicUser,
+        loginAt: new Date().toISOString()
+      })
+
+      window.dispatchEvent(new CustomEvent('vietvoyage:auth-changed', { detail: publicUser }))
+    },
+
+    login({ email, password }) {
+      this.state.users = ensureUsersArray(this.state.users)
+      const normalizedEmail = normalizeEmail(email)
+      const user = this.state.users.find((entry) => entry.email.toLowerCase() === normalizedEmail)
+
+      if (!user || user.password !== password) {
+        return {
+          success: false,
+          message: 'Email hoặc mật khẩu chưa đúng.'
+        }
       }
-    }
 
-    const exists = state.users.some((entry) => entry.email.toLowerCase() === normalizedEmail)
+      this.syncUser(user)
 
-    if (exists) {
       return {
-        success: false,
-        message: 'Email này đã tồn tại, vui lòng dùng email khác.'
+        success: true,
+        user: toPublicUser(user),
+        message: user.role === 'admin' ? 'Đăng nhập admin thành công.' : 'Đăng nhập thành công.'
       }
-    }
+    },
 
-    const phoneExists = state.users.some((entry) => normalizePhone(entry.phone) === normalizedPhone)
-    if (phoneExists) {
+    register({ fullName, email, password, phone = '', address = '' }) {
+      this.state.users = ensureUsersArray(this.state.users)
+      const normalizedEmail = normalizeEmail(email)
+      const normalizedPhone = normalizePhone(phone)
+
+      if (!normalizedEmail.endsWith('@gmail.com')) {
+        return {
+          success: false,
+          message: 'Email đăng ký phải có đuôi @gmail.com.'
+        }
+      }
+
+      const exists = this.state.users.some((entry) => entry.email.toLowerCase() === normalizedEmail)
+
+      if (exists) {
+        return {
+          success: false,
+          message: 'Email này đã tồn tại, vui lòng dùng email khác.'
+        }
+      }
+
+      const phoneExists = this.state.users.some((entry) => normalizePhone(entry.phone) === normalizedPhone)
+      if (phoneExists) {
+        return {
+          success: false,
+          message: 'Số điện thoại này đã tồn tại, vui lòng dùng số khác.'
+        }
+      }
+
+      const newUser = {
+        id: Date.now(),
+        fullName,
+        email: normalizedEmail,
+        password,
+        role: 'customer',
+        phone: normalizedPhone,
+        address
+      }
+
+      this.state.users = [newUser, ...this.state.users]
+      this.persistUsers()
+      fireAndForget(() => usersApi.create(newUser))
+      this.syncUser(newUser)
+
       return {
-        success: false,
-        message: 'Số điện thoại này đã tồn tại, vui lòng dùng số khác.'
+        success: true,
+        user: toPublicUser(newUser),
+        message: 'Đăng ký thành công và đã đăng nhập.'
       }
-    }
+    },
 
-    const newUser = {
-      id: Date.now(),
-      fullName,
-      email: normalizedEmail,
-      password,
-      role: 'customer',
-      phone: normalizedPhone,
-      address
-    }
-
-    state.users = [newUser, ...state.users]
-    persistStorage(STORAGE_KEYS.users, state.users)
-    syncUser(newUser)
-
-    return {
-      success: true,
-      user: toPublicUser(newUser),
-      message: 'Đăng ký thành công và đã đăng nhập.'
+    logout() {
+      this.state.currentUser = null
+      window.localStorage.removeItem(STORAGE_KEYS.user)
+      window.localStorage.removeItem(STORAGE_KEYS.session)
+      window.dispatchEvent(new CustomEvent('vietvoyage:auth-changed', { detail: null }))
     }
   }
-
-  const logout = () => {
-    state.currentUser = null
-    window.localStorage.removeItem(STORAGE_KEYS.user)
-    window.localStorage.removeItem(STORAGE_KEYS.session)
-    window.dispatchEvent(new CustomEvent('vietvoyage:auth-changed', { detail: null }))
-  }
-
-  return {
-    state: readonly(state),
-    isLoggedIn,
-    isAdmin,
-    login,
-    register,
-    logout
-  }
-}
+})

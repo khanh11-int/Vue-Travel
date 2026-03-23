@@ -50,6 +50,45 @@
 </template>
 
 <script setup>
-import { adminSummary } from '@/data/mockData'
+import { computed } from 'vue'
+import { useBookingStore } from '@/stores/useBookingStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 import { formatCurrencyVND } from '@/utils/formatters'
+
+const contextStore = useTravelContextStore()
+const bookingStore = useBookingStore()
+
+const adminSummary = computed(() => {
+  const services = contextStore.state.services
+  const bookings = bookingStore.adminBookingHistory
+  const now = new Date()
+
+  const monthlyRevenue = bookings
+    .filter((booking) => {
+      const bookingDate = new Date(booking.createdAt)
+      return bookingDate.getFullYear() === now.getFullYear()
+        && bookingDate.getMonth() === now.getMonth()
+    })
+    .reduce((sum, booking) => sum + Number(booking.total || 0), 0)
+
+  const revenueSeries = Array.from({ length: 7 }, (_, index) => {
+    const target = new Date(now)
+    target.setDate(now.getDate() - (6 - index))
+    return bookings
+      .filter((booking) => {
+        const bookingDate = new Date(booking.createdAt)
+        return bookingDate.toDateString() === target.toDateString()
+      })
+      .reduce((sum, booking) => sum + Math.round(Number(booking.total || 0) / 100000), 0)
+  })
+
+  return {
+    totalServices: services.length,
+    totalBookings: bookings.length,
+    monthlyRevenue,
+    pendingBookings: bookings.filter((booking) => booking.status === 'pending').length,
+    lowStockServices: services.filter((service) => Number(service.availableSlots || 0) <= 5),
+    revenueSeries
+  }
+})
 </script>

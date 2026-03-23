@@ -74,8 +74,8 @@
           v-for="service in filteredServices"
           :key="service.id"
           :service="service"
-          :is-wishlisted="store.state.wishlist.includes(service.id)"
-          @toggle-wishlist="store.toggleWishlist"
+          :is-wishlisted="contextStore.state.wishlist.includes(service.id)"
+          @toggle-wishlist="catalogStore.toggleWishlist"
           @book-now="handleBookNow"
         />
       </div>
@@ -91,8 +91,9 @@
 import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { categories, destinations } from '@/data/mockData'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useCatalogStore } from '@/stores/useCatalogStore'
+import { useTravelCartStore } from '@/stores/useCartStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 import { serviceRequiresEndDate } from '@/utils/bookingRules'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 import {
@@ -105,7 +106,11 @@ import {
 
 const route = useRoute()
 const router = useRouter()
-const store = useTravelStore()
+const catalogStore = useCatalogStore()
+const cartStore = useTravelCartStore()
+const contextStore = useTravelContextStore()
+const categories = computed(() => contextStore.state.categories)
+const destinations = computed(() => contextStore.state.destinations)
 
 const createInitialFilters = () => ({
   keyword: route.query.destination || '',
@@ -142,7 +147,7 @@ const searchContextSummary = computed(() => resolveSearchSummary(route.query, se
 const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
 
-  const result = store.state.services.filter((service) => {
+  const result = contextStore.state.services.filter((service) => {
     const matchesKeyword = !keyword || [service.name, service.destination, service.province]
       .join(' ')
       .toLowerCase()
@@ -231,7 +236,7 @@ const handleBookNow = (service) => {
     return
   }
 
-  store.addToCart({
+  cartStore.addToCart({
     serviceId: service.id,
     quantity: defaultQuantity,
     bookingType: category,

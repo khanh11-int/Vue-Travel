@@ -49,9 +49,11 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useTravelStore } from '@/stores/useTravelStore'
+import { useAdminStore } from '@/stores/useAdminStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 
-const store = useTravelStore()
-const comments = computed(() => store.state.comments)
-const getServiceName = (serviceId) => store.state.services.find((service) => service.id === serviceId)?.name || 'Dịch vụ nội địa'
+const store = useAdminStore()
+const contextStore = useTravelContextStore()
+const comments = computed(() => contextStore.state.comments)
+const getServiceName = (serviceId) => contextStore.state.services.find((service) => service.id === serviceId)?.name || 'Dịch vụ nội địa'
 </script>

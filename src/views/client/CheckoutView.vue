@@ -89,25 +89,34 @@
 <script setup>
 import { computed, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { destinations } from '@/data/mockData'
-import { useTravelStore } from '@/stores/useTravelStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useBookingStore } from '@/stores/useBookingStore'
+import { useTravelCartStore } from '@/stores/useCartStore'
+import { useTravelContextStore } from '@/stores/useTravelContextStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
-const store = useTravelStore()
 const authStore = useAuthStore()
+const bookingStore = useBookingStore()
+const cartStore = useTravelCartStore()
+const contextStore = useTravelContextStore()
+const destinations = computed(() => contextStore.state.destinations)
 
-const cartItems = computed(() => store.cartItems.value)
+const cartItems = computed(() => cartStore.cartItems)
 const isDirectCheckout = computed(() => route.query.mode === 'direct')
+const directRequestedServiceId = computed(() => {
+  if (route.query.serviceId === undefined || route.query.serviceId === null) return ''
+  return String(route.query.serviceId)
+})
+
 const directCheckoutItem = computed(() => {
   if (!isDirectCheckout.value) return null
 
-  const serviceId = Number(route.query.serviceId)
-  const service = store.state.services.find((entry) => entry.id === serviceId)
+  const service = contextStore.state.services.find((entry) => String(entry.id) === directRequestedServiceId.value)
   if (!service) return null
+  const serviceId = service.id
 
   const bookingType = service.categoryId
   const quantity = bookingType === 'ticket'
@@ -176,16 +185,22 @@ const directCheckoutItem = computed(() => {
     quantity,
     startDate,
     endDate,
+    travelDate: startDate,
     bookingSummary,
     identityKey: `direct-${serviceId}-${startDate}-${endDate}-${quantity}`,
     lineTotal: (Number(bookingMeta.unitPrice || 0) || Number(service.salePrice || 0) || 0) * quantity
   }
 })
-const checkoutItems = computed(() => directCheckoutItem.value ? [directCheckoutItem.value] : cartItems.value)
+const checkoutItems = computed(() => {
+  if (isDirectCheckout.value) {
+    return directCheckoutItem.value ? [directCheckoutItem.value] : []
+  }
+  return cartItems.value
+})
 const subtotal = computed(() =>
   checkoutItems.value.reduce((acc, item) => acc + (item.lineTotal || 0), 0)
 )
-const discount = computed(() => isDirectCheckout.value ? 0 : store.calculatePromotionDiscount(subtotal.value))
+const discount = computed(() => isDirectCheckout.value ? 0 : cartStore.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
 const getSlotValidationError = (item) => {
@@ -248,6 +263,15 @@ const errors = reactive({
 })
 
 const validate = () => {
+  if (isDirectCheckout.value && !directCheckoutItem.value) {
+    errors.fullName = ''
+    errors.email = ''
+    errors.phone = ''
+    errors.city = ''
+    errors.cart = 'Không tìm thấy dịch vụ đặt ngay. Vui lòng quay lại trang chi tiết và thử lại.'
+    return false
+  }
+
   errors.fullName = form.fullName ? '' : 'Vui lòng nhập họ tên.'
   errors.email = /.+@.+\..+/.test(form.email) ? '' : 'Email không hợp lệ.'
   errors.phone = /^0\d{9,10}$/.test(form.phone) ? '' : 'Số điện thoại phải bắt đầu bằng 0 và có 10-11 số.'
@@ -260,17 +284,22 @@ const validate = () => {
 }
 
 const handleCheckout = () => {
-  if (!checkoutItems.value.length) return
+  if (!checkoutItems.value.length) {
+    errors.cart = isDirectCheckout.value
+      ? 'Không tìm thấy dịch vụ đặt ngay. Vui lòng quay lại trang chi tiết và thử lại.'
+      : 'Giỏ hàng đang trống.'
+    return
+  }
   if (!validate()) return
 
-  const booking = store.createBooking({
+  const booking = bookingStore.createBooking({
     customer: { ...form },
     items: checkoutItems.value,
     subtotal: subtotal.value,
     discount: discount.value,
     serviceFee: serviceFee.value,
     total: total.value,
-    promotion: isDirectCheckout.value ? null : store.state.appliedPromotion,
+    promotion: isDirectCheckout.value ? null : contextStore.state.appliedPromotion,
     clearCartAfterBooking: !isDirectCheckout.value,
     clearPromotionAfterBooking: !isDirectCheckout.value
   })
@@ -278,7 +307,6 @@ const handleCheckout = () => {
   router.push({ name: 'booking-success', query: { code: booking.code } })
 }
 
-// Auto-fill form data when user is logged in
 onMounted(() => {
   if (authStore.state.currentUser) {
     const user = authStore.state.currentUser

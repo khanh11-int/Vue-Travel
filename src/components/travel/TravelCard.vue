@@ -2,7 +2,7 @@
   <article class="travel-card">
     <div class="travel-card__image-wrapper">
       <img :src="service.image" :alt="service.name" class="travel-card__image" />
-      <button class="wishlist-button" type="button" @click="$emit('toggle-wishlist', service.id)">
+      <button :class="['wishlist-button', { 'wishlist-button--active': isWishlisted }]" type="button" @click="$emit('toggle-wishlist', service.id)">
         {{ isWishlisted ? '♥' : '♡' }}
       </button>
     </div>

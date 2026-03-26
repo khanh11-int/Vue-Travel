@@ -56,14 +56,6 @@
 
     <aside class="summary-card sticky-card">
       <p class="eyebrow">Tóm tắt booking</p>
-      <div class="field-group">
-        <label>Mã khuyến mãi</label>
-        <div class="voucher-row">
-          <input v-model="promotionCode" type="text" placeholder="Ví dụ: VTRAVEL10" />
-          <button class="secondary-button" type="button" @click="handleApplyPromotion">Áp dụng</button>
-        </div>
-        <small v-if="promotionFeedback" :class="promotionSuccess ? 'success-text' : 'error-text'">{{ promotionFeedback }}</small>
-      </div>
       <div class="summary-row">
         <span>Tạm tính</span>
         <strong>{{ formatCurrencyVND(subtotal) }}</strong>
@@ -96,9 +88,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/useCartStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
@@ -106,11 +99,9 @@ import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
 const store = useCartStore()
+const authStore = useAuthStore()
 const serviceStore = useServiceStore()
 const categories = computed(() => serviceStore.categories)
-const promotionCode = ref(store.appliedPromotion?.code || '')
-const promotionFeedback = ref('')
-const promotionSuccess = ref(false)
 
 const cartItems = computed(() => store.enrichedCartItems)
 const subtotal = computed(() => store.cartTotal)
@@ -119,6 +110,17 @@ const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
 const hasInvalidCartItems = computed(() =>
   cartItems.value.some((item) => isItemDateInvalid(item))
+)
+
+onMounted(() => {
+  store.syncUserScope()
+})
+
+watch(
+  () => authStore.currentUser?.id || null,
+  () => {
+    store.syncUserScope()
+  }
 )
 
 const isItemDateInvalid = (item) => {
@@ -179,14 +181,6 @@ const getDetailRoute = (service, query = {}) => getDetailRouteLocation(service, 
 
 const getCategoryLabel = (categoryId) =>
   categories.value.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
-
-const handleApplyPromotion = async () => {
-  const result = await store.applyPromotionCode(promotionCode.value, subtotal.value)
-  promotionSuccess.value = result.success
-  promotionFeedback.value = result.success
-    ? `Áp dụng thành công mã ${result.promotion.code}.`
-    : result.message
-}
 
 const handleProceedCheckout = () => {
   if (hasInvalidCartItems.value) return

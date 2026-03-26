@@ -26,16 +26,30 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
+
+onMounted(() => {
+  wishlistStore.syncUserScope()
+})
+
+watch(
+  () => authStore.currentUser?.id || null,
+  () => {
+    wishlistStore.syncUserScope()
+  }
+)
+
 const wishlistItems = computed(() => {
   const wishlistIds = Array.isArray(wishlistStore.wishlist) ? wishlistStore.wishlist : []
   return serviceStore.services.filter((service) => wishlistIds.some((id) => Number(id) === Number(service.id)))

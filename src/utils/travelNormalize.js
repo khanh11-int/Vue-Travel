@@ -1,10 +1,26 @@
 import { serviceRequiresEndDate } from '@/utils/bookingRules'
 
+/**
+ * Suy ra bookingType từ item hoặc fallback theo category của service.
+ * @param {Object} service - Service gốc.
+ * @param {Object|null} item - Item hiện tại có thể đã mang bookingType.
+ * @returns {string} Booking type hợp lệ.
+ */
 export const getBookingType = (service, item = null) => {
   if (item?.bookingType) return item.bookingType
   return service?.categoryId || 'hotel'
 }
 
+/**
+ * Chuẩn hóa cấu trúc bookingMeta theo từng loại dịch vụ để thống nhất dữ liệu lưu trữ.
+ * @param {Object} payload - Tham số đầu vào dùng để xây bookingMeta.
+ * @param {string} payload.bookingType - Loại booking.
+ * @param {string} payload.startDate - Ngày bắt đầu.
+ * @param {string} payload.endDate - Ngày kết thúc.
+ * @param {number} payload.quantity - Số lượng đặt.
+ * @param {Object} payload.bookingMeta - Metadata gốc từ UI.
+ * @returns {Object} Booking metadata đã chuẩn hóa.
+ */
 export const buildBookingMeta = ({ bookingType, startDate = '', endDate = '', quantity = 1, bookingMeta = {} }) => {
   const normalizedQuantity = Math.max(1, Number(quantity) || 1)
 
@@ -39,15 +55,20 @@ export const buildBookingMeta = ({ bookingType, startDate = '', endDate = '', qu
   }
 
   return {
-    packageId: bookingMeta.packageId || '',
     departureId: bookingMeta.departureId || '',
-    applyDate: bookingMeta.applyDate || startDate || '',
+    departureDate: bookingMeta.departureDate || startDate || '',
     travelers: Math.max(1, Number(bookingMeta.travelers ?? normalizedQuantity) || 1),
     durationLabel: bookingMeta.durationLabel || '',
     unitPrice: Number(bookingMeta.unitPrice || 0) || 0
   }
 }
 
+/**
+ * Trích xuất cặp ngày start/end từ bookingMeta theo từng bookingType.
+ * @param {string} bookingType - Loại booking.
+ * @param {Object} bookingMeta - Metadata đã chuẩn hóa.
+ * @returns {{startDate: string, endDate: string}} Khoảng ngày tương ứng.
+ */
 export const extractDateRangeFromBookingMeta = (bookingType, bookingMeta) => {
   if (bookingType === 'hotel') {
     return {
@@ -71,17 +92,28 @@ export const extractDateRangeFromBookingMeta = (bookingType, bookingMeta) => {
   }
 
   return {
-    startDate: bookingMeta.applyDate || '',
+    startDate: bookingMeta.departureDate || '',
     endDate: ''
   }
 }
 
+/**
+ * Trích xuất số lượng chính từ bookingMeta theo loại dịch vụ.
+ * @param {string} bookingType - Loại booking.
+ * @param {Object} bookingMeta - Metadata đã chuẩn hóa.
+ * @returns {number} Số lượng hợp lệ (>=1).
+ */
 export const extractQuantityFromBookingMeta = (bookingType, bookingMeta) => {
   if (bookingType === 'hotel') return Math.max(1, Number(bookingMeta.guests || 1) || 1)
   if (bookingType === 'ticket') return Math.max(1, Number(bookingMeta.ticketQuantity || 1) || 1)
   return Math.max(1, Number(bookingMeta.travelers || 1) || 1)
 }
 
+/**
+ * Chuẩn hóa cấu trúc service khi đọc từ storage để tránh thiếu field theo category.
+ * @param {Array<Object>} services - Danh sách service thô từ storage.
+ * @returns {Array<Object>} Danh sách service đã chuẩn hóa.
+ */
 export const normalizeServicesFromStorage = (services = []) => {
   if (!Array.isArray(services)) return []
 
@@ -92,19 +124,16 @@ export const normalizeServicesFromStorage = (services = []) => {
       nextService.departures = []
     }
 
-    if (nextService.categoryId === 'combo') {
-      if (!Array.isArray(nextService.packages)) {
-        nextService.packages = []
-      }
-      if (typeof nextService.isFixedSchedule !== 'boolean') {
-        nextService.isFixedSchedule = nextService.packages.length > 0
-      }
-    }
-
     return nextService
   })
 }
 
+/**
+ * Chuẩn hóa cart item từ dữ liệu cũ/mới về một schema đồng nhất cho xử lý nghiệp vụ.
+ * @param {Object} item - Cart item cần chuẩn hóa.
+ * @param {Array<Object>} services - Danh sách service để suy luận category/rules.
+ * @returns {Object} Cart item đã chuẩn hóa đầy đủ.
+ */
 export const normalizeCartItem = (item, services) => {
   const service = services.find((entry) => entry.id === item.serviceId)
   const bookingType = getBookingType(service, item)

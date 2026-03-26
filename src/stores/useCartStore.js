@@ -7,13 +7,33 @@ import { buildBookingMeta, extractDateRangeFromBookingMeta, getBookingType, norm
 import { getCartIdentity, buildBookingSummary, resolveItemMaxSlots } from '@/utils/travelCart'
 import { serviceRequiresEndDate } from '@/utils/bookingRules'
 
+/**
+ * Ép dữ liệu đầu vào về mảng để tránh lỗi khi đọc state/storage.
+ * @param {*} value - Giá trị đầu vào.
+ * @returns {Array} Mảng hợp lệ.
+ */
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
+/**
+ * So sánh service id theo dạng chuỗi để tránh sai khác kiểu dữ liệu.
+ * @param {number|string} left - Giá trị bên trái.
+ * @param {number|string} right - Giá trị bên phải.
+ * @returns {boolean} True nếu cùng id.
+ */
 const isSameServiceId = (left, right) => String(left) === String(right)
 
+/**
+ * Lấy user id đang đăng nhập, fallback guest khi chưa có session.
+ * @param {Object} authStore - Auth store instance.
+ * @returns {string} User id theo scope hiện tại.
+ */
 const resolveUserId = (authStore) => (authStore.currentUser?.id ? String(authStore.currentUser.id) : GUEST_SCOPE)
 
 export const useCartStore = defineStore('cart', {
+  /**
+   * Khởi tạo cart state theo user scope hiện tại từ storage.
+   * @returns {Object} Cart state ban đầu.
+   */
   state: () => {
     const authStore = useAuthStore()
     const currentUserId = resolveUserId(authStore)
@@ -28,6 +48,11 @@ export const useCartStore = defineStore('cart', {
   },
 
   getters: {
+    /**
+     * Chuẩn hóa item trong giỏ và bổ sung dữ liệu hiển thị (service, summary, lineTotal).
+     * @param {Object} state - Cart state hiện tại.
+     * @returns {Array<Object>} Danh sách item đã enrich cho UI.
+     */
     enrichedCartItems(state) {
       const cartItems = Array.isArray(state.cartItems) ? state.cartItems : []
       const serviceStore = useServiceStore()
@@ -52,10 +77,19 @@ export const useCartStore = defineStore('cart', {
       })
     },
 
+    /**
+     * Tính tổng tiền hàng trước giảm giá/phí dịch vụ.
+     * @returns {number} Tổng lineTotal của cart.
+     */
     cartTotal() {
       return this.enrichedCartItems.reduce((total, item) => total + item.lineTotal, 0)
     },
 
+    /**
+     * Tính tiền giảm giá theo loại khuyến mãi đang áp dụng.
+     * @param {Object} state - Cart state hiện tại.
+     * @returns {number} Số tiền giảm.
+     */
     discountAmount(state) {
       if (!state.appliedPromotion) return 0
       const promotion = state.appliedPromotion
@@ -65,12 +99,28 @@ export const useCartStore = defineStore('cart', {
       return promotion.value || 0
     },
 
+    /**
+     * Tính tổng cuối sau khi trừ khuyến mãi.
+     * @returns {number} Tổng thanh toán cuối (không âm).
+     */
     finalTotal() {
       return Math.max(0, this.cartTotal - this.discountAmount)
     }
   },
 
   actions: {
+    /**
+     * Đồng bộ scope công khai để view có thể gọi khi chuyển tài khoản.
+     * @returns {void}
+     */
+    syncUserScope() {
+      this._syncUserId()
+    },
+
+    /**
+     * Đồng bộ user scope của cart khi trạng thái đăng nhập thay đổi.
+     * @returns {void}
+     */
     _syncUserId() {
       const authStore = useAuthStore()
       const userId = resolveUserId(authStore)
@@ -80,6 +130,10 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    /**
+     * Nạp cart và khuyến mãi theo scoped key của user hiện tại.
+     * @returns {void}
+     */
     _loadCartForUser() {
       const scopedKey = getScopedKey(STORAGE_KEYS.cart, this._currentUserId)
       this.cartItems = ensureArray(readStorage(scopedKey, []))
@@ -88,11 +142,19 @@ export const useCartStore = defineStore('cart', {
       this.appliedPromotion = readStorage(promotionKey, null)
     },
 
+    /**
+     * Persist danh sách cart hiện tại theo user scope.
+     * @returns {void}
+     */
     _saveCart() {
       const scopedKey = getScopedKey(STORAGE_KEYS.cart, this._currentUserId)
       persistStorage(scopedKey, this.cartItems)
     },
 
+    /**
+     * Persist/xóa mã khuyến mãi theo user scope.
+     * @returns {void}
+     */
     _savePromotion() {
       const promotionKey = getScopedKey(STORAGE_KEYS.appliedPromotion, this._currentUserId)
       if (this.appliedPromotion) {
@@ -102,6 +164,11 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    /**
+     * Thêm item vào giỏ với chuẩn hóa bookingMeta và giới hạn theo slot còn lại.
+     * @param {Object} payload - Dữ liệu đặt chỗ từ UI/detail.
+     * @returns {void}
+     */
     addToCart({
       serviceId,
       quantity = 1,
@@ -175,6 +242,12 @@ export const useCartStore = defineStore('cart', {
       this.error = null
     },
 
+    /**
+     * Cập nhật số lượng item theo index, xóa item nếu số lượng về 0.
+     * @param {number} cartIndex - Vị trí item trong cart.
+     * @param {number|string} newQuantity - Số lượng mới.
+     * @returns {void}
+     */
     updateCartQuantity(cartIndex, newQuantity) {
       this._syncUserId()
 
@@ -191,6 +264,15 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    /**
+     * Xóa item khỏi giỏ (hỗ trợ cả mode theo index và mode theo identity cũ).
+     * @param {number|string} serviceIdOrIndex - Index hoặc service id.
+     * @param {string} startDate - Ngày bắt đầu identity mode.
+     * @param {string} endDate - Ngày kết thúc identity mode.
+     * @param {string} bookingType - Loại booking identity mode.
+     * @param {Object|null} bookingMeta - Meta identity mode.
+     * @returns {void}
+     */
     removeCartItem(serviceIdOrIndex, startDate = '', endDate = '', bookingType = '', bookingMeta = null) {
       this._syncUserId()
 
@@ -230,12 +312,22 @@ export const useCartStore = defineStore('cart', {
       this._saveCart()
     },
 
+    /**
+     * Xóa toàn bộ giỏ hàng của user hiện tại.
+     * @returns {void}
+     */
     clearCart() {
       this._syncUserId()
       this.cartItems = []
       this._saveCart()
     },
 
+    /**
+     * Áp mã khuyến mãi: nạp danh sách mã khi cần, kiểm tra điều kiện và lưu vào state.
+     * @param {string} code - Mã khuyến mãi từ người dùng.
+     * @param {number} subtotal - Tạm tính đơn hàng để check điều kiện mã.
+     * @returns {Promise<Object>} Kết quả áp mã với success/message/promotion.
+     */
     async applyPromotionCode(code, subtotal = 0) {
       this._syncUserId()
 
@@ -286,12 +378,21 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    /**
+     * Gỡ mã khuyến mãi hiện tại khỏi cart state.
+     * @returns {void}
+     */
     clearAppliedPromotion() {
       this._syncUserId()
       this.appliedPromotion = null
       this._savePromotion()
     },
 
+    /**
+     * Tính số tiền giảm theo mã đang áp dụng, dùng cho checkout summary.
+     * @param {number} subtotal - Tạm tính đơn hàng.
+     * @returns {number} Số tiền giảm cuối cùng.
+     */
     calculatePromotionDiscount(subtotal = this.cartTotal) {
       if (!this.appliedPromotion) return 0
       const { type, value } = this.appliedPromotion
@@ -301,6 +402,10 @@ export const useCartStore = defineStore('cart', {
       return Math.min(subtotal, value || 0)
     },
 
+    /**
+     * Xóa lỗi hiện tại của cart store.
+     * @returns {void}
+     */
     clearError() {
       this.error = null
     }

@@ -112,7 +112,16 @@ const wishlistStore = useWishlistStore()
 const categories = computed(() => serviceStore.categories)
 const destinations = computed(() => serviceStore.destinations)
 
-const isWishlisted = (serviceId) => wishlistStore.isInWishlist(serviceId)
+const isWishlisted = (serviceId) => {
+  const wishlist = Array.isArray(wishlistStore.wishlist) ? wishlistStore.wishlist : []
+  const numericServiceId = Number(serviceId)
+
+  if (!Number.isNaN(numericServiceId)) {
+    return wishlist.some((id) => Number(id) === numericServiceId)
+  }
+
+  return wishlist.some((id) => String(id) === String(serviceId))
+}
 const handleToggleWishlist = (serviceId) => {
   wishlistStore.toggleWishlist(serviceId)
 }
@@ -192,18 +201,13 @@ const handleBookNow = (service) => {
   const category = service.categoryId
   const defaultQuantity = Math.max(1, Number(selectedQuantity.value) || 1)
 
-  if (category === 'tour' || category === 'combo') {
+  if (category === 'tour') {
     router.push({
       ...getDetailRouteLocation(service),
-      query: category === 'tour'
-        ? {
-          departureDate: selectedStartDate.value || undefined,
-          travelers: defaultQuantity
-        }
-        : {
-          applyDate: selectedStartDate.value || undefined,
-          travelers: defaultQuantity
-        }
+      query: {
+        departureDate: selectedStartDate.value || undefined,
+        travelers: defaultQuantity
+      }
     })
     return
   }
@@ -232,9 +236,6 @@ const handleBookNow = (service) => {
     } else if (category === 'tour') {
       query.departureDate = selectedStartDate.value || undefined
       query.travelers = defaultQuantity
-    } else if (category === 'combo') {
-      query.applyDate = selectedStartDate.value || undefined
-      query.travelers = defaultQuantity
     }
 
     router.push(getDetailRouteLocation(service, query))
@@ -262,10 +263,7 @@ const handleBookNow = (service) => {
             departureDate: selectedStartDate.value,
             travelers: defaultQuantity
           }
-          : {
-            applyDate: selectedStartDate.value,
-            travelers: defaultQuantity
-          },
+          : {},
     startDate: selectedStartDate.value,
     endDate: requiresEndDate ? selectedEndDate.value : ''
   })

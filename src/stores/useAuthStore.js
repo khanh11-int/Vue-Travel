@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import {
   AUTH_CHANGED_EVENT,
   clearStoredAuthSession,
-  getLegacyAuthUser,
   getStoredAuthSession,
   getStoredAuthUsers,
   saveStoredAuthSession,
@@ -30,6 +29,11 @@ const defaultUsers = [
   }
 ]
 
+/**
+ * Chuyển user raw thành public user để không lộ password ra state/UI.
+ * @param {Object|null} user - User nguồn.
+ * @returns {Object|null} User public hoặc null.
+ */
 const toPublicUser = (user) => {
   if (!user) return null
   return {
@@ -42,10 +46,24 @@ const toPublicUser = (user) => {
   }
 }
 
+/**
+ * Đảm bảo danh sách user luôn là mảng hợp lệ.
+ * @param {*} value - Giá trị bất kỳ.
+ * @returns {Array<Object>} Danh sách user.
+ */
 const ensureUsersArray = (value) => (Array.isArray(value) ? value : [...defaultUsers])
 
+/**
+ * Lấy dữ liệu user ban đầu từ storage, có fallback mặc định.
+ * @returns {Array<Object>} Danh sách user ban đầu.
+ */
 const resolveInitialUsers = () => ensureUsersArray(getStoredAuthUsers(defaultUsers))
 
+/**
+ * Xác định người dùng hiện tại dựa trên session hoặc key legacy.
+ * @param {Array<Object>} users - Danh sách user hiện có.
+ * @returns {Object|null} User đang đăng nhập hoặc null.
+ */
 const resolveInitialCurrentUser = (users) => {
   const safeUsers = ensureUsersArray(users)
   const savedSession = getStoredAuthSession()
@@ -55,10 +73,15 @@ const resolveInitialCurrentUser = (users) => {
     return toPublicUser(matchedUser || savedSession.user)
   }
 
-  return getLegacyAuthUser()
+  // Không tự đăng nhập từ key legacy để tránh trạng thái "đã logout nhưng vẫn vào như đã login".
+  return null
 }
 
 export const useAuthStore = defineStore('auth', {
+  /**
+   * Khởi tạo auth state từ dữ liệu storage.
+   * @returns {Object} Auth state ban đầu.
+   */
   state: () => {
     const users = resolveInitialUsers()
     return {
@@ -70,16 +93,30 @@ export const useAuthStore = defineStore('auth', {
   },
 
   getters: {
+    /**
+     * Kiểm tra trạng thái đăng nhập hiện tại.
+     * @param {Object} state - Auth state hiện tại.
+     * @returns {boolean} True nếu đã đăng nhập.
+     */
     isLoggedIn(state) {
       return Boolean(state.currentUser)
     },
 
+    /**
+     * Kiểm tra user hiện tại có quyền admin hay không.
+     * @param {Object} state - Auth state hiện tại.
+     * @returns {boolean} True nếu role là admin.
+     */
     isAdmin(state) {
       return state.currentUser?.role === 'admin'
     }
   },
 
   actions: {
+    /**
+     * Nạp lại user/session từ storage để đồng bộ trạng thái auth lúc khởi động.
+     * @returns {Promise<boolean>} Luôn trả true khi hoàn tất.
+     */
     async bootstrapState() {
       const users = ensureUsersArray(getStoredAuthUsers(defaultUsers))
       this.users = users
@@ -87,6 +124,12 @@ export const useAuthStore = defineStore('auth', {
       return true
     },
 
+    /**
+     * Xử lý đăng nhập, lưu session và phát sự kiện auth-changed.
+     * @param {Object|string} emailOrPayload - Payload login hoặc email.
+     * @param {string} maybePassword - Mật khẩu khi truyền dạng tham số rời.
+     * @returns {Promise<Object>} Kết quả đăng nhập có success/message/user.
+     */
     async login(emailOrPayload, maybePassword) {
       this.loading = true
       this.error = null
@@ -122,6 +165,11 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /**
+     * Đăng ký tài khoản mới, tự đăng nhập và phát sự kiện auth-changed.
+     * @param {Object} payload - Dữ liệu đăng ký từ form.
+     * @returns {Promise<Object>} Kết quả đăng ký có success/message/user.
+     */
     async register(payload) {
       this.loading = true
       this.error = null
@@ -170,6 +218,10 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /**
+     * Đăng xuất: xóa user hiện tại, xóa session storage và phát sự kiện auth-changed.
+     * @returns {void}
+     */
     logout() {
       this.currentUser = null
       clearStoredAuthSession()
@@ -178,6 +230,10 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /**
+     * Xóa thông báo lỗi auth hiện tại.
+     * @returns {void}
+     */
     clearError() {
       this.error = null
     }

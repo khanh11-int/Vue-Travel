@@ -68,23 +68,6 @@
         </label>
       </template>
 
-      <template v-else>
-        <label class="ota-search-field">
-          <span class="ota-search-icon ota-search-icon--location" aria-hidden="true"></span>
-          <input v-model="comboForm.destination" type="text" placeholder="Điểm đến combo" />
-        </label>
-
-        <label class="ota-search-field">
-          <span class="ota-search-icon ota-search-icon--calendar" aria-hidden="true"></span>
-          <input v-model="comboForm.applyDate" :min="todayISO" type="date" />
-        </label>
-
-        <label class="ota-search-field ota-search-field--meta">
-          <span class="ota-search-icon ota-search-icon--users" aria-hidden="true"></span>
-          <input v-model.number="comboForm.travelers" type="number" min="1" max="20" placeholder="Số người" />
-        </label>
-      </template>
-
       <router-link :to="searchTarget" class="primary-button ota-search-cta">{{ searchButtonLabel }}</router-link>
     </div>
   </section>
@@ -174,8 +157,7 @@ const activeService = ref('hotel')
 const serviceTabs = [
   { id: 'hotel', label: 'Khách sạn' },
   { id: 'ticket', label: 'Vé tham quan' },
-  { id: 'tour', label: 'Tour' },
-  { id: 'combo', label: 'Combo' }
+  { id: 'tour', label: 'Tour' }
 ]
 
 const hotelForm = ref({
@@ -198,26 +180,29 @@ const tourForm = ref({
   travelers: 2
 })
 
-const comboForm = ref({
-  destination: '',
-  applyDate: '',
-  travelers: 2
-})
-
 const featuredServices = computed(() => (Array.isArray(serviceStore.featuredServices) ? serviceStore.featuredServices : []))
 const activePromotions = computed(() => (Array.isArray(serviceStore.activePromotions) ? serviceStore.activePromotions : []).slice(0, 3))
 const featuredDestinations = computed(() => (Array.isArray(serviceStore.destinations) ? serviceStore.destinations : []).slice(0, 6))
 
-const isWishlisted = (serviceId) => wishlistStore.isInWishlist(serviceId)
 const handleToggleWishlist = (serviceId) => {
   wishlistStore.toggleWishlist(serviceId)
+}
+
+const isWishlisted = (serviceId) => {
+  const wishlist = Array.isArray(wishlistStore.wishlist) ? wishlistStore.wishlist : []
+  const numericServiceId = Number(serviceId)
+
+  if (!Number.isNaN(numericServiceId)) {
+    return wishlist.some((id) => Number(id) === numericServiceId)
+  }
+
+  return wishlist.some((id) => String(id) === String(serviceId))
 }
 
 const searchButtonLabel = computed(() => {
   if (activeService.value === 'hotel') return 'Tìm khách sạn'
   if (activeService.value === 'ticket') return 'Tìm vé'
-  if (activeService.value === 'tour') return 'Tìm tour'
-  return 'Tìm combo'
+  return 'Tìm tour'
 })
 
 const searchTarget = computed(() => {
@@ -238,10 +223,6 @@ const searchTarget = computed(() => {
     if (tourForm.value.destination) query.set('destination', tourForm.value.destination)
     if (tourForm.value.departureDate) query.set('departureDate', tourForm.value.departureDate)
     query.set('travelers', String(Math.max(1, Number(tourForm.value.travelers) || 1)))
-  } else {
-    if (comboForm.value.destination) query.set('destination', comboForm.value.destination)
-    if (comboForm.value.applyDate) query.set('applyDate', comboForm.value.applyDate)
-    query.set('travelers', String(Math.max(1, Number(comboForm.value.travelers) || 1)))
   }
 
   return `/dich-vu?${query.toString()}`

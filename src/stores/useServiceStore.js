@@ -3,9 +3,18 @@ import { categoriesApi, commentsApi, destinationsApi, promotionsApi, servicesApi
 import { STORAGE_KEYS, readStorage, saveToStorage } from '@/utils/travelStorage'
 import { normalizeServicesFromStorage } from '@/utils/travelNormalize'
 
+/**
+ * Đảm bảo dữ liệu đầu vào luôn là mảng để tránh lỗi khi bind state/getter.
+ * @param {*} value - Giá trị bất kỳ.
+ * @returns {Array} Mảng hợp lệ.
+ */
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
 export const useServiceStore = defineStore('services', {
+  /**
+   * Khởi tạo state dịch vụ từ storage để có dữ liệu cache khi mở app.
+   * @returns {Object} Service state mặc định.
+   */
   state: () => ({
     services: normalizeServicesFromStorage(ensureArray(readStorage(STORAGE_KEYS.services, []))),
     categories: ensureArray(readStorage(STORAGE_KEYS.categories, [])),
@@ -18,11 +27,21 @@ export const useServiceStore = defineStore('services', {
   }),
 
   getters: {
+    /**
+     * Lọc danh sách dịch vụ nổi bật để render ở trang chủ.
+     * @param {Object} state - Service state hiện tại.
+     * @returns {Array<Object>} Danh sách dịch vụ featured.
+     */
     featuredServices(state) {
       const services = Array.isArray(state.services) ? state.services : []
       return services.filter((service) => service.featured)
     },
 
+    /**
+     * Lọc các khuyến mãi còn hiệu lực theo trạng thái active.
+     * @param {Object} state - Service state hiện tại.
+     * @returns {Array<Object>} Danh sách khuyến mãi active.
+     */
     activePromotions(state) {
       const promotions = Array.isArray(state.promotions) ? state.promotions : []
       return promotions.filter((promotion) => promotion.status === 'active')
@@ -30,31 +49,61 @@ export const useServiceStore = defineStore('services', {
   },
 
   actions: {
+    /**
+     * Cập nhật danh sách dịch vụ và persist xuống storage.
+     * @param {Array<Object>} services - Danh sách dịch vụ mới.
+     * @returns {void}
+     */
     setServices(services) {
       this.services = normalizeServicesFromStorage(ensureArray(services))
       saveToStorage(STORAGE_KEYS.services, this.services)
     },
 
+    /**
+     * Cập nhật danh mục dịch vụ và persist xuống storage.
+     * @param {Array<Object>} categories - Danh sách category.
+     * @returns {void}
+     */
     setCategories(categories) {
       this.categories = ensureArray(categories)
       saveToStorage(STORAGE_KEYS.categories, this.categories)
     },
 
+    /**
+     * Cập nhật điểm đến và persist xuống storage.
+     * @param {Array<Object>} destinations - Danh sách điểm đến.
+     * @returns {void}
+     */
     setDestinations(destinations) {
       this.destinations = ensureArray(destinations)
       saveToStorage(STORAGE_KEYS.destinations, this.destinations)
     },
 
+    /**
+     * Cập nhật bình luận và persist xuống storage.
+     * @param {Array<Object>} comments - Danh sách bình luận.
+     * @returns {void}
+     */
     setComments(comments) {
       this.comments = ensureArray(comments)
       saveToStorage(STORAGE_KEYS.comments, this.comments)
     },
 
+    /**
+     * Cập nhật khuyến mãi và persist xuống storage.
+     * @param {Array<Object>} promotions - Danh sách khuyến mãi.
+     * @returns {void}
+     */
     setPromotions(promotions) {
       this.promotions = ensureArray(promotions)
       saveToStorage(STORAGE_KEYS.promotions, this.promotions)
     },
 
+    /**
+     * Nạp đồng thời toàn bộ collection chính từ API để bootstrap dữ liệu app.
+     * Side effect: ghi dữ liệu vào state + localStorage và cập nhật loading/error.
+     * @returns {Promise<void>}
+     */
     async bootstrapServices() {
       this.loading = true
       this.error = null
@@ -80,6 +129,10 @@ export const useServiceStore = defineStore('services', {
       }
     },
 
+    /**
+     * Tải lại danh sách dịch vụ từ API.
+     * @returns {Promise<void>}
+     */
     async fetchServices() {
       this.loading = true
       this.error = null
@@ -95,6 +148,11 @@ export const useServiceStore = defineStore('services', {
       }
     },
 
+    /**
+     * Tải chi tiết dịch vụ theo id và gán vào serviceDetail.
+     * @param {number|string} id - Id dịch vụ cần lấy.
+     * @returns {Promise<void>}
+     */
     async fetchServiceById(id) {
       this.loading = true
       this.error = null
@@ -109,6 +167,10 @@ export const useServiceStore = defineStore('services', {
       }
     },
 
+    /**
+     * Tải danh mục từ API rồi đồng bộ về state.
+     * @returns {Promise<void>}
+     */
     async fetchCategories() {
       try {
         const data = await categoriesApi.getAll()
@@ -118,6 +180,10 @@ export const useServiceStore = defineStore('services', {
       }
     },
 
+    /**
+     * Tải danh sách điểm đến từ API rồi đồng bộ về state.
+     * @returns {Promise<void>}
+     */
     async fetchDestinations() {
       try {
         const data = await destinationsApi.getAll()
@@ -127,6 +193,10 @@ export const useServiceStore = defineStore('services', {
       }
     },
 
+    /**
+     * Tải danh sách bình luận từ API rồi đồng bộ về state.
+     * @returns {Promise<void>}
+     */
     async fetchComments() {
       try {
         const data = await commentsApi.getAll()
@@ -136,6 +206,10 @@ export const useServiceStore = defineStore('services', {
       }
     },
 
+    /**
+     * Tải danh sách khuyến mãi từ API rồi đồng bộ về state.
+     * @returns {Promise<void>}
+     */
     async fetchPromotions() {
       try {
         const data = await promotionsApi.getAll()
@@ -145,11 +219,21 @@ export const useServiceStore = defineStore('services', {
       }
     },
 
+    /**
+     * Tìm dịch vụ theo slug để dùng cho trang chi tiết.
+     * @param {string} slug - Slug dịch vụ.
+     * @returns {Object|undefined} Service tìm thấy.
+     */
     getServiceBySlug(slug) {
       const services = Array.isArray(this.services) ? this.services : []
       return services.find((service) => service.slug === slug)
     },
 
+    /**
+     * Trả danh sách bình luận hiển thị cho một dịch vụ, đã lọc visible và sắp xếp mới nhất.
+     * @param {number|string} serviceId - Id dịch vụ.
+     * @returns {Array<Object>} Danh sách bình luận hợp lệ.
+     */
     getCommentsByService(serviceId) {
       const comments = Array.isArray(this.comments) ? this.comments : []
       return comments
@@ -158,10 +242,18 @@ export const useServiceStore = defineStore('services', {
         .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
     },
 
+    /**
+     * Xóa dữ liệu chi tiết dịch vụ đang giữ trong state.
+     * @returns {void}
+     */
     clearServiceDetail() {
       this.serviceDetail = null
     },
 
+    /**
+     * Xóa trạng thái lỗi hiện tại của service store.
+     * @returns {void}
+     */
     clearError() {
       this.error = null
     }

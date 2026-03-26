@@ -1,3 +1,8 @@
+/**
+ * Tạo khóa định danh duy nhất cho item trong giỏ dựa trên loại booking và metadata.
+ * @param {Object} item - Cart item đã chuẩn hóa.
+ * @returns {string} Identity key dùng để gộp/tìm item trong cart.
+ */
 export const getCartIdentity = (item) => {
   const bookingType = item.bookingType || 'hotel'
   const startDate = item.startDate || item.travelDate || ''
@@ -13,13 +18,14 @@ export const getCartIdentity = (item) => {
     return `${bookingType}|${item.serviceId}|${startDate}|dep:${bookingMeta.departureId || ''}`
   }
 
-  if (bookingType === 'combo') {
-    return `${bookingType}|${item.serviceId}|${startDate}|pkg:${bookingMeta.packageId || ''}|dep:${bookingMeta.departureId || ''}`
-  }
-
   return `${bookingType}|${item.serviceId}|${startDate}`
 }
 
+/**
+ * Sinh chuỗi tóm tắt thông tin đặt chỗ để hiển thị trong card/cart/checkout.
+ * @param {Object} item - Cart item hoặc booking item.
+ * @returns {string} Chuỗi mô tả booking theo từng loại dịch vụ.
+ */
 export const buildBookingSummary = (item) => {
   const bookingType = item.bookingType || 'hotel'
   const meta = item.bookingMeta || {}
@@ -37,9 +43,15 @@ export const buildBookingSummary = (item) => {
     return `Khởi hành ${meta.departureDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.travelers || item.quantity} người`
   }
 
-  return `Áp dụng ${meta.applyDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.travelers || item.quantity} người`
+  return `Ngày bắt đầu ${item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${item.quantity || 1} người`
 }
 
+/**
+ * Xác định số chỗ tối đa có thể đặt cho item theo loại dịch vụ và lịch đã chọn.
+ * @param {Object} service - Service gốc.
+ * @param {Object} item - Item mang bookingType và bookingMeta.
+ * @returns {number} Số chỗ khả dụng cho item.
+ */
 export const resolveItemMaxSlots = (service, item) => {
   if (!service || !item) return 0
 
@@ -51,13 +63,6 @@ export const resolveItemMaxSlots = (service, item) => {
     if (!departureId) return Number(service.availableSlots || 0)
     const departure = (service.departures || []).find((entry) => entry.departureId === departureId)
     return Number(departure?.remainingSlots || 0)
-  }
-
-  if (bookingType === 'combo' && service.isFixedSchedule !== false) {
-    const packageId = bookingMeta.packageId
-    if (!packageId) return Number(service.availableSlots || 0)
-    const selectedPackage = (service.packages || []).find((entry) => entry.packageId === packageId)
-    return Number(selectedPackage?.remainingSlots || 0)
   }
 
   return Number(service.availableSlots || 0)

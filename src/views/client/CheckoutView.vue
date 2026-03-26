@@ -49,7 +49,46 @@
           <label>Ghi chú</label>
           <textarea v-model="form.note" rows="4" placeholder="Ví dụ: ưu tiên phòng tầng cao, hỗ trợ trẻ em..." />
         </div>
-      </form>
+
+        <div class="field-group">
+          <label>Mã khuyến mãi</label>
+          <p class="muted" style="font-size: 0.9rem; margin-bottom: 14px; margin-top: -8px;">Chọn hoặc nhập mã khuyến mãi để tiết kiệm</p>
+          
+          <div v-if="availablePromotions.length" class="promotions-list">
+            <div
+              v-for="promo in availablePromotions"
+              :key="promo.code"
+              class="promotion-card"
+              :class="{ active: appliedPromotion?.code === promo.code }"
+              @click="selectPromotion(promo)"
+            >
+              <div class="promo-badge">
+                <span v-if="promo.type === 'percentage' || promo.type === 'percent'">-{{ promo.value }}%</span>
+                <span v-else>{{ formatCurrencyVND(promo.value) }}</span>
+              </div>
+              <div class="promo-info">
+                <p class="promo-code">{{ promo.code }}</p>
+                <p class="promo-desc">{{ promo.description }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="appliedPromotion" class="applied-promo-tag">
+            ✓ Đã chọn: <strong>{{ appliedPromotion.code }}</strong>
+            <button type="button" @click="clearPromotion" class="clear-promo-btn">Xóa</button>
+          </div>
+
+          <div class="custom-voucher-row">
+            <input
+              v-model="customVoucherCode"
+              type="text"
+              placeholder="Hoặc nhập mã khác..."
+              @keyup.enter="handleApplyCustomVoucher"
+            />
+            <button class="secondary-button" type="button" @click="handleApplyCustomVoucher">Áp dụng</button>
+          </div>
+          <small v-if="voucherFeedback" :class="voucherSuccess ? 'success-text' : 'error-text'">{{ voucherFeedback }}</small>
+        </div>      </form>
     </div>
 
     <aside class="summary-card sticky-card">
@@ -87,8 +126,9 @@
 </template>
 
 <script setup>
-import { computed, reactive, onMounted } from 'vue'
+import { computed, reactive, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { promotionsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useBookingStore } from '@/stores/useBookingStore'
 import { useCartStore } from '@/stores/useCartStore'
@@ -200,7 +240,14 @@ const checkoutItems = computed(() => {
 const subtotal = computed(() =>
   checkoutItems.value.reduce((acc, item) => acc + (item.lineTotal || 0), 0)
 )
-const discount = computed(() => isDirectCheckout.value ? 0 : cartStore.calculatePromotionDiscount(subtotal.value))
+const discount = computed(() => {
+  if (!appliedPromotion.value) return 0
+  const { type, value } = appliedPromotion.value
+  if (type === 'percentage' || type === 'percent') {
+    return Math.round((subtotal.value * value) / 100)
+  }
+  return Math.min(subtotal.value, value || 0)
+})
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
 const getSlotValidationError = (item) => {
@@ -215,17 +262,6 @@ const getSlotValidationError = (item) => {
     const remaining = Number(departure.remainingSlots || 0)
     if (remaining < item.quantity) {
       return `Lịch tour chỉ còn ${remaining} chỗ, không đủ cho ${item.quantity} khách.`
-    }
-  }
-
-  if (bookingType === 'combo' && item.service?.isFixedSchedule !== false) {
-    const packageId = bookingMeta.packageId
-    if (!packageId) return 'Combo chưa chọn gói áp dụng hợp lệ.'
-    const pkg = (item.service?.packages || []).find((entry) => entry.packageId === packageId)
-    if (!pkg) return 'Gói combo đã hết hoặc không còn hiệu lực.'
-    const remaining = Number(pkg.remainingSlots || 0)
-    if (remaining < item.quantity) {
-      return `Gói combo chỉ còn ${remaining} suất, không đủ cho ${item.quantity} khách.`
     }
   }
 
@@ -261,6 +297,13 @@ const errors = reactive({
   city: '',
   cart: ''
 })
+
+// Voucher/promotion state
+const availablePromotions = ref([])
+const appliedPromotion = ref(null)
+const customVoucherCode = ref('')
+const voucherFeedback = ref('')
+const voucherSuccess = ref(false)
 
 const validate = () => {
   if (isDirectCheckout.value && !directCheckoutItem.value) {
@@ -299,7 +342,7 @@ const handleCheckout = () => {
     discount: discount.value,
     serviceFee: serviceFee.value,
     total: total.value,
-    promotion: isDirectCheckout.value ? null : cartStore.appliedPromotion,
+    promotion: appliedPromotion.value,
     clearCartAfterBooking: !isDirectCheckout.value,
     clearPromotionAfterBooking: !isDirectCheckout.value
   })
@@ -313,6 +356,98 @@ const handleCheckout = () => {
 }
 
 onMounted(() => {
+  
+  loadAvailablePromotions()
+})
+
+const loadAvailablePromotions = async () => {
+  try {
+    let promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
+    
+    if (!promotions.length) {
+      promotions = await promotionsApi.getAll()
+      if (Array.isArray(promotions)) {
+        serviceStore.promotions = promotions
+      }
+    }
+    
+    // Lọc các promotion active và sắp xếp theo discount cao nhất, lấy top 5
+    const active = Array.isArray(promotions)
+      ? promotions.filter((p) => p.status === 'active')
+      : []
+    
+    availablePromotions.value = active
+      .sort((a, b) => {
+        const aDiscount = a.type === 'percentage' || a.type === 'percent' ? a.value : a.value / 100000
+        const bDiscount = b.type === 'percentage' || b.type === 'percent' ? b.value : b.value / 100000
+        return bDiscount - aDiscount
+      })
+      .slice(0, 5)
+  } catch (error) {
+    console.error('Failed to load promotions:', error)
+  }
+}
+
+const selectPromotion = (promo) => {
+  appliedPromotion.value = promo
+  customVoucherCode.value = ''
+  voucherFeedback.value = ''
+}
+
+const clearPromotion = () => {
+  appliedPromotion.value = null
+  customVoucherCode.value = ''
+  voucherFeedback.value = ''
+}
+
+const handleApplyCustomVoucher = async () => {
+  voucherFeedback.value = ''
+  
+  if (!customVoucherCode.value.trim()) {
+    appliedPromotion.value = null
+    return
+  }
+  
+  try {
+    let promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
+    
+    if (!promotions.length) {
+      promotions = await promotionsApi.getAll()
+      if (Array.isArray(promotions)) {
+        serviceStore.promotions = promotions
+      }
+    }
+    
+    const found = Array.isArray(promotions)
+      ? promotions.find((p) => p.code.toUpperCase() === customVoucherCode.value.toUpperCase() && p.status === 'active')
+      : null
+    
+    if (!found) {
+      voucherSuccess.value = false
+      voucherFeedback.value = 'Mã khuyến mãi không hợp lệ hoặc đã hết hạn.'
+      appliedPromotion.value = null
+      return
+    }
+    
+    // Check điều kiện mã (ví dụ: giảm tối thiểu)
+    if (found.code === 'PHUQUOC500K' && subtotal.value < 5000000) {
+      voucherSuccess.value = false
+      voucherFeedback.value = 'Mã PHUQUOC500K chỉ áp dụng cho đơn từ 5.000.000 VND.'
+      appliedPromotion.value = null
+      return
+    }
+    
+    appliedPromotion.value = found
+    customVoucherCode.value = ''
+    voucherSuccess.value = true
+    voucherFeedback.value = `Áp dụng thành công mã ${found.code}`
+  } catch (error) {
+    voucherSuccess.value = false
+    voucherFeedback.value = 'Lỗi khi áp dụng mã khuyến mãi'
+  }
+}
+
+onMounted(() => {
   if (authStore.currentUser) {
     const user = authStore.currentUser
     form.fullName = user.fullName || ''
@@ -320,5 +455,7 @@ onMounted(() => {
     form.phone = user.phone || ''
     form.address = user.address || ''
   }
+  
+  loadAvailablePromotions()
 })
 </script>

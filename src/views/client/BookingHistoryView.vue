@@ -54,13 +54,27 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useBookingStore } from '@/stores/useBookingStore'
 import { formatCurrencyVND, formatDateVN, formatDateRangeVN } from '@/utils/formatters'
 
 const store = useBookingStore()
+const authStore = useAuthStore()
 const bookings = computed(() => store.bookingHistory)
 const expandedBookingId = ref(null)
+
+onMounted(() => {
+  store.syncUserScope()
+})
+
+watch(
+  () => authStore.currentUser?.id || null,
+  () => {
+    store.syncUserScope()
+    expandedBookingId.value = null
+  }
+)
 
 const toggleExpandedBooking = (bookingId) => {
   expandedBookingId.value = expandedBookingId.value === bookingId ? null : bookingId

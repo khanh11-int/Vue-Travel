@@ -4,15 +4,30 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { fireAndForget } from '@/utils/travelBooking'
 
+/**
+ * Chuyển giá trị bất kỳ về số hữu hạn, fallback khi dữ liệu nhập không hợp lệ.
+ * @param {*} value - Giá trị cần ép kiểu.
+ * @param {number} fallback - Giá trị mặc định khi ép kiểu thất bại.
+ * @returns {number} Số đã chuẩn hóa.
+ */
 const toNumber = (value, fallback = 0) => {
   const numericValue = Number(value)
   return Number.isFinite(numericValue) ? numericValue : fallback
 }
 
 export const useAdminStore = defineStore('travelAdmin', {
+  /**
+   * Store admin chỉ dùng action nên không cần state cục bộ.
+   * @returns {Object} State rỗng.
+   */
   state: () => ({}),
 
   actions: {
+    /**
+     * Tạo mới hoặc cập nhật dịch vụ và đồng bộ lên API theo chế độ nền.
+     * @param {Object} serviceInput - Dữ liệu dịch vụ từ form admin.
+     * @returns {void}
+     */
     saveService(serviceInput) {
       const serviceStore = useServiceStore()
       const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
@@ -41,6 +56,11 @@ export const useAdminStore = defineStore('travelAdmin', {
       }
     },
 
+    /**
+     * Đảo trạng thái active/inactive của dịch vụ và lưu lại.
+     * @param {number|string} serviceId - Id dịch vụ cần đổi trạng thái.
+     * @returns {void}
+     */
     toggleServiceStatus(serviceId) {
       const serviceStore = useServiceStore()
       const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
@@ -59,6 +79,11 @@ export const useAdminStore = defineStore('travelAdmin', {
       }
     },
 
+    /**
+     * Tạo mới hoặc cập nhật chương trình khuyến mãi theo mã code chuẩn hóa.
+     * @param {Object} promotionInput - Dữ liệu khuyến mãi từ form admin.
+     * @returns {void}
+     */
     savePromotion(promotionInput) {
       const serviceStore = useServiceStore()
       const promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
@@ -81,6 +106,11 @@ export const useAdminStore = defineStore('travelAdmin', {
       }
     },
 
+    /**
+     * Đảo trạng thái active/inactive của khuyến mãi.
+     * @param {number|string} promotionId - Id khuyến mãi.
+     * @returns {void}
+     */
     togglePromotionStatus(promotionId) {
       const serviceStore = useServiceStore()
       const promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
@@ -99,6 +129,11 @@ export const useAdminStore = defineStore('travelAdmin', {
       }
     },
 
+    /**
+     * Ẩn/hiện bình luận bằng cách toggle cờ visible.
+     * @param {number|string} commentId - Id bình luận.
+     * @returns {void}
+     */
     toggleCommentVisibility(commentId) {
       const serviceStore = useServiceStore()
       const comments = Array.isArray(serviceStore.comments) ? serviceStore.comments : []
@@ -117,6 +152,11 @@ export const useAdminStore = defineStore('travelAdmin', {
       }
     },
 
+    /**
+     * Xóa bình luận khỏi store và gửi yêu cầu xóa lên API.
+     * @param {number|string} commentId - Id bình luận cần xóa.
+     * @returns {void}
+     */
     deleteComment(commentId) {
       const serviceStore = useServiceStore()
       const comments = Array.isArray(serviceStore.comments) ? serviceStore.comments : []
@@ -125,6 +165,15 @@ export const useAdminStore = defineStore('travelAdmin', {
       fireAndForget(() => commentsApi.remove(commentId))
     },
 
+    /**
+     * Thêm bình luận mới, tự gán tên người dùng hiện tại nếu chưa truyền vào.
+     * @param {Object} payload - Thông tin bình luận.
+     * @param {number|string} payload.serviceId - Id dịch vụ.
+     * @param {string} payload.userName - Tên hiển thị người bình luận.
+     * @param {number|string} payload.rating - Điểm đánh giá.
+     * @param {string} payload.content - Nội dung bình luận.
+     * @returns {void}
+     */
     addComment({ serviceId, userName, rating, content }) {
       const serviceStore = useServiceStore()
       const comments = Array.isArray(serviceStore.comments) ? serviceStore.comments : []

@@ -8,8 +8,6 @@ import TicketSearchView from '@/views/client/ticket/TicketSearchView.vue'
 import TicketDetailView from '@/views/client/ticket/TicketDetailView.vue'
 import TourSearchView from '@/views/client/tour/TourSearchView.vue'
 import TourDetailView from '@/views/client/tour/TourDetailView.vue'
-import ComboSearchView from '@/views/client/combo/ComboSearchView.vue'
-import ComboDetailView from '@/views/client/combo/ComboDetailView.vue'
 import TravelListView from '@/views/client/TravelListView.vue'
 import WishlistView from '@/views/client/WishlistView.vue'
 import CartView from '@/views/client/CartView.vue'
@@ -79,19 +77,6 @@ const routes = [
         component: TourDetailView,
         props: true,
         meta: { title: 'Chi tiết tour' }
-      },
-      {
-        path: 'combo',
-        name: 'combo-search',
-        component: ComboSearchView,
-        meta: { title: 'Tìm combo du lịch' }
-      },
-      {
-        path: 'combo/:slug',
-        name: 'combo-detail',
-        component: ComboDetailView,
-        props: true,
-        meta: { title: 'Chi tiết combo' }
       },
       {
         path: 'wishlist',

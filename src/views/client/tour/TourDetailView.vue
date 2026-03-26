@@ -76,7 +76,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
 import { formatDateRangeVN, formatCurrencyVND } from '@/utils/formatters'
@@ -101,7 +101,7 @@ const tourDetailLogic = {
         : 'Theo chương trình'
 
       return {
-        id: departure.departureId,
+        id: String(departure.departureId || ''),
         startDate: departure.startDate,
         endDate: departure.endDate || departure.startDate,
         remainingSlots: Number(departure.remainingSlots || 0),
@@ -288,7 +288,7 @@ const increaseQuantity = () => {
 }
 
 const selectScheduleOption = (scheduleId) => {
-  bookingForm.selectedScheduleId = scheduleId
+  bookingForm.selectedScheduleId = String(scheduleId || '')
 }
 
 const toggleWishlist = () => {
@@ -308,7 +308,8 @@ const handleAddToCart = () => {
   bookingSuccess.value = 'Đã thêm dịch vụ vào giỏ đặt chỗ.'
 }
 
-const handleBookNow = () => {
+const handleBookNow = async () => {
+  await nextTick()
   if (!validateBookingInput()) return
   router.push({
     path: '/thanh-toan',
@@ -324,6 +325,7 @@ const handleBookNow = () => {
     }
   })
 }
+
 
 const submitComment = (payload) => {
   if (!service.value) return

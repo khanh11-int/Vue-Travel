@@ -42,26 +42,12 @@
         <input v-model="serviceForm.image" type="text" placeholder="URL ảnh đại diện" class="admin-form-span-2" />
         <textarea v-model="serviceForm.shortDescription" rows="3" placeholder="Mô tả ngắn" class="admin-form-span-2" />
 
-        <label v-if="serviceForm.categoryId === 'combo'" class="admin-form-span-2">
-          <input v-model="serviceForm.isFixedSchedule" type="checkbox" />
-          Combo theo lịch cố định
-        </label>
-
         <div v-if="serviceForm.categoryId === 'tour'" class="admin-form-span-2">
           <label>Lịch khởi hành (JSON Array)</label>
           <textarea
             v-model="departuresInput"
             rows="6"
             placeholder='[{"departureId":"T001-2026-07-20","startDate":"2026-07-20","endDate":"2026-07-22","durationDays":3,"durationNights":2,"remainingSlots":10}]'
-          />
-        </div>
-
-        <div v-if="serviceForm.categoryId === 'combo' && serviceForm.isFixedSchedule" class="admin-form-span-2">
-          <label>Gói combo (JSON Array)</label>
-          <textarea
-            v-model="packagesInput"
-            rows="6"
-            placeholder='[{"packageId":"C001-A","name":"Đợt A","applyFrom":"2026-07-01","applyTo":"2026-07-31","startDate":"2026-07-10","endDate":"2026-07-12","durationDays":3,"durationNights":2,"remainingSlots":8,"packagePrice":2990000}]'
           />
         </div>
 
@@ -152,15 +138,12 @@ const defaultForm = () => ({
   createdAt: new Date().toISOString(),
   featured: false,
   itinerary: [],
-  departures: [],
-  packages: [],
-  isFixedSchedule: false
+  departures: []
 })
 
 const serviceForm = reactive(defaultForm())
 const isEditing = ref(false)
 const departuresInput = ref('[]')
-const packagesInput = ref('[]')
 const formError = ref('')
 
 const provinceOptions = computed(() =>
@@ -187,7 +170,6 @@ const getCategoryLabel = (categoryId) =>
 const resetServiceForm = () => {
   Object.assign(serviceForm, defaultForm())
   departuresInput.value = '[]'
-  packagesInput.value = '[]'
   formError.value = ''
   isEditing.value = false
 }
@@ -202,12 +184,9 @@ const startEditService = (service) => {
     gallery: [...(service.gallery || [])],
     amenities: [...(service.amenities || [])],
     itinerary: [...(service.itinerary || [])],
-    departures: [...(service.departures || [])],
-    packages: [...(service.packages || [])],
-    isFixedSchedule: Boolean(service.isFixedSchedule)
+    departures: [...(service.departures || [])]
   })
   departuresInput.value = JSON.stringify(service.departures || [], null, 2)
-  packagesInput.value = JSON.stringify(service.packages || [], null, 2)
   formError.value = ''
   isEditing.value = true
 }
@@ -231,15 +210,10 @@ const handleSubmitService = () => {
   if (!serviceForm.name || !serviceForm.slug || !serviceForm.categoryId || !serviceForm.destination || !serviceForm.province) return
 
   let departures = [...(serviceForm.departures || [])]
-  let packages = [...(serviceForm.packages || [])]
 
   try {
     if (serviceForm.categoryId === 'tour') {
       departures = parseArrayField(departuresInput.value, 'Lịch khởi hành')
-    }
-
-    if (serviceForm.categoryId === 'combo' && serviceForm.isFixedSchedule) {
-      packages = parseArrayField(packagesInput.value, 'Gói combo')
     }
   } catch (error) {
     formError.value = error.message
@@ -253,9 +227,7 @@ const handleSubmitService = () => {
     amenities: serviceForm.amenities.length ? serviceForm.amenities : ['Hỗ trợ khách Việt', 'Xác nhận nhanh'],
     itinerary: serviceForm.itinerary.length ? serviceForm.itinerary : ['Lịch trình đang cập nhật'],
     description: serviceForm.description || serviceForm.shortDescription,
-    departures,
-    packages,
-    isFixedSchedule: serviceForm.categoryId === 'combo' ? Boolean(serviceForm.isFixedSchedule) : false
+    departures
   })
 
   resetServiceForm()

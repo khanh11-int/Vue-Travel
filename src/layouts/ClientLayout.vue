@@ -12,7 +12,7 @@
         </div>
 
         <div class="ota-nav-right">
-          <router-link to="/wishlist">Đã lưu <span class="nav-pill">{{ wishlistCount }}</span></router-link>
+          <router-link to="/wishlist">Yêu thích <span class="nav-pill">{{ wishlistCount }}</span></router-link>
           <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
           <router-link to="/lich-su-dat-cho">Đặt chỗ của tôi</router-link>
 

@@ -24,8 +24,7 @@ defineProps({
     default: () => [
       { id: 'hotel', label: 'Khách sạn', to: '/khach-san' },
       { id: 'ticket', label: 'Vé tham quan', to: '/ve-tham-quan' },
-      { id: 'tour', label: 'Tour', to: '/tour' },
-      { id: 'combo', label: 'Combo', to: '/combo' }
+      { id: 'tour', label: 'Tour', to: '/tour' }
     ]
   }
 })

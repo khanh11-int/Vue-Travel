@@ -17,12 +17,6 @@
       "name": "Vé tham quan",
       "description": "Vé vào cổng và trải nghiệm nổi bật",
       "status": "active"
-    },
-    {
-      "id": "combo",
-      "name": "Combo",
-      "description": "Combo khách sạn và trải nghiệm nội địa",
-      "status": "active"
     }
   ],
   "destinations": [
@@ -189,7 +183,7 @@
         "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=1200&q=80"
       ],
       "shortDescription": "Vé tham quan công viên chủ đề nổi tiếng tại Phú Quốc.",
-      "description": "Phù hợp cho gia đình và nhóm bạn với hàng loạt trò chơi, show diễn và công viên nước. Có thể kết hợp cùng safari hoặc combo nghỉ dưỡng.",
+      "description": "Phù hợp cho gia đình và nhóm bạn với hàng loạt trò chơi, show diễn và công viên nước. Có thể kết hợp cùng safari hoặc gói nghỉ dưỡng.",
       "amenities": [
         "Vé vào cổng",
         "Nhiều khu trò chơi",
@@ -201,64 +195,6 @@
         "Sử dụng trong ngày",
         "Áp dụng cho 1 khách",
         "Không hoàn hủy sau khi kích hoạt"
-      ]
-    },
-    {
-      "id": "104",
-      "name": "Combo Đà Lạt 3N2Đ Khách sạn + City Tour",
-      "slug": "combo-da-lat-3n2d-khach-san-city-tour",
-      "categoryId": "combo",
-      "destination": "Đà Lạt",
-      "province": "Lâm Đồng",
-      "price": 3650000,
-      "salePrice": 2990000,
-      "rating": 4.6,
-      "availableSlots": 16,
-      "isFixedSchedule": true,
-      "packages": [
-        {
-          "packageId": "C104-JUL-A",
-          "name": "Đợt tháng 7 (tuần 1)",
-          "applyFrom": "2026-07-01",
-          "applyTo": "2026-07-31",
-          "startDate": "2026-07-05",
-          "endDate": "2026-07-07",
-          "durationDays": 3,
-          "durationNights": 2,
-          "remainingSlots": 8,
-          "packagePrice": 2990000
-        },
-        {
-          "packageId": "C104-JUL-B",
-          "name": "Đợt tháng 7 (tuần 3)",
-          "applyFrom": "2026-07-01",
-          "applyTo": "2026-07-31",
-          "startDate": "2026-07-19",
-          "endDate": "2026-07-21",
-          "durationDays": 3,
-          "durationNights": 2,
-          "remainingSlots": 6,
-          "packagePrice": 3090000
-        }
-      ],
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Combo tiết kiệm cho kỳ nghỉ Đà Lạt mộng mơ.",
-      "description": "Bao gồm khách sạn trung tâm, bữa sáng và city tour các địa điểm nổi tiếng như Hồ Xuân Hương, Thiền Viện Trúc Lâm, đồi chè Cầu Đất.",
-      "amenities": [
-        "Khách sạn 3 sao",
-        "Bữa sáng",
-        "Xe tour tham quan"
-      ],
-      "createdAt": "2026-03-12T13:00:00Z",
-      "featured": true,
-      "itinerary": [
-        "Ngày 1: Nhận phòng",
-        "Ngày 2: City tour Đà Lạt",
-        "Ngày 3: Tự do mua sắm - trả phòng"
       ]
     },
     {
@@ -374,66 +310,6 @@
         "Sử dụng trong ngày",
         "Áp dụng cho 1 khách",
         "Không áp dụng hoàn tiền sau khi kích hoạt"
-      ]
-    },
-    {
-      "id": "108",
-      "name": "Combo nghỉ dưỡng Nha Trang 3N2Đ",
-      "slug": "combo-nghi-duong-nha-trang-3n2d",
-      "categoryId": "combo",
-      "destination": "Nha Trang",
-      "province": "Khánh Hòa",
-      "price": 4390000,
-      "salePrice": 3790000,
-      "rating": 4.7,
-      "availableSlots": 11,
-      "isFixedSchedule": true,
-      "packages": [
-        {
-          "packageId": "C108-AUG-A",
-          "name": "Đợt đầu tháng 8",
-          "applyFrom": "2026-08-01",
-          "applyTo": "2026-08-31",
-          "startDate": "2026-08-04",
-          "endDate": "2026-08-06",
-          "durationDays": 3,
-          "durationNights": 2,
-          "remainingSlots": 6,
-          "packagePrice": 3790000
-        },
-        {
-          "packageId": "C108-AUG-B",
-          "name": "Đợt giữa tháng 8",
-          "applyFrom": "2026-08-01",
-          "applyTo": "2026-08-31",
-          "startDate": "2026-08-18",
-          "endDate": "2026-08-20",
-          "durationDays": 3,
-          "durationNights": 2,
-          "remainingSlots": 5,
-          "packagePrice": 3890000
-        }
-      ],
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Combo khách sạn ven biển, buffet sáng và tour đảo mini tại Nha Trang.",
-      "description": "Lựa chọn phù hợp cho cặp đôi và gia đình muốn nghỉ dưỡng biển với chi phí tối ưu và trải nghiệm trọn gói.",
-      "amenities": [
-        "Khách sạn 4 sao",
-        "Buffet sáng",
-        "Đưa đón sân bay",
-        "Tour đảo mini"
-      ],
-      "createdAt": "2026-03-18T14:00:00Z",
-      "featured": true,
-      "itinerary": [
-        "Ngày 1: Nhận phòng",
-        "Ngày 2: Tour đảo mini",
-        "Ngày 3: Tự do tắm biển - trả phòng"
       ]
     },
     {
@@ -570,67 +446,6 @@
         "10:00 tham quan Bái Đính",
         "13:30 chèo thuyền Tràng An",
         "19:00 về lại Hà Nội"
-      ]
-    },
-    {
-      "id": "112",
-      "name": "Combo Phú Quốc 4N3Đ Resort + Grand World",
-      "slug": "combo-phu-quoc-4n3d-resort-grand-world",
-      "categoryId": "combo",
-      "destination": "Phú Quốc",
-      "province": "Kiên Giang",
-      "price": 6990000,
-      "salePrice": 5990000,
-      "rating": 4.8,
-      "availableSlots": 11,
-      "isFixedSchedule": true,
-      "packages": [
-        {
-          "packageId": "C112-AUG-A",
-          "name": "Đợt đầu tháng 8",
-          "applyFrom": "2026-08-01",
-          "applyTo": "2026-08-31",
-          "startDate": "2026-08-07",
-          "endDate": "2026-08-10",
-          "durationDays": 4,
-          "durationNights": 3,
-          "remainingSlots": 5,
-          "packagePrice": 5990000
-        },
-        {
-          "packageId": "C112-AUG-B",
-          "name": "Đợt cuối tháng 8",
-          "applyFrom": "2026-08-01",
-          "applyTo": "2026-08-31",
-          "startDate": "2026-08-22",
-          "endDate": "2026-08-25",
-          "durationDays": 4,
-          "durationNights": 3,
-          "remainingSlots": 6,
-          "packagePrice": 6190000
-        }
-      ],
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Combo nghỉ dưỡng biển dài ngày kèm vé tham quan Grand World Phú Quốc.",
-      "description": "Phù hợp cho cặp đôi và gia đình muốn ở resort ven biển, tặng xe đón sân bay và một buổi khám phá Grand World về đêm.",
-      "amenities": [
-        "Resort 4 sao",
-        "Đưa đón sân bay",
-        "Buffet sáng",
-        "Vé Grand World"
-      ],
-      "createdAt": "2026-03-20T10:00:00Z",
-      "featured": true,
-      "itinerary": [
-        "Ngày 1: Đón sân bay - nhận phòng",
-        "Ngày 2: Tự do tắm biển",
-        "Ngày 3: Grand World Phú Quốc",
-        "Ngày 4: Trả phòng"
       ]
     },
     {
@@ -784,67 +599,6 @@
       ]
     },
     {
-      "id": "117",
-      "name": "Combo Sapa 3N2Đ khách sạn + xe cabin đôi",
-      "slug": "combo-sapa-3n2d-khach-san-xe-cabin-doi",
-      "categoryId": "combo",
-      "destination": "Sapa",
-      "province": "Lào Cai",
-      "price": 3950000,
-      "salePrice": 3350000,
-      "rating": 4.6,
-      "availableSlots": 15,
-      "isFixedSchedule": true,
-      "packages": [
-        {
-          "packageId": "C117-SEP-A",
-          "name": "Đợt đầu tháng 9",
-          "applyFrom": "2026-09-01",
-          "applyTo": "2026-09-30",
-          "startDate": "2026-09-05",
-          "endDate": "2026-09-07",
-          "durationDays": 3,
-          "durationNights": 2,
-          "remainingSlots": 7,
-          "packagePrice": 3350000
-        },
-        {
-          "packageId": "C117-SEP-B",
-          "name": "Đợt giữa tháng 9",
-          "applyFrom": "2026-09-01",
-          "applyTo": "2026-09-30",
-          "startDate": "2026-09-16",
-          "endDate": "2026-09-18",
-          "durationDays": 3,
-          "durationNights": 2,
-          "remainingSlots": 8,
-          "packagePrice": 3450000
-        }
-      ],
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1504457047772-27faf1c00561?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Combo tiện lợi cho chuyến đi Sapa tự túc với xe cabin đôi và khách sạn trung tâm.",
-      "description": "Phù hợp cho nhóm bạn trẻ hoặc cặp đôi, đã bao gồm xe khứ hồi, 2 đêm khách sạn và gợi ý lịch trình check-in bản Cát Cát, nhà thờ đá, Fansipan.",
-      "amenities": [
-        "Xe cabin đôi khứ hồi",
-        "Khách sạn 3 sao",
-        "Ăn sáng",
-        "Hỗ trợ giữ hành lý"
-      ],
-      "createdAt": "2026-03-21T10:30:00Z",
-      "featured": true,
-      "itinerary": [
-        "Đêm 1: Khởi hành từ Hà Nội",
-        "Ngày 1: Nhận phòng - bản Cát Cát",
-        "Ngày 2: Fansipan tự túc",
-        "Ngày 3: Tự do mua sắm - về Hà Nội"
-      ]
-    },
-    {
       "id": "118",
       "name": "Khách sạn boutique Cần Thơ bến Ninh Kiều",
       "slug": "khach-san-boutique-can-tho-ben-ninh-kieu",
@@ -902,7 +656,7 @@
       "serviceId": 108,
       "userName": "Lê Thu Trang",
       "rating": 5,
-      "content": "Combo Nha Trang rất đáng tiền, phòng đẹp và tour đảo tổ chức chuyên nghiệp.",
+      "content": "Kỳ nghỉ Nha Trang rất đáng tiền, phòng đẹp và tour đảo tổ chức chuyên nghiệp.",
       "createdAt": "2026-03-18T16:20:00Z",
       "visible": true
     }
@@ -959,213 +713,6 @@
       "address": "Cầu Giấy, Hà Nội"
     }
   ],
-  "bookings": [
-    {
-      "id": "-gHN3taNQiE",
-      "code": "VV301013",
-      "customer": {
-        "fullName": "Khách du lịch Việt",
-        "email": "user@vtravel.vn",
-        "phone": "0987654321",
-        "city": "Hà Nội",
-        "address": "Cầu Giấy, Hà Nội",
-        "note": ""
-      },
-      "items": [
-        {
-          "serviceId": "112",
-          "bookingType": "combo",
-          "bookingMeta": {
-            "applyDate": "2026-08-07",
-            "packageId": "C112-AUG-A",
-            "departureId": "",
-            "travelers": 2,
-            "durationLabel": "4N3Đ",
-            "unitPrice": 5990000
-          },
-          "service": {
-            "id": "112",
-            "name": "Combo Phú Quốc 4N3Đ Resort + Grand World",
-            "slug": "combo-phu-quoc-4n3d-resort-grand-world",
-            "categoryId": "combo",
-            "destination": "Phú Quốc",
-            "province": "Kiên Giang",
-            "price": 6990000,
-            "salePrice": 5990000,
-            "rating": 4.8,
-            "availableSlots": 13,
-            "isFixedSchedule": true,
-            "packages": [
-              {
-                "packageId": "C112-AUG-A",
-                "name": "Đợt đầu tháng 8",
-                "applyFrom": "2026-08-01",
-                "applyTo": "2026-08-31",
-                "startDate": "2026-08-07",
-                "endDate": "2026-08-10",
-                "durationDays": 4,
-                "durationNights": 3,
-                "remainingSlots": 7,
-                "packagePrice": 5990000
-              },
-              {
-                "packageId": "C112-AUG-B",
-                "name": "Đợt cuối tháng 8",
-                "applyFrom": "2026-08-01",
-                "applyTo": "2026-08-31",
-                "startDate": "2026-08-22",
-                "endDate": "2026-08-25",
-                "durationDays": 4,
-                "durationNights": 3,
-                "remainingSlots": 6,
-                "packagePrice": 6190000
-              }
-            ],
-            "status": "active",
-            "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80",
-            "gallery": [
-              "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-              "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80"
-            ],
-            "shortDescription": "Combo nghỉ dưỡng biển dài ngày kèm vé tham quan Grand World Phú Quốc.",
-            "description": "Phù hợp cho cặp đôi và gia đình muốn ở resort ven biển, tặng xe đón sân bay và một buổi khám phá Grand World về đêm.",
-            "amenities": [
-              "Resort 4 sao",
-              "Đưa đón sân bay",
-              "Buffet sáng",
-              "Vé Grand World"
-            ],
-            "createdAt": "2026-03-20T10:00:00Z",
-            "featured": true,
-            "itinerary": [
-              "Ngày 1: Đón sân bay - nhận phòng",
-              "Ngày 2: Tự do tắm biển",
-              "Ngày 3: Grand World Phú Quốc",
-              "Ngày 4: Trả phòng"
-            ]
-          },
-          "quantity": 2,
-          "startDate": "2026-08-07",
-          "endDate": "",
-          "travelDate": "2026-08-07",
-          "bookingSummary": "Áp dụng 2026-08-07 · 4N3Đ · 2 người",
-          "identityKey": "direct-112-2026-08-07--2",
-          "lineTotal": 11980000
-        }
-      ],
-      "subtotal": 11980000,
-      "discount": 0,
-      "serviceFee": 50000,
-      "total": 12030000,
-      "promotion": null,
-      "status": "pending",
-      "statusLabel": "Chờ xác nhận",
-      "createdAt": "2026-03-23T05:38:21.013Z",
-      "visible": true
-    },
-    {
-      "id": "-Qbl7VAB7c4",
-      "code": "VV543009",
-      "customer": {
-        "fullName": "Khách du lịch Việt",
-        "email": "user@vtravel.vn",
-        "phone": "0987654321",
-        "city": "Hà Nội",
-        "address": "Cầu Giấy, Hà Nội",
-        "note": ""
-      },
-      "items": [
-        {
-          "serviceId": "117",
-          "bookingType": "combo",
-          "bookingMeta": {
-            "applyDate": "2026-09-05",
-            "packageId": "C117-SEP-A",
-            "departureId": "",
-            "travelers": 2,
-            "durationLabel": "3N2Đ",
-            "unitPrice": 3350000
-          },
-          "service": {
-            "id": "117",
-            "name": "Combo Sapa 3N2Đ khách sạn + xe cabin đôi",
-            "slug": "combo-sapa-3n2d-khach-san-xe-cabin-doi",
-            "categoryId": "combo",
-            "destination": "Sapa",
-            "province": "Lào Cai",
-            "price": 3950000,
-            "salePrice": 3350000,
-            "rating": 4.6,
-            "availableSlots": 17,
-            "isFixedSchedule": true,
-            "packages": [
-              {
-                "packageId": "C117-SEP-A",
-                "name": "Đợt đầu tháng 9",
-                "applyFrom": "2026-09-01",
-                "applyTo": "2026-09-30",
-                "startDate": "2026-09-05",
-                "endDate": "2026-09-07",
-                "durationDays": 3,
-                "durationNights": 2,
-                "remainingSlots": 9,
-                "packagePrice": 3350000
-              },
-              {
-                "packageId": "C117-SEP-B",
-                "name": "Đợt giữa tháng 9",
-                "applyFrom": "2026-09-01",
-                "applyTo": "2026-09-30",
-                "startDate": "2026-09-16",
-                "endDate": "2026-09-18",
-                "durationDays": 3,
-                "durationNights": 2,
-                "remainingSlots": 8,
-                "packagePrice": 3450000
-              }
-            ],
-            "status": "active",
-            "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
-            "gallery": [
-              "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
-              "https://images.unsplash.com/photo-1504457047772-27faf1c00561?auto=format&fit=crop&w=1200&q=80"
-            ],
-            "shortDescription": "Combo tiện lợi cho chuyến đi Sapa tự túc với xe cabin đôi và khách sạn trung tâm.",
-            "description": "Phù hợp cho nhóm bạn trẻ hoặc cặp đôi, đã bao gồm xe khứ hồi, 2 đêm khách sạn và gợi ý lịch trình check-in bản Cát Cát, nhà thờ đá, Fansipan.",
-            "amenities": [
-              "Xe cabin đôi khứ hồi",
-              "Khách sạn 3 sao",
-              "Ăn sáng",
-              "Hỗ trợ giữ hành lý"
-            ],
-            "createdAt": "2026-03-21T10:30:00Z",
-            "featured": true,
-            "itinerary": [
-              "Đêm 1: Khởi hành từ Hà Nội",
-              "Ngày 1: Nhận phòng - bản Cát Cát",
-              "Ngày 2: Fansipan tự túc",
-              "Ngày 3: Tự do mua sắm - về Hà Nội"
-            ]
-          },
-          "quantity": 2,
-          "startDate": "2026-09-05",
-          "endDate": "",
-          "travelDate": "2026-09-05",
-          "bookingSummary": "Áp dụng 2026-09-05 · 3N2Đ · 2 người",
-          "identityKey": "direct-117-2026-09-05--2",
-          "lineTotal": 6700000
-        }
-      ],
-      "subtotal": 6700000,
-      "discount": 0,
-      "serviceFee": 50000,
-      "total": 6750000,
-      "promotion": null,
-      "status": "pending",
-      "statusLabel": "Chờ xác nhận",
-      "createdAt": "2026-03-23T05:42:23.009Z",
-      "visible": true
-    }
-  ],
+  "bookings": [],
   "$schema": "./node_modules/json-server/schema.json"
 }

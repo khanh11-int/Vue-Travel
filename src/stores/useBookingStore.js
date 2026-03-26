@@ -18,35 +18,86 @@ import {
   readStorage
 } from '@/utils/travelStorage'
 
+/**
+ * Ép dữ liệu bất kỳ về mảng để giảm xử lý null/undefined ở các bước sau.
+ * @param {*} value - Giá trị đầu vào.
+ * @returns {Array} Mảng hợp lệ.
+ */
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
+
+/**
+ * Trả về key storage dùng lưu danh sách booking toàn hệ thống.
+ * @returns {string} Storage key cho all bookings.
+ */
 const resolveAllBookingsStorageKey = () => STORAGE_KEYS.bookings
 
+/**
+ * Suy ra owner id của booking từ payload customer, fallback guest khi thiếu.
+ * @param {Object} booking - Booking cần xác định owner.
+ * @returns {string} User id sở hữu booking hoặc guest.
+ */
 const resolveBookingOwnerId = (booking) => {
   const customerId = booking?.customer?.id ?? booking?.customer?.userId
   return customerId ? String(customerId) : GUEST_SCOPE
 }
 
+/**
+ * Lấy currentUser từ auth store theo cách an toàn.
+ * @param {Object} authStore - Auth store instance.
+ * @returns {Object|null} User hiện tại hoặc null.
+ */
 const resolveCurrentUser = (authStore) => authStore?.currentUser || null
 
+/**
+ * Trả về user id hiện tại, fallback từ storage session khi chưa có user trong state.
+ * @param {Object} authStore - Auth store instance.
+ * @returns {string} User id hiện tại.
+ */
 const resolveCurrentUserId = (authStore) => {
   const currentUser = resolveCurrentUser(authStore)
   if (currentUser?.id) return String(currentUser.id)
   return getActiveUserId()
 }
 
+/**
+ * Đọc lịch sử booking theo scoped user từ storage.
+ * @param {string} userId - User id cần đọc.
+ * @returns {Array<Object>} Danh sách booking theo user.
+ */
 const readUserScopedBookings = (userId) =>
   ensureArray(readStorage(getScopedKey(STORAGE_KEYS.bookings, userId), []))
 
+/**
+ * Persist lịch sử booking theo scoped user.
+ * @param {string} userId - User id cần lưu.
+ * @param {Array<Object>} bookings - Danh sách booking cần ghi.
+ * @returns {void}
+ */
 const persistUserScopedBookings = (userId, bookings) => {
   persistStorage(getScopedKey(STORAGE_KEYS.bookings, userId), ensureArray(bookings))
 }
 
+/**
+ * Đọc danh sách booking toàn hệ thống từ storage.
+ * @returns {Array<Object>} Danh sách all bookings.
+ */
 const readAllBookings = () => ensureArray(readStorage(resolveAllBookingsStorageKey(), []))
 
+/**
+ * Persist danh sách booking toàn hệ thống.
+ * @param {Array<Object>} bookings - Danh sách booking cần lưu.
+ * @returns {void}
+ */
 const persistAllBookings = (bookings) => {
   persistStorage(resolveAllBookingsStorageKey(), ensureArray(bookings))
 }
 
+/**
+ * Cập nhật đồng thời status và statusLabel của booking.
+ * @param {Object} booking - Booking hiện tại.
+ * @param {string} status - Trạng thái mới.
+ * @returns {Object} Booking sau khi cập nhật trạng thái.
+ */
 const updateBookingStatusLabel = (booking, status) => ({
   ...booking,
   status,
@@ -54,6 +105,10 @@ const updateBookingStatusLabel = (booking, status) => ({
 })
 
 export const useBookingStore = defineStore('travelBooking', {
+  /**
+   * Khởi tạo booking state theo user scope hiện tại và dữ liệu all bookings.
+   * @returns {Object} Booking state ban đầu.
+   */
   state: () => {
     const authStore = useAuthStore()
     const currentUserId = resolveCurrentUserId(authStore)
@@ -67,16 +122,30 @@ export const useBookingStore = defineStore('travelBooking', {
   },
 
   getters: {
+    /**
+     * Trả lịch sử booking của user hiện tại theo thứ tự mới nhất trước.
+     * @param {Object} state - Booking state.
+     * @returns {Array<Object>} Booking history của user.
+     */
     bookingHistory(state) {
       return sortByCreatedAtDesc(state.bookings)
     },
 
+    /**
+     * Trả lịch sử booking toàn hệ thống theo thứ tự mới nhất trước.
+     * @param {Object} state - Booking state.
+     * @returns {Array<Object>} Lịch sử booking cho admin.
+     */
     adminBookingHistory(state) {
       return sortByCreatedAtDesc(state.allBookings)
     }
   },
 
   actions: {
+    /**
+     * Đồng bộ lại lịch sử booking theo user scope hiện tại.
+     * @returns {string} User id đang active sau khi sync.
+     */
     syncUserScope() {
       const authStore = useAuthStore()
       const currentUserId = resolveCurrentUserId(authStore)
@@ -84,6 +153,12 @@ export const useBookingStore = defineStore('travelBooking', {
       return currentUserId
     },
 
+    /**
+     * Tạo booking mới, trừ slot dịch vụ liên quan, lưu cả scoped + global booking.
+     * Side effect: cập nhật service store, ghi localStorage, gọi API nền.
+     * @param {Object} payload - Dữ liệu checkout cần tạo booking.
+     * @returns {Object} Booking vừa tạo.
+     */
     createBooking({
       customer,
       items,
@@ -152,6 +227,10 @@ export const useBookingStore = defineStore('travelBooking', {
       return booking
     },
 
+    /**
+     * Tải booking của user hiện tại từ API, fallback sang storage khi lỗi mạng.
+     * @returns {Promise<void>}
+     */
     async fetchMyBookings() {
       this.loading = true
       this.error = null
@@ -187,6 +266,10 @@ export const useBookingStore = defineStore('travelBooking', {
       }
     },
 
+    /**
+     * Tải booking toàn hệ thống từ API cho màn admin, fallback storage khi lỗi.
+     * @returns {Promise<void>}
+     */
     async fetchAllBookings() {
       this.loading = true
       this.error = null
@@ -210,6 +293,13 @@ export const useBookingStore = defineStore('travelBooking', {
       }
     },
 
+    /**
+     * Cập nhật trạng thái booking và hoàn slot về dịch vụ nếu chuyển sang cancelled.
+     * Side effect: ghi lại scoped/global storage và đồng bộ API nền.
+     * @param {number|string} bookingId - Id booking cần cập nhật.
+     * @param {string} status - Trạng thái mới.
+     * @returns {void}
+     */
     updateBookingStatus(bookingId, status) {
       const currentUserId = this.syncUserScope()
 
@@ -258,6 +348,11 @@ export const useBookingStore = defineStore('travelBooking', {
       }
     },
 
+    /**
+     * Shortcut hủy booking bằng cách cập nhật trạng thái cancelled.
+     * @param {number|string} bookingId - Id booking cần hủy.
+     * @returns {void}
+     */
     cancelBooking(bookingId) {
       this.updateBookingStatus(bookingId, 'cancelled')
     }

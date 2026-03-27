@@ -18,13 +18,9 @@
               <label>Ngày trả phòng</label>
               <input v-model="form.checkOutDate" :min="form.checkInDate || todayISO" type="date" />
             </div>
-            <div class="home-search-panel__guests">
-              <label>Số khách</label>
-              <input v-model.number="form.guests" type="number" min="1" max="20" />
-            </div>
-            <div class="home-search-panel__rooms">
-              <label>Số phòng</label>
-              <input v-model.number="form.rooms" type="number" min="1" max="10" />
+            <div class="home-search-panel__guest-room">
+              <label>Khách và Phòng</label>
+              <GuestRoomSelector v-model="guestRoomSelection" />
             </div>
           </div>
 
@@ -37,7 +33,10 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import ServiceSearchNav from '@/components/travel/ServiceSearchNav.vue'
+import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
+import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
 
 const todayISO = (() => {
   const now = new Date()
@@ -45,12 +44,21 @@ const todayISO = (() => {
   return local.toISOString().slice(0, 10)
 })()
 
+const route = useRoute()
+const guestRoomStore = useHotelGuestRoomStore()
+guestRoomStore.setFromQuery(route.query)
+
 const form = ref({
-  destination: '',
-  checkInDate: '',
-  checkOutDate: '',
-  guests: 2,
-  rooms: 1
+  destination: String(route.query.destination || ''),
+  checkInDate: String(route.query.checkInDate || ''),
+  checkOutDate: String(route.query.checkOutDate || '')
+})
+
+const guestRoomSelection = computed({
+  get: () => guestRoomStore.selection,
+  set: (value) => {
+    guestRoomStore.setSelection(value)
+  }
 })
 
 const searchTarget = computed(() => {
@@ -60,8 +68,16 @@ const searchTarget = computed(() => {
   if (form.value.destination) query.set('destination', form.value.destination)
   if (form.value.checkInDate) query.set('checkInDate', form.value.checkInDate)
   if (form.value.checkOutDate) query.set('checkOutDate', form.value.checkOutDate)
-  query.set('guests', String(Math.max(1, Number(form.value.guests) || 1)))
-  query.set('rooms', String(Math.max(1, Number(form.value.rooms) || 1)))
+
+  const guestRoomQuery = guestRoomStore.getQueryPayload()
+  query.set('guests', guestRoomQuery.guests)
+  query.set('adults', guestRoomQuery.adults)
+  query.set('children', guestRoomQuery.children)
+  query.set('rooms', guestRoomQuery.rooms)
+
+  if (guestRoomQuery.childrenAges) {
+    query.set('childrenAges', guestRoomQuery.childrenAges)
+  }
 
   return `/dich-vu?${query.toString()}`
 })

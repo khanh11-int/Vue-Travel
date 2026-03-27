@@ -2,11 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import ClientLayout from '@/layouts/ClientLayout.vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import HomeView from '@/views/client/HomeView.vue'
+import HotelHome from '@/views/client/hotel/HotelHome.vue'
 import HotelSearchView from '@/views/client/hotel/HotelSearchView.vue'
 import HotelDetailView from '@/views/client/hotel/HotelDetailView.vue'
-import TicketSearchView from '@/views/client/ticket/TicketSearchView.vue'
+import TicketHome from '@/views/client/ticket/TicketHome.vue'
 import TicketDetailView from '@/views/client/ticket/TicketDetailView.vue'
-import TourSearchView from '@/views/client/tour/TourSearchView.vue'
+import TourHome from '@/views/client/tour/TourHome.vue'
 import TourDetailView from '@/views/client/tour/TourDetailView.vue'
 import TravelListView from '@/views/client/TravelListView.vue'
 import WishlistView from '@/views/client/WishlistView.vue'
@@ -34,6 +35,12 @@ const routes = [
         meta: { title: 'Vtravel | Du lịch nội địa Việt Nam' }
       },
       {
+        path: 'hotel',
+        name: 'hotel-home',
+        component: HotelHome,
+        meta: { title: 'Khám phá khách sạn nội địa Việt Nam' }
+      },
+      {
         path: 'dich-vu',
         name: 'travel-list',
         component: TravelListView,
@@ -55,7 +62,7 @@ const routes = [
       {
         path: 've-tham-quan',
         name: 'ticket-search',
-        component: TicketSearchView,
+        component: TicketHome,
         meta: { title: 'Tìm vé tham quan nội địa' }
       },
       {
@@ -68,7 +75,7 @@ const routes = [
       {
         path: 'tour',
         name: 'tour-search',
-        component: TourSearchView,
+        component: TourHome,
         meta: { title: 'Tìm tour nội địa' }
       },
       {

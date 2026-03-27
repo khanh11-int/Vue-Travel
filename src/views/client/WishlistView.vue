@@ -14,7 +14,6 @@
         :service="service"
         :is-wishlisted="true"
         @toggle-wishlist="handleToggleWishlist"
-        @book-now="handleBookNow"
       />
     </div>
     <div v-else class="empty-state">
@@ -27,14 +26,11 @@
 
 <script setup>
 import { computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
-import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
@@ -57,9 +53,5 @@ const wishlistItems = computed(() => {
 
 const handleToggleWishlist = (serviceId) => {
   wishlistStore.toggleWishlist(serviceId)
-}
-
-const handleBookNow = (service) => {
-  router.push(getDetailRouteLocation(service, { guests: 1 }))
 }
 </script>

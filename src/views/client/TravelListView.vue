@@ -76,7 +76,6 @@
           :service="service"
           :is-wishlisted="isWishlisted(service.id)"
           @toggle-wishlist="handleToggleWishlist"
-          @book-now="handleBookNow"
         />
       </div>
       <div v-else class="empty-state">
@@ -89,24 +88,16 @@
 
 <script setup>
 import { computed, reactive, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useCartStore } from '@/stores/useCartStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
-import { serviceRequiresEndDate } from '@/utils/bookingRules'
-import { getDetailRouteLocation } from '@/utils/serviceRouting'
 import {
   resolveCategoryFromQuery,
-  resolveEndDateByCategory,
-  resolveQuantityByCategory,
-  resolveSearchSummary,
-  resolveStartDateByCategory
+  resolveSearchSummary
 } from '@/utils/searchContext'
 
 const route = useRoute()
-const router = useRouter()
-const cartStore = useCartStore()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 const categories = computed(() => serviceStore.categories)
@@ -141,10 +132,6 @@ const filters = reactive(createInitialFilters())
 
 const selectedCategory = computed(() => resolveCategoryFromQuery(route.query, filters.categoryId))
 
-const selectedStartDate = computed(() => resolveStartDateByCategory(route.query, selectedCategory.value))
-
-const selectedEndDate = computed(() => resolveEndDateByCategory(route.query, selectedCategory.value))
-
 watch(
   () => route.query,
   (query) => {
@@ -153,8 +140,6 @@ watch(
     filters.province = query.province || ''
   }
 )
-
-const selectedQuantity = computed(() => resolveQuantityByCategory(route.query, selectedCategory.value))
 
 const searchContextSummary = computed(() => resolveSearchSummary(route.query, selectedCategory.value))
 
@@ -195,80 +180,6 @@ const filteredServices = computed(() => {
     }
   })
 })
-
-const handleBookNow = (service) => {
-  const requiresEndDate = serviceRequiresEndDate(service)
-  const category = service.categoryId
-  const defaultQuantity = Math.max(1, Number(selectedQuantity.value) || 1)
-
-  if (category === 'tour') {
-    router.push({
-      ...getDetailRouteLocation(service),
-      query: {
-        departureDate: selectedStartDate.value || undefined,
-        travelers: defaultQuantity
-      }
-    })
-    return
-  }
-
-  if (category === 'hotel') {
-    if (!selectedStartDate.value || !selectedEndDate.value) {
-      router.push({
-        ...getDetailRouteLocation(service),
-        query: {
-          checkInDate: selectedStartDate.value || undefined,
-          checkOutDate: selectedEndDate.value || undefined,
-          guests: defaultQuantity,
-          rooms: Number(route.query.rooms || 1) || 1
-        }
-      })
-      return
-    }
-  } else if (!selectedStartDate.value) {
-    const query = {
-      guests: defaultQuantity
-    }
-
-    if (category === 'ticket') {
-      query.useDate = selectedStartDate.value || undefined
-      query.ticketQuantity = defaultQuantity
-    } else if (category === 'tour') {
-      query.departureDate = selectedStartDate.value || undefined
-      query.travelers = defaultQuantity
-    }
-
-    router.push(getDetailRouteLocation(service, query))
-    return
-  }
-
-  cartStore.addToCart({
-    serviceId: service.id,
-    quantity: defaultQuantity,
-    bookingType: category,
-    bookingMeta: category === 'hotel'
-      ? {
-        checkInDate: selectedStartDate.value,
-        checkOutDate: selectedEndDate.value,
-        guests: defaultQuantity,
-        rooms: Number(route.query.rooms || 1) || 1
-      }
-      : category === 'ticket'
-        ? {
-          useDate: selectedStartDate.value,
-          ticketQuantity: defaultQuantity
-        }
-        : category === 'tour'
-          ? {
-            departureDate: selectedStartDate.value,
-            travelers: defaultQuantity
-          }
-          : {},
-    startDate: selectedStartDate.value,
-    endDate: requiresEndDate ? selectedEndDate.value : ''
-  })
-  router.push('/gio-hang')
-}
 
 const resetFilters = () => {
   Object.assign(filters, {

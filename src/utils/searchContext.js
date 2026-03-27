@@ -1,3 +1,5 @@
+import { calculateTotalGuests } from '@/utils/hotelGuestRoom'
+
 /**
  * Ưu tiên đọc category từ query, nếu thiếu thì dùng fallback để giữ context tìm kiếm.
  * @param {Object} query - Query params hiện tại trên URL.
@@ -47,6 +49,16 @@ export const resolveEndDateByCategory = (query, category) => {
 export const resolveQuantityByCategory = (query, category) => {
   if (category === 'ticket') return Number(query.ticketQuantity || 1)
   if (category === 'tour') return Number(query.travelers || 1)
+  if (category === 'hotel') {
+    const hasHotelGuestFields = query.adults !== undefined || query.children !== undefined
+    if (hasHotelGuestFields) {
+      return calculateTotalGuests({
+        adults: Number(query.adults || 1),
+        children: Number(query.children || 0),
+        rooms: Number(query.rooms || 1)
+      })
+    }
+  }
   return Number(query.guests || 1)
 }
 

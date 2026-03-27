@@ -29,6 +29,8 @@
       </nav>
     </header>
 
+    <SubNavBar />
+
     <main>
       <router-view />
     </main>
@@ -53,6 +55,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import SubNavBar from '@/components/common/SubNavBar.vue'
 import { useCartStore } from '@/stores/useCartStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'

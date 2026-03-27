@@ -26,12 +26,10 @@
           <input v-model="hotelForm.checkOutDate" :min="hotelForm.checkInDate || todayISO" type="date" />
         </label>
 
-        <label class="ota-search-field ota-search-field--meta">
+        <div class="ota-search-field ota-search-field--meta ota-search-field--guest-room">
           <span class="ota-search-icon ota-search-icon--users" aria-hidden="true"></span>
-          <input v-model.number="hotelForm.guests" type="number" min="1" max="20" placeholder="Khách" />
-          <span class="ota-search-divider">|</span>
-          <input v-model.number="hotelForm.rooms" type="number" min="1" max="10" placeholder="Phòng" />
-        </label>
+          <GuestRoomSelector v-model="guestRoomSelection" />
+        </div>
       </template>
 
       <template v-else-if="activeService === 'ticket'">
@@ -88,7 +86,6 @@
         :service="service"
         :is-wishlisted="isWishlisted(service.id)"
         @toggle-wishlist="handleToggleWishlist"
-        @book-now="handleBookNow"
       />
     </div>
   </section>
@@ -137,15 +134,15 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
+import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
-import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
-const router = useRouter()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
+const guestRoomStore = useHotelGuestRoomStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -163,9 +160,14 @@ const serviceTabs = [
 const hotelForm = ref({
   destination: '',
   checkInDate: '',
-  checkOutDate: '',
-  guests: 2,
-  rooms: 1
+  checkOutDate: ''
+})
+
+const guestRoomSelection = computed({
+  get: () => guestRoomStore.selection,
+  set: (value) => {
+    guestRoomStore.setSelection(value)
+  }
 })
 
 const ticketForm = ref({
@@ -213,8 +215,14 @@ const searchTarget = computed(() => {
     if (hotelForm.value.destination) query.set('destination', hotelForm.value.destination)
     if (hotelForm.value.checkInDate) query.set('checkInDate', hotelForm.value.checkInDate)
     if (hotelForm.value.checkOutDate) query.set('checkOutDate', hotelForm.value.checkOutDate)
-    query.set('guests', String(Math.max(1, Number(hotelForm.value.guests) || 1)))
-    query.set('rooms', String(Math.max(1, Number(hotelForm.value.rooms) || 1)))
+    const guestRoomQuery = guestRoomStore.getQueryPayload()
+    query.set('guests', guestRoomQuery.guests)
+    query.set('adults', guestRoomQuery.adults)
+    query.set('children', guestRoomQuery.children)
+    query.set('rooms', guestRoomQuery.rooms)
+    if (guestRoomQuery.childrenAges) {
+      query.set('childrenAges', guestRoomQuery.childrenAges)
+    }
   } else if (activeService.value === 'ticket') {
     if (ticketForm.value.destination) query.set('destination', ticketForm.value.destination)
     if (ticketForm.value.useDate) query.set('useDate', ticketForm.value.useDate)
@@ -228,11 +236,25 @@ const searchTarget = computed(() => {
   return `/dich-vu?${query.toString()}`
 })
 
-const pushToDetail = (service, query = {}) => {
-  router.push(getDetailRouteLocation(service, query))
+</script>
+
+<style scoped>
+.ota-search-field--guest-room {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding-right: 8px;
 }
 
-const handleBookNow = (service) => {
-  pushToDetail(service)
+.ota-search-field--guest-room :deep(.guest-room-selector__trigger) {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-weight: 700;
+  color: #1d2d45;
 }
-</script>
+
+.ota-search-field--guest-room :deep(.guest-room-selector__popup) {
+  left: -34px;
+  top: calc(100% + 10px);
+}
+</style>

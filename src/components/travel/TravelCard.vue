@@ -1,8 +1,12 @@
 <template>
-  <article class="travel-card">
+  <article class="travel-card" role="link" tabindex="0" @click="openDetail" @keydown.enter="openDetail" @keydown.space.prevent="openDetail">
     <div class="travel-card__image-wrapper">
       <img :src="service.image" :alt="service.name" class="travel-card__image" />
-      <button :class="['wishlist-button', { 'wishlist-button--active': isWishlisted }]" type="button" @click="$emit('toggle-wishlist', service.id)">
+      <button
+        :class="['wishlist-button', { 'wishlist-button--active': isWishlisted }]"
+        type="button"
+        @click.stop="$emit('toggle-wishlist', service.id)"
+      >
         {{ isWishlisted ? '♥' : '♡' }}
       </button>
     </div>
@@ -22,17 +26,18 @@
           {{ service.availableSlots > 0 ? `Còn ${service.availableSlots} chỗ` : 'Hết chỗ' }}
         </span>
         <div class="travel-card__price-main">
-          <small class="price-label">Giá từ</small><p class="price">{{ formatCurrencyVND(service.salePrice) }}</p>
+          <p v-if="hasDiscountedPrice" class="price-before">{{ formatCurrencyVND(effectiveOriginalPrice) }}</p>
+          <div class="travel-card__price-current">
+            <small class="price-label">{{ hasDiscountedPrice ? 'Gia uu dai' : 'Gia tu' }}</small>
+            <p class="price price--sale">{{ formatCurrencyVND(currentSalePrice) }}</p>
+          </div>
         </div>
 
       </div>
 
-      <div class="travel-card__actions">
-        <router-link :to="detailRoute" class="secondary-button travel-card__action">Xem chi tiết</router-link>
-        <button class="primary-button travel-card__action" type="button" @click="$emit('book-now', service)">
-          Đặt ngay
-        </button>
-      </div>
+      <p v-if="showDiscountAmount && discountAmount > 0" class="travel-card__discount-amount">
+        Tiet kiem {{ formatCurrencyVND(discountAmount) }}
+      </p>
     </div>
   </article>
 </template>
@@ -40,6 +45,7 @@
 <script setup>
 /* global defineProps, defineEmits */
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import RatingStars from '@/components/common/RatingStars.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
@@ -53,11 +59,16 @@ const props = defineProps({
   isWishlisted: {
     type: Boolean,
     default: false
+  },
+  showDiscountAmount: {
+    type: Boolean,
+    default: false
   }
 })
 
-defineEmits(['toggle-wishlist', 'book-now'])
+defineEmits(['toggle-wishlist'])
 
+const router = useRouter()
 const serviceStore = useServiceStore()
 
 const categoryLabel = computed(() =>
@@ -65,4 +76,33 @@ const categoryLabel = computed(() =>
 )
 
 const detailRoute = computed(() => getDetailRouteLocation(props.service))
+
+const currentSalePrice = computed(() => Number(props.service.salePrice) || 0)
+
+const effectiveOriginalPrice = computed(() => {
+  const salePrice = currentSalePrice.value
+  const listedPrice = Number(props.service.originalPrice) || Number(props.service.price) || 0
+  const discountPercent = Number(props.service.discount) || 0
+
+  if (listedPrice > salePrice && salePrice > 0) {
+    return listedPrice
+  }
+
+  if (discountPercent > 0 && discountPercent < 100 && salePrice > 0) {
+    return Math.round(salePrice / (1 - discountPercent / 100))
+  }
+
+  return listedPrice > 0 ? listedPrice : salePrice
+})
+
+const hasDiscountedPrice = computed(() => effectiveOriginalPrice.value > currentSalePrice.value)
+
+const discountAmount = computed(() => {
+  if (!hasDiscountedPrice.value) return 0
+  return effectiveOriginalPrice.value - currentSalePrice.value
+})
+
+const openDetail = () => {
+  router.push(detailRoute.value)
+}
 </script>

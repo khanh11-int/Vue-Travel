@@ -10,14 +10,19 @@ import { normalizeServicesFromStorage } from '@/utils/travelNormalize'
  */
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
+const sanitizeCategories = (categories) => ensureArray(categories).filter((category) => category?.id !== 'combo')
+
+const sanitizeServices = (services) =>
+  normalizeServicesFromStorage(ensureArray(services)).filter((service) => service?.categoryId !== 'combo')
+
 export const useServiceStore = defineStore('services', {
   /**
    * Khởi tạo state dịch vụ từ storage để có dữ liệu cache khi mở app.
    * @returns {Object} Service state mặc định.
    */
   state: () => ({
-    services: normalizeServicesFromStorage(ensureArray(readStorage(STORAGE_KEYS.services, []))),
-    categories: ensureArray(readStorage(STORAGE_KEYS.categories, [])),
+    services: sanitizeServices(readStorage(STORAGE_KEYS.services, [])),
+    categories: sanitizeCategories(readStorage(STORAGE_KEYS.categories, [])),
     destinations: ensureArray(readStorage(STORAGE_KEYS.destinations, [])),
     comments: ensureArray(readStorage(STORAGE_KEYS.comments, [])),
     promotions: ensureArray(readStorage(STORAGE_KEYS.promotions, [])),
@@ -55,7 +60,7 @@ export const useServiceStore = defineStore('services', {
      * @returns {void}
      */
     setServices(services) {
-      this.services = normalizeServicesFromStorage(ensureArray(services))
+      this.services = sanitizeServices(services)
       saveToStorage(STORAGE_KEYS.services, this.services)
     },
 
@@ -65,7 +70,7 @@ export const useServiceStore = defineStore('services', {
      * @returns {void}
      */
     setCategories(categories) {
-      this.categories = ensureArray(categories)
+      this.categories = sanitizeCategories(categories)
       saveToStorage(STORAGE_KEYS.categories, this.categories)
     },
 

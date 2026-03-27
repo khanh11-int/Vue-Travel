@@ -666,6 +666,7 @@ p {
 }
 
 .home-search-panel {
+  display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 14px 12px;
   align-items: end;
@@ -686,6 +687,10 @@ p {
 
 .home-search-panel__category {
   grid-column: span 3;
+}
+
+.home-search-panel__guest-room {
+  grid-column: span 4;
 }
 
 .home-search-panel label {
@@ -884,6 +889,13 @@ p {
   min-height: 48px;
   color: var(--muted);
   margin: 0;
+}
+
+.travel-card__discount-amount {
+  margin: -6px 0 0;
+  color: #e56d00;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .travel-card__price-row {
@@ -1624,17 +1636,38 @@ p {
 
 .travel-card__price-main {
   display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   min-width: 0;
   flex-wrap: nowrap;
+}
+
+.travel-card__price-current {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .price-label {
   color: var(--muted);
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   white-space: nowrap;
+}
+
+.price-before {
+  margin: 0;
+  color: #8a97a9;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: line-through;
+  text-shadow: none;
+}
+
+.price--sale {
+  font-size: 1.42rem;
+  color: #0a5fbd;
 }
 
 .availability {
@@ -1851,6 +1884,7 @@ p {
   .home-search-panel__return-date,
   .home-search-panel__guests,
   .home-search-panel__rooms,
+  .home-search-panel__guest-room,
   .home-search-panel__tickets,
   .home-search-panel__travelers,
   .home-search-panel__category,
@@ -1947,24 +1981,14 @@ p {
 .user-chip {
   display: inline-flex;
   align-items: center;
-  padding: 10px 14px;
+  height: 36px;
+  padding: 0 8px;
+  background: rgba(10, 109, 217, 0.1);
   border-radius: 999px;
-  background: rgba(10, 109, 217, 0.08);
-  color: var(--primary);
-  font-weight: 700;
-  max-width: 240px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.95rem;
+  gap: 8px;
 }
 
-
-.admin-page {
-  width: min(1180px, calc(100% - 32px));
-  margin: 0 auto;
-  display: grid;
-  gap: 20px;
-}
 
 .admin-heading-stack {
   align-items: flex-start;
@@ -2289,3 +2313,4 @@ p {
     width: 100%;
   }
 }
+

@@ -45,6 +45,7 @@
 <script setup>
 /* global defineProps, defineEmits */
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useRouter } from 'vue-router'
 import RatingStars from '@/components/common/RatingStars.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
@@ -69,13 +70,24 @@ const props = defineProps({
 defineEmits(['toggle-wishlist'])
 
 const router = useRouter()
+const route = useRoute()
 const serviceStore = useServiceStore()
 
 const categoryLabel = computed(() =>
   serviceStore.categories.find((category) => category.id === props.service.categoryId)?.name || 'Dịch vụ'
 )
 
-const detailRoute = computed(() => getDetailRouteLocation(props.service))
+const detailRoute = computed(() => {
+  const baseRoute = getDetailRouteLocation(props.service)
+
+  return {
+    ...baseRoute,
+    query: {
+      ...(route.query || {}),
+      ...(baseRoute.query || {})
+    }
+  }
+})
 
 const currentSalePrice = computed(() => Number(props.service.salePrice) || 0)
 

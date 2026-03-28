@@ -25,11 +25,32 @@ export const buildBookingMeta = ({ bookingType, startDate = '', endDate = '', qu
   const normalizedQuantity = Math.max(1, Number(quantity) || 1)
 
   if (bookingType === 'hotel') {
+    const adults = Math.max(1, Number(bookingMeta.adults ?? bookingMeta.guests ?? normalizedQuantity) || 1)
+    const children = Math.max(0, Number(bookingMeta.children ?? 0) || 0)
+    const guests = Math.max(1, Number(bookingMeta.guests ?? (adults + children) ?? normalizedQuantity) || 1)
+    const childrenAges = Array.isArray(bookingMeta.childrenAges)
+      ? bookingMeta.childrenAges
+          .slice(0, children)
+          .map((age) => Math.min(17, Math.max(0, Math.floor(Number(age) || 8))))
+      : []
+
     return {
       checkInDate: bookingMeta.checkInDate || startDate || '',
       checkOutDate: bookingMeta.checkOutDate || endDate || '',
-      guests: Math.max(1, Number(bookingMeta.guests ?? normalizedQuantity) || 1),
+      guests,
+      adults,
+      children,
+      childrenAges,
       rooms: Math.max(1, Number(bookingMeta.rooms ?? 1) || 1),
+      roomType: String(bookingMeta.roomType || ''),
+      roomTypeLabel: String(bookingMeta.roomTypeLabel || ''),
+      nights: Math.max(1, Number(bookingMeta.nights || 1) || 1),
+      chargeableAdults: Math.max(1, Number(bookingMeta.chargeableAdults ?? adults) || adults),
+      childrenUnderFour: Math.max(0, Number(bookingMeta.childrenUnderFour || 0) || 0),
+      children4To14: Math.max(0, Number(bookingMeta.children4To14 || 0) || 0),
+      childSurchargeMin: Math.max(500000, Number(bookingMeta.childSurchargeMin || 500000) || 500000),
+      childSurchargeMax: Math.min(1000000, Math.max(500000, Number(bookingMeta.childSurchargeMax || 700000) || 700000)),
+      totalPrice: Math.max(0, Number(bookingMeta.totalPrice || 0) || 0),
       durationLabel: bookingMeta.durationLabel || '',
       unitPrice: Number(bookingMeta.unitPrice || 0) || 0
     }
@@ -104,7 +125,12 @@ export const extractDateRangeFromBookingMeta = (bookingType, bookingMeta) => {
  * @returns {number} Số lượng hợp lệ (>=1).
  */
 export const extractQuantityFromBookingMeta = (bookingType, bookingMeta) => {
-  if (bookingType === 'hotel') return Math.max(1, Number(bookingMeta.guests || 1) || 1)
+  if (bookingType === 'hotel') {
+    const guests = Math.max(1, Number(bookingMeta.guests || 1) || 1)
+    const adults = Math.max(1, Number(bookingMeta.adults || 1) || 1)
+    const children = Math.max(0, Number(bookingMeta.children || 0) || 0)
+    return Math.max(guests, adults + children)
+  }
   if (bookingType === 'ticket') return Math.max(1, Number(bookingMeta.ticketQuantity || 1) || 1)
   return Math.max(1, Number(bookingMeta.travelers || 1) || 1)
 }

@@ -119,7 +119,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
 import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
@@ -127,6 +127,7 @@ import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
 
 const router = useRouter()
+const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 const guestRoomStore = useHotelGuestRoomStore()
@@ -152,10 +153,17 @@ const guestRoomSelection = computed({
 
 const selectedCity = ref('Tat ca')
 
+const currentCategory = computed(() => {
+  const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
+  return categories.find((category) => category.homePath === route.path || category.searchPath === route.path) || null
+})
+
+const currentCategoryId = computed(() => String(currentCategory.value?.id || route.query.category || ''))
+
 const allHotels = computed(() => {
   const source = Array.isArray(serviceStore.services) ? serviceStore.services : []
   return source
-    .filter((service) => service.categoryId === 'hotel')
+    .filter((service) => !currentCategoryId.value || service.categoryId === currentCategoryId.value)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
@@ -168,7 +176,7 @@ const filteredHotels = computed(() => {
 
 const featuredHotels = computed(() => {
   const discounted = filteredHotels.value.filter(
-    (hotel) => Number(hotel.discount) > 0 || Number(hotel.originalPrice) > Number(hotel.salePrice)
+    (hotel) => Number(hotel.discount) > 0 || Number(hotel.price) > Number(hotel.salePrice)
   )
 
   return discounted.length ? discounted : filteredHotels.value
@@ -185,8 +193,11 @@ const promotionsList = computed(() => {
 })
 
 const searchTarget = computed(() => {
+  const basePath = '/dich-vu'
   const query = new URLSearchParams()
-  query.set('category', 'hotel')
+  if (currentCategoryId.value) {
+    query.set('category', currentCategoryId.value)
+  }
   if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
   if (searchForm.value.checkInDate) query.set('checkInDate', searchForm.value.checkInDate)
   if (searchForm.value.checkOutDate) query.set('checkOutDate', searchForm.value.checkOutDate)
@@ -199,7 +210,7 @@ const searchTarget = computed(() => {
     query.set('childrenAges', guestRoomQuery.childrenAges)
   }
 
-  return `/dich-vu?${query.toString()}`
+  return `${basePath}?${query.toString()}`
 })
 
 const handleToggleWishlist = (serviceId) => {
@@ -209,7 +220,13 @@ const handleToggleWishlist = (serviceId) => {
 const isWishlisted = (service) => wishlistStore.isInWishlist(service.id)
 
 const handleSelectDestination = (destination) => {
-  router.push({ name: 'hotel-search', query: { destination: destination.name } })
+  router.push({
+    name: 'travel-list',
+    query: {
+      destination: destination.name,
+      category: currentCategoryId.value || undefined
+    }
+  })
 }
 </script>
 

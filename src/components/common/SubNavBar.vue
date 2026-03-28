@@ -14,27 +14,24 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useServiceStore } from '@/stores/useServiceStore'
 
 const route = useRoute()
+const serviceStore = useServiceStore()
 
-const navItems = [
-  {
-    id: 'hotel',
-    label: 'Khách sạn',
-    to: '/hotel',
-  },
-  {
-    id: 'ticket',
-    label: 'Vé tham quan',
-    to: '/ve-tham-quan',
-  },
-  {
-    id: 'tour',
-    label: 'Tour',
-    to: '/tour',
-  }
-]
+const navItems = computed(() => {
+  const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
+
+  return categories
+    .filter((category) => category?.status !== 'inactive')
+    .map((category) => ({
+      id: category.id,
+      label: category.name,
+      to: category.homePath || category.searchPath || { name: 'travel-list', query: { category: category.id } }
+    }))
+})
 
 const isActive = (path) => {
   return route.path.startsWith(path)

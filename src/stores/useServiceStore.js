@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { categoriesApi, commentsApi, destinationsApi, promotionsApi, servicesApi } from '@/services/api'
-import { STORAGE_KEYS, readStorage, saveToStorage } from '@/utils/travelStorage'
+import { STORAGE_KEYS, saveToStorage } from '@/utils/travelStorage'
 import { normalizeServicesFromStorage } from '@/utils/travelNormalize'
 
 /**
@@ -21,11 +21,11 @@ export const useServiceStore = defineStore('services', {
    * @returns {Object} Service state mặc định.
    */
   state: () => ({
-    services: sanitizeServices(readStorage(STORAGE_KEYS.services, [])),
-    categories: sanitizeCategories(readStorage(STORAGE_KEYS.categories, [])),
-    destinations: ensureArray(readStorage(STORAGE_KEYS.destinations, [])),
-    comments: ensureArray(readStorage(STORAGE_KEYS.comments, [])),
-    promotions: ensureArray(readStorage(STORAGE_KEYS.promotions, [])),
+    services: [],
+    categories: [],
+    destinations: [],
+    comments: [],
+    promotions: [],
     serviceDetail: null,
     loading: false,
     error: null

@@ -32,12 +32,12 @@
       <div class="guest-room-selector__row">
         <div>
           <p class="guest-room-selector__label">Phòng</p>
-          <p class="guest-room-selector__hint">Tối thiểu 1 phòng</p>
+          <p class="guest-room-selector__hint">Tối thiểu 1 phòng, tối đa {{ draft.adults }} phòng</p>
         </div>
         <div class="guest-room-selector__counter">
           <button type="button" :disabled="draft.rooms <= 1" @click="decreaseRooms">-</button>
           <span>{{ draft.rooms }}</span>
-          <button type="button" @click="increaseRooms">+</button>
+          <button type="button" :disabled="draft.rooms >= draft.adults" @click="increaseRooms">+</button>
         </div>
       </div>
 
@@ -150,7 +150,9 @@ const decreaseChildren = () => {
 }
 
 const increaseRooms = () => {
-  draft.rooms += 1
+  if (draft.rooms < draft.adults) {
+    draft.rooms += 1
+  }
 }
 
 const decreaseRooms = () => {

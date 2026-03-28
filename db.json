@@ -4,19 +4,118 @@
       "id": "hotel",
       "name": "Khách sạn",
       "description": "Lưu trú nội địa cao cấp và tiện nghi",
-      "status": "active"
+      "status": "active",
+      "homePath": "/hotel",
+      "searchPath": "/khach-san",
+      "searchConfig": {
+        "submitLabel": "Tìm khách sạn",
+        "defaults": {
+          "destination": "",
+          "checkInDate": "",
+          "checkOutDate": ""
+        },
+        "fields": [
+          {
+            "type": "text",
+            "key": "destination",
+            "queryKey": "destination",
+            "placeholder": "Bạn muốn đi đâu?",
+            "icon": "location"
+          },
+          {
+            "type": "date-range",
+            "startKey": "checkInDate",
+            "endKey": "checkOutDate",
+            "startQueryKey": "checkInDate",
+            "endQueryKey": "checkOutDate",
+            "icon": "calendar"
+          },
+          {
+            "type": "guest-room",
+            "icon": "users"
+          }
+        ]
+      }
     },
     {
       "id": "tour",
       "name": "Tour",
       "description": "Tour trọn gói khám phá Việt Nam",
-      "status": "active"
+      "status": "active",
+      "homePath": "/tour",
+      "searchPath": "/tour/tim-kiem",
+      "searchConfig": {
+        "submitLabel": "Tìm tour",
+        "defaults": {
+          "destination": "",
+          "startDate": "",
+          "travelers": 2
+        },
+        "fields": [
+          {
+            "type": "text",
+            "key": "destination",
+            "queryKey": "destination",
+            "placeholder": "Điểm đến tour",
+            "icon": "location"
+          },
+          {
+            "type": "date",
+            "key": "startDate",
+            "queryKey": "startDate",
+            "icon": "calendar"
+          },
+          {
+            "type": "number",
+            "key": "travelers",
+            "queryKey": "travelers",
+            "min": 1,
+            "defaultValue": 2,
+            "placeholder": "Số khách",
+            "icon": "users"
+          }
+        ]
+      }
     },
     {
       "id": "ticket",
       "name": "Vé tham quan",
       "description": "Vé vào cổng và trải nghiệm nổi bật",
-      "status": "active"
+      "status": "active",
+      "homePath": "/ve-tham-quan",
+      "searchPath": "/ve-tham-quan/tim-kiem",
+      "searchConfig": {
+        "submitLabel": "Tìm vé",
+        "defaults": {
+          "destination": "",
+          "useDate": "",
+          "quantity": 2
+        },
+        "fields": [
+          {
+            "type": "text",
+            "key": "destination",
+            "queryKey": "destination",
+            "placeholder": "Điểm tham quan",
+            "icon": "location"
+          },
+          {
+            "type": "date",
+            "key": "useDate",
+            "queryKey": "useDate",
+            "icon": "calendar"
+          },
+          {
+            "type": "number",
+            "key": "quantity",
+            "queryKey": "quantity",
+            "min": 1,
+            "defaultValue": 2,
+            "placeholder": "Số vé",
+            "icon": "users"
+          }
+        ]
+      }
     }
   ],
   "destinations": [
@@ -134,40 +233,6 @@
       ]
     },
     {
-      "id": "102",
-      "name": "InterContinental Đà Nẵng Sun Peninsula Resort",
-      "slug": "intercontinental-da-nang-sun-peninsula-resort",
-      "categoryId": "hotel",
-      "destination": "Đà Nẵng",
-      "province": "Đà Nẵng",
-      "price": 12900000,
-      "salePrice": 10800000,
-      "discount": 25,
-      "rating": 4.9,
-      "availableSlots": 5,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Khu nghỉ dưỡng ven biển sang trọng trên bán đảo Sơn Trà.",
-      "description": "Resort phù hợp cho kỳ nghỉ dưỡng cao cấp với hồ bơi vô cực, spa, bãi biển riêng và nhà hàng fine dining. Đây là lựa chọn nổi bật cho khách hàng du lịch nội địa muốn nghỉ dưỡng sang trọng.",
-      "amenities": [
-        "Hồ bơi vô cực",
-        "Bãi biển riêng",
-        "Spa",
-        "Xe điện nội khu"
-      ],
-      "createdAt": "2026-02-25T09:00:00Z",
-      "featured": true,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Bao gồm bữa sáng",
-        "Miễn phí xe điện nội khu"
-      ]
-    },
-    {
       "id": "103",
       "name": "Vé VinWonders Phú Quốc",
       "slug": "ve-vinwonders-phu-quoc",
@@ -196,40 +261,6 @@
         "Sử dụng trong ngày",
         "Áp dụng cho 1 khách",
         "Không hoàn hủy sau khi kích hoạt"
-      ]
-    },
-    {
-      "id": "105",
-      "name": "Khách sạn phố cổ Hà Nội 2N1Đ",
-      "slug": "khach-san-pho-co-ha-noi-2n1d",
-      "categoryId": "hotel",
-      "destination": "Hà Nội",
-      "province": "Hà Nội",
-      "price": 2100000,
-      "salePrice": 1690000,
-      "discount": 15,
-      "rating": 4.5,
-      "availableSlots": 18,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Khách sạn trung tâm gần Hồ Gươm, phù hợp cho gia đình và cặp đôi.",
-      "description": "Dịch vụ lưu trú tại trung tâm Hà Nội với thiết kế hiện đại, tiện di chuyển tới Hồ Gươm, phố cổ và các khu ẩm thực nổi tiếng.",
-      "amenities": [
-        "Bữa sáng",
-        "Đưa đón sân bay",
-        "Miễn phí wifi",
-        "Quầy hỗ trợ 24/7"
-      ],
-      "createdAt": "2026-03-14T08:00:00Z",
-      "featured": true,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00",
-        "Miễn phí buffet sáng"
       ]
     },
     {
@@ -366,40 +397,6 @@
       ]
     },
     {
-      "id": "110",
-      "name": "Khách sạn trung tâm Quận 1 TP.HCM",
-      "slug": "khach-san-trung-tam-quan-1-tphcm",
-      "categoryId": "hotel",
-      "destination": "TP.HCM",
-      "province": "TP.HCM",
-      "price": 2800000,
-      "salePrice": 2290000,
-      "discount": 18,
-      "rating": 4.3,
-      "availableSlots": 14,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Khách sạn hiện đại gần phố đi bộ Nguyễn Huệ và chợ Bến Thành.",
-      "description": "Điểm lưu trú phù hợp cho khách công tác kết hợp du lịch, thuận tiện tham quan trung tâm TP.HCM và các điểm ăn uống về đêm.",
-      "amenities": [
-        "Buffet sáng",
-        "Phòng gym",
-        "Đưa đón sân bay",
-        "Hỗ trợ check-in sớm"
-      ],
-      "createdAt": "2026-03-19T11:00:00Z",
-      "featured": false,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00",
-        "Miễn phí buffet sáng"
-      ]
-    },
-    {
       "id": "111",
       "name": "Tour Hà Nội - Ninh Bình Tràng An 1 ngày",
       "slug": "tour-ha-noi-ninh-binh-trang-an-1-ngay",
@@ -481,40 +478,6 @@
         "Sử dụng trong ngày",
         "Bao gồm buffet trưa",
         "Không bao gồm xe đưa đón"
-      ]
-    },
-    {
-      "id": "114",
-      "name": "Resort ven hồ Đà Lạt 2N1Đ",
-      "slug": "resort-ven-ho-da-lat-2n1d",
-      "categoryId": "hotel",
-      "destination": "Đà Lạt",
-      "province": "Lâm Đồng",
-      "price": 3250000,
-      "salePrice": 2790000,
-      "discount": 20,
-      "rating": 4.6,
-      "availableSlots": 8,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Khu nghỉ dưỡng yên tĩnh nhìn ra hồ Tuyền Lâm, thích hợp nghỉ dưỡng cuối tuần.",
-      "description": "Không gian biệt lập với khí hậu mát mẻ, phù hợp cho khách muốn nghỉ ngơi, thưởng trà chiều và tham gia các hoạt động nhẹ ngoài trời.",
-      "amenities": [
-        "Ăn sáng",
-        "Trà chiều",
-        "Xe điện nội khu",
-        "Thuê xe đạp"
-      ],
-      "createdAt": "2026-03-20T15:30:00Z",
-      "featured": false,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Tặng trà chiều",
-        "Trả phòng trước 12:00"
       ]
     },
     {
@@ -604,36 +567,916 @@
     },
     {
       "id": "118",
-      "name": "Khách sạn boutique Cần Thơ bén Ninh Kiều",
-      "slug": "khach-san-boutique-can-tho-ben-ninh-kieu",
+      "name": "Khách sạn Boutique Cần Thơ",
+      "slug": "khach-san-boutique-can-tho",
       "categoryId": "hotel",
       "destination": "Cần Thơ",
       "province": "Cần Thơ",
-      "price": 2350000,
-      "salePrice": 1890000,
-      "discount": 12,
-      "rating": 4.4,
-      "availableSlots": 10,
+      "price": 880000,
+      "salePrice": 765600,
+      "discount": 13,
+      "rating": 4.3,
+      "availableSlots": 11,
       "status": "active",
       "image": "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=900&q=80",
       "gallery": [
         "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Khách sạn boutique gần bến Ninh Kiều, thuận tiện khám phá chợ đêm và ẩm thực miền Tây.",
-      "description": "Không gian lưu trú nhỏ xinh, dịch vụ thân thiện, phù hợp cho du khách muốn nghỉ ngơi ở trung tâm và dễ di chuyển ra bến tàu chợ nổi.",
+      "shortDescription": "Khách sạn trung tâm gần bến Ninh Kiều.",
+      "description": "Lưu trú tiện nghi, thuận tiện tham quan chợ nổi và ẩm thực miền Tây.",
       "amenities": [
         "Ăn sáng",
-        "Cho thuê xe máy",
+        "Thuê xe máy",
         "Quầy tour",
-        "Wifi tốc độ cao"
+        "Wifi"
       ],
-      "createdAt": "2026-03-21T13:00:00Z",
+      "createdAt": "2026-03-20T14:00:00Z",
       "featured": false,
       "itinerary": [
         "Nhận phòng từ 14:00",
-        "Gợi ý tour chợ nổi sáng sớm",
         "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "standard",
+          "label": "Phòng tiêu chuẩn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "deluxe",
+          "label": "Phòng deluxe",
+          "priceMultiplier": 1.12,
+          "childSurcharge": 360000
+        },
+        {
+          "value": "family",
+          "label": "Phòng gia đình",
+          "priceMultiplier": 1.3,
+          "childSurcharge": 470000
+        }
+      ]
+    },
+    {
+      "id": "131",
+      "name": "Khách sạn Cần Thơ Riverside",
+      "slug": "khach-san-can-tho-riverside",
+      "categoryId": "hotel",
+      "destination": "Cần Thơ",
+      "province": "Cần Thơ",
+      "price": 470000,
+      "salePrice": 423000,
+      "discount": 10,
+      "rating": 4.2,
+      "availableSlots": 11,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn gần bến Ninh Kiều giá tốt.",
+      "description": "Thuận tiện di chuyển chợ nổi và khám phá ẩm thực miền Tây.",
+      "amenities": [
+        "Wifi",
+        "Ăn sáng",
+        "Lễ tân 24/7"
+      ],
+      "createdAt": "2026-03-29T02:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "economy",
+          "label": "Phòng economy",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "river",
+          "label": "Phòng view sông",
+          "priceMultiplier": 1.16,
+          "childSurcharge": 370000
+        }
+      ]
+    },
+    {
+      "id": "105",
+      "name": "Khách sạn Phố Cổ Hà Nội",
+      "slug": "khach-san-pho-co-ha-noi",
+      "categoryId": "hotel",
+      "destination": "Hà Nội",
+      "province": "Hà Nội",
+      "price": 1200000,
+      "salePrice": 996000,
+      "discount": 17,
+      "rating": 4.5,
+      "availableSlots": 18,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn trung tâm gần Hồ Gươm và phố cổ.",
+      "description": "Thiết kế hiện đại, thuận tiện di chuyển, phù hợp lưu trú ngắn ngày.",
+      "amenities": [
+        "Bữa sáng",
+        "Lễ tân 24/7",
+        "Wifi",
+        "Dọn phòng hàng ngày"
+      ],
+      "createdAt": "2026-03-20T11:00:00Z",
+      "featured": true,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "economy",
+          "label": "Phòng economy",
+          "priceMultiplier": 0.95,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "standard",
+          "label": "Phòng tiêu chuẩn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 320000
+        },
+        {
+          "value": "family",
+          "label": "Phòng gia đình",
+          "priceMultiplier": 1.25,
+          "childSurcharge": 420000
+        }
+      ]
+    },
+    {
+      "id": "125",
+      "name": "Khách sạn Hà Nội Lake Side",
+      "slug": "khach-san-ha-noi-lake-side",
+      "categoryId": "hotel",
+      "destination": "Hà Nội",
+      "province": "Hà Nội",
+      "price": 300000,
+      "salePrice": 285000,
+      "discount": 5,
+      "rating": 4.1,
+      "availableSlots": 16,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn tiết kiệm gần Hồ Tây.",
+      "description": "Phù hợp khách đi công tác ngắn ngày hoặc du lịch tiết kiệm tại Hà Nội.",
+      "amenities": [
+        "Wifi",
+        "Lễ tân 24/7",
+        "Giữ hành lý"
+      ],
+      "createdAt": "2026-03-29T01:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "compact",
+          "label": "Phòng compact",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "standard",
+          "label": "Phòng tiêu chuẩn",
+          "priceMultiplier": 1.1,
+          "childSurcharge": 300000
+        }
+      ]
+    },
+    {
+      "id": "121",
+      "name": "Khách sạn Hạ Long Bay View",
+      "slug": "khach-san-ha-long-bay-view",
+      "categoryId": "hotel",
+      "destination": "Hạ Long",
+      "province": "Quảng Ninh",
+      "price": 980000,
+      "salePrice": 842800,
+      "discount": 14,
+      "rating": 4.4,
+      "availableSlots": 16,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn gần bến tàu tham quan vịnh Hạ Long.",
+      "description": "Tiện lợi cho lịch trình tham quan trong ngày và nghỉ ngắn ngày.",
+      "amenities": [
+        "Ăn sáng",
+        "Xe điện",
+        "Lễ tân 24/7",
+        "Wifi"
+      ],
+      "createdAt": "2026-03-20T16:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "standard",
+          "label": "Phòng tiêu chuẩn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "bay",
+          "label": "Phòng view vịnh",
+          "priceMultiplier": 1.2,
+          "childSurcharge": 420000
+        },
+        {
+          "value": "executive",
+          "label": "Phòng executive",
+          "priceMultiplier": 1.35,
+          "childSurcharge": 520000
+        }
+      ]
+    },
+    {
+      "id": "122",
+      "name": "Khách sạn Hội An Riverside",
+      "slug": "khach-san-hoi-an-riverside",
+      "categoryId": "hotel",
+      "destination": "Hội An",
+      "province": "Quảng Nam",
+      "price": 760000,
+      "salePrice": 653600,
+      "discount": 14,
+      "rating": 4.5,
+      "availableSlots": 10,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn gần phố cổ và bờ sông Hội An.",
+      "description": "Phù hợp cặp đôi và gia đình nhỏ thích đi bộ khám phá phố cổ.",
+      "amenities": [
+        "Ăn sáng",
+        "Xe đạp miễn phí",
+        "Wifi",
+        "Đưa đón sân bay"
+      ],
+      "createdAt": "2026-03-20T17:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "superior",
+          "label": "Phòng superior",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "deluxe",
+          "label": "Phòng deluxe",
+          "priceMultiplier": 1.15,
+          "childSurcharge": 360000
+        },
+        {
+          "value": "family",
+          "label": "Phòng gia đình",
+          "priceMultiplier": 1.3,
+          "childSurcharge": 480000
+        }
+      ]
+    },
+    {
+      "id": "132",
+      "name": "Khách sạn Hội An Lantern House",
+      "slug": "khach-san-hoi-an-lantern-house",
+      "categoryId": "hotel",
+      "destination": "Hội An",
+      "province": "Quảng Nam",
+      "price": 860000,
+      "salePrice": 748200,
+      "discount": 13,
+      "rating": 4.5,
+      "availableSlots": 10,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn mang phong cách đèn lồng Hội An.",
+      "description": "Phù hợp nghỉ dưỡng nhẹ nhàng, gần phố cổ và bờ sông Hoài.",
+      "amenities": [
+        "Xe đạp miễn phí",
+        "Bữa sáng",
+        "Wifi"
+      ],
+      "createdAt": "2026-03-29T02:10:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "superior",
+          "label": "Phòng superior",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "deluxe",
+          "label": "Phòng deluxe",
+          "priceMultiplier": 1.15,
+          "childSurcharge": 360000
+        },
+        {
+          "value": "family",
+          "label": "Phòng gia đình",
+          "priceMultiplier": 1.3,
+          "childSurcharge": 480000
+        }
+      ]
+    },
+    {
+      "id": "120",
+      "name": "Khách sạn Biển Nha Trang",
+      "slug": "khach-san-bien-nha-trang",
+      "categoryId": "hotel",
+      "destination": "Nha Trang",
+      "province": "Khánh Hòa",
+      "price": 1300000,
+      "salePrice": 1118000,
+      "discount": 14,
+      "rating": 4.6,
+      "availableSlots": 13,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn sát biển với nhiều hạng phòng.",
+      "description": "Phù hợp kỳ nghỉ biển với gia đình và nhóm bạn.",
+      "amenities": [
+        "Hồ bơi",
+        "Bữa sáng",
+        "Spa",
+        "Wifi"
+      ],
+      "createdAt": "2026-03-20T15:00:00Z",
+      "featured": true,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "city",
+          "label": "Phòng hướng phố",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 320000
+        },
+        {
+          "value": "sea",
+          "label": "Phòng hướng biển",
+          "priceMultiplier": 1.2,
+          "childSurcharge": 420000
+        },
+        {
+          "value": "suite",
+          "label": "Suite biển",
+          "priceMultiplier": 1.45,
+          "childSurcharge": 600000
+        }
+      ]
+    },
+    {
+      "id": "128",
+      "name": "Khách sạn Nha Trang Ocean Gate",
+      "slug": "khach-san-nha-trang-ocean-gate",
+      "categoryId": "hotel",
+      "destination": "Nha Trang",
+      "province": "Khánh Hòa",
+      "price": 1090000,
+      "salePrice": 948300,
+      "discount": 13,
+      "rating": 4.5,
+      "availableSlots": 10,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn gần biển với hồ bơi rooftop.",
+      "description": "Thuận tiện tắm biển, ăn uống và vui chơi tại trung tâm Nha Trang.",
+      "amenities": [
+        "Hồ bơi",
+        "Bữa sáng",
+        "Wifi"
+      ],
+      "createdAt": "2026-03-29T01:30:00Z",
+      "featured": true,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "city",
+          "label": "Phòng hướng phố",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 320000
+        },
+        {
+          "value": "sea",
+          "label": "Phòng hướng biển",
+          "priceMultiplier": 1.2,
+          "childSurcharge": 430000
+        }
+      ]
+    },
+    {
+      "id": "124",
+      "name": "Khách sạn Phú Quốc Island Resort",
+      "slug": "khach-san-phu-quoc-island-resort",
+      "categoryId": "hotel",
+      "destination": "Phú Quốc",
+      "province": "Kiên Giang",
+      "price": 1450000,
+      "salePrice": 1247000,
+      "discount": 14,
+      "rating": 4.7,
+      "availableSlots": 12,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Resort gần biển với nhiều hạng phòng nghỉ dưỡng.",
+      "description": "Phù hợp gia đình, cặp đôi muốn trải nghiệm nghỉ dưỡng đảo.",
+      "amenities": [
+        "Bãi biển riêng",
+        "Hồ bơi",
+        "Spa",
+        "Buffet sáng"
+      ],
+      "createdAt": "2026-03-20T19:00:00Z",
+      "featured": true,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "garden",
+          "label": "Bungalow vườn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 320000
+        },
+        {
+          "value": "pool",
+          "label": "Phòng hướng hồ bơi",
+          "priceMultiplier": 1.2,
+          "childSurcharge": 420000
+        },
+        {
+          "value": "beachfront",
+          "label": "Villa sát biển",
+          "priceMultiplier": 1.45,
+          "childSurcharge": 600000
+        }
+      ]
+    },
+    {
+      "id": "129",
+      "name": "Khách sạn Phú Quốc Palm Bay",
+      "slug": "khach-san-phu-quoc-palm-bay",
+      "categoryId": "hotel",
+      "destination": "Phú Quốc",
+      "province": "Kiên Giang",
+      "price": 1320000,
+      "salePrice": 1188000,
+      "discount": 10,
+      "rating": 4.6,
+      "availableSlots": 9,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Resort gần biển với không gian xanh.",
+      "description": "Phù hợp gia đình nghỉ dưỡng với nhiều hoạt động ngoài trời.",
+      "amenities": [
+        "Bãi biển riêng",
+        "Spa",
+        "Buffet sáng"
+      ],
+      "createdAt": "2026-03-29T01:40:00Z",
+      "featured": true,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "garden",
+          "label": "Bungalow vườn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 320000
+        },
+        {
+          "value": "pool",
+          "label": "Phòng hướng hồ bơi",
+          "priceMultiplier": 1.18,
+          "childSurcharge": 420000
+        },
+        {
+          "value": "beach",
+          "label": "Villa sát biển",
+          "priceMultiplier": 1.35,
+          "childSurcharge": 580000
+        }
+      ]
+    },
+    {
+      "id": "123",
+      "name": "Khách sạn Sapa Mountain View",
+      "slug": "khach-san-sapa-mountain-view",
+      "categoryId": "hotel",
+      "destination": "Sapa",
+      "province": "Lào Cai",
+      "price": 680000,
+      "salePrice": 557600,
+      "discount": 18,
+      "rating": 4.4,
+      "availableSlots": 9,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1504457047772-27faf1c00561?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn view núi cho kỳ nghỉ Sapa mát mẻ.",
+      "description": "Không gian ấm cúng, thuận tiện tham quan bản làng và cáp treo Fansipan.",
+      "amenities": [
+        "Bữa sáng",
+        "Lò sưởi",
+        "Quầy tour",
+        "Wifi"
+      ],
+      "createdAt": "2026-03-20T18:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "classic",
+          "label": "Phòng classic",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "mountain",
+          "label": "Phòng view núi",
+          "priceMultiplier": 1.18,
+          "childSurcharge": 380000
+        },
+        {
+          "value": "suite",
+          "label": "Suite ấm cúng",
+          "priceMultiplier": 1.35,
+          "childSurcharge": 520000
+        }
+      ]
+    },
+    {
+      "id": "127",
+      "name": "Khách sạn Sapa Cloud Nest",
+      "slug": "khach-san-sapa-cloud-nest",
+      "categoryId": "hotel",
+      "destination": "Sapa",
+      "province": "Lào Cai",
+      "price": 740000,
+      "salePrice": 651200,
+      "discount": 12,
+      "rating": 4.4,
+      "availableSlots": 12,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Lưu trú ấm cúng với view núi Sapa.",
+      "description": "Phù hợp nghỉ dưỡng cuối tuần và khám phá bản làng quanh Sapa.",
+      "amenities": [
+        "Lò sưởi",
+        "Wifi",
+        "Bữa sáng"
+      ],
+      "createdAt": "2026-03-29T01:20:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "classic",
+          "label": "Phòng classic",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "mountain",
+          "label": "Phòng view núi",
+          "priceMultiplier": 1.2,
+          "childSurcharge": 380000
+        },
+        {
+          "value": "suite",
+          "label": "Suite",
+          "priceMultiplier": 1.35,
+          "childSurcharge": 520000
+        }
+      ]
+    },
+    {
+      "id": "110",
+      "name": "Khách sạn Trung Tâm Quận 1 TP.HCM",
+      "slug": "khach-san-trung-tam-quan-1-tphcm",
+      "categoryId": "hotel",
+      "destination": "TP.HCM",
+      "province": "TP.HCM",
+      "price": 1400000,
+      "salePrice": 1176000,
+      "discount": 16,
+      "rating": 4.4,
+      "availableSlots": 15,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn gần phố đi bộ và chợ Bến Thành.",
+      "description": "Phù hợp khách công tác và du lịch với hạng phòng linh hoạt.",
+      "amenities": [
+        "Buffet sáng",
+        "Gym",
+        "Xe đưa đón sân bay",
+        "Wifi"
+      ],
+      "createdAt": "2026-03-20T12:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "standard",
+          "label": "Phòng tiêu chuẩn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 320000
+        },
+        {
+          "value": "executive",
+          "label": "Phòng executive",
+          "priceMultiplier": 1.2,
+          "childSurcharge": 430000
+        },
+        {
+          "value": "suite",
+          "label": "Phòng suite",
+          "priceMultiplier": 1.4,
+          "childSurcharge": 550000
+        }
+      ]
+    },
+    {
+      "id": "126",
+      "name": "Khách sạn Saigon Metro Stay",
+      "slug": "khach-san-saigon-metro-stay",
+      "categoryId": "hotel",
+      "destination": "TP.HCM",
+      "province": "TP.HCM",
+      "price": 520000,
+      "salePrice": 468000,
+      "discount": 10,
+      "rating": 4.2,
+      "availableSlots": 14,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn hiện đại gần tuyến metro trung tâm.",
+      "description": "Thuận tiện di chuyển, phù hợp cặp đôi và gia đình nhỏ.",
+      "amenities": [
+        "Wifi",
+        "Bữa sáng",
+        "Dọn phòng"
+      ],
+      "createdAt": "2026-03-29T01:10:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "economy",
+          "label": "Phòng economy",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "deluxe",
+          "label": "Phòng deluxe",
+          "priceMultiplier": 1.15,
+          "childSurcharge": 350000
+        },
+        {
+          "value": "family",
+          "label": "Phòng gia đình",
+          "priceMultiplier": 1.3,
+          "childSurcharge": 420000
+        }
+      ]
+    },
+    {
+      "id": "114",
+      "name": "Khách sạn Ven Hồ Đà Lạt",
+      "slug": "khach-san-ven-ho-da-lat",
+      "categoryId": "hotel",
+      "destination": "Đà Lạt",
+      "province": "Lâm Đồng",
+      "price": 950000,
+      "salePrice": 817000,
+      "discount": 14,
+      "rating": 4.6,
+      "availableSlots": 12,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn yên tĩnh gần hồ Tuyền Lâm.",
+      "description": "Không gian thư giãn, khí hậu mát mẻ, phù hợp nghỉ dưỡng cuối tuần.",
+      "amenities": [
+        "Bữa sáng",
+        "Vườn cafe",
+        "Xe điện",
+        "Wifi"
+      ],
+      "createdAt": "2026-03-20T13:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "garden",
+          "label": "Phòng hướng vườn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "lake",
+          "label": "Phòng hướng hồ",
+          "priceMultiplier": 1.15,
+          "childSurcharge": 380000
+        },
+        {
+          "value": "villa",
+          "label": "Villa mini",
+          "priceMultiplier": 1.35,
+          "childSurcharge": 520000
+        }
+      ]
+    },
+    {
+      "id": "130",
+      "name": "Khách sạn Đà Lạt Pine House",
+      "slug": "khach-san-da-lat-pine-house",
+      "categoryId": "hotel",
+      "destination": "Đà Lạt",
+      "province": "Lâm Đồng",
+      "price": 610000,
+      "salePrice": 549000,
+      "discount": 10,
+      "rating": 4.3,
+      "availableSlots": 13,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn ấm cúng giữa rừng thông Đà Lạt.",
+      "description": "Không gian yên tĩnh phù hợp nghỉ ngơi và tận hưởng khí hậu mát mẻ.",
+      "amenities": [
+        "Trà chiều",
+        "Wifi",
+        "Bữa sáng"
+      ],
+      "createdAt": "2026-03-29T01:50:00Z",
+      "featured": false,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "standard",
+          "label": "Phòng tiêu chuẩn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "balcony",
+          "label": "Phòng ban công",
+          "priceMultiplier": 1.14,
+          "childSurcharge": 360000
+        }
+      ]
+    },
+    {
+      "id": "102",
+      "name": "Khách sạn Biển Sơn Trà Đà Nẵng",
+      "slug": "khach-san-bien-son-tra-da-nang",
+      "categoryId": "hotel",
+      "destination": "Đà Nẵng",
+      "province": "Đà Nẵng",
+      "price": 1500000,
+      "salePrice": 1290000,
+      "discount": 14,
+      "rating": 4.7,
+      "availableSlots": 14,
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Khách sạn ven biển với view Sơn Trà, phù hợp nghỉ dưỡng và công tác.",
+      "description": "Lưu trú tiện nghi gần biển Mỹ Khê, phù hợp gia đình và nhóm bạn với nhiều hạng phòng.",
+      "amenities": [
+        "Bữa sáng",
+        "Hồ bơi",
+        "Gym",
+        "Wifi miễn phí"
+      ],
+      "createdAt": "2026-03-20T10:00:00Z",
+      "featured": true,
+      "itinerary": [
+        "Nhận phòng từ 14:00",
+        "Trả phòng trước 12:00"
+      ],
+      "roomTypes": [
+        {
+          "value": "standard",
+          "label": "Phòng tiêu chuẩn",
+          "priceMultiplier": 1.0,
+          "childSurcharge": 300000
+        },
+        {
+          "value": "deluxe",
+          "label": "Phòng deluxe",
+          "priceMultiplier": 1.15,
+          "childSurcharge": 380000
+        },
+        {
+          "value": "suite",
+          "label": "Phòng suite",
+          "priceMultiplier": 1.35,
+          "childSurcharge": 500000
+        }
       ]
     }
   ],

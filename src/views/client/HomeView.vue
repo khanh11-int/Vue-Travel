@@ -13,57 +13,58 @@
     </div>
 
     <div class="home-ota-searchbar">
-      <template v-if="activeService === 'hotel'">
-        <label class="ota-search-field">
-          <span class="ota-search-icon ota-search-icon--location" aria-hidden="true"></span>
-          <input v-model="hotelForm.destination" type="text" placeholder="Điểm đến hoặc tên khách sạn" />
+      <template v-for="(field, index) in activeSearchFields" :key="`${field.type}-${field.key || index}`">
+        <label
+          v-if="['text', 'date', 'number'].includes(field.type)"
+          :class="['ota-search-field', { 'ota-search-field--meta': field.type === 'number' }]"
+        >
+          <span :class="['ota-search-icon', `ota-search-icon--${field.icon || 'location'}`]" aria-hidden="true"></span>
+          <input
+            v-if="field.type === 'text'"
+            :value="form[field.key] || ''"
+            type="text"
+            :placeholder="field.placeholder || 'Nhập thông tin tìm kiếm'"
+            @input="updateFieldValue(field.key, $event.target.value)"
+          />
+          <input
+            v-else-if="field.type === 'date'"
+            :value="form[field.key] || ''"
+            :min="todayISO"
+            type="date"
+            @input="updateFieldValue(field.key, $event.target.value)"
+          />
+          <input
+            v-else
+            :value="form[field.key]"
+            type="number"
+            :min="field.min || 1"
+            :max="field.max || 50"
+            :placeholder="field.placeholder || 'Số lượng'"
+            @input="updateFieldValue(field.key, Number($event.target.value))"
+          />
         </label>
 
-        <label class="ota-search-field ota-search-field--range">
-          <span class="ota-search-icon ota-search-icon--calendar" aria-hidden="true"></span>
-          <input v-model="hotelForm.checkInDate" :min="todayISO" type="date" />
+        <label v-else-if="field.type === 'date-range'" class="ota-search-field ota-search-field--range">
+          <span :class="['ota-search-icon', `ota-search-icon--${field.icon || 'calendar'}`]" aria-hidden="true"></span>
+          <input
+            :value="form[field.startKey] || ''"
+            :min="todayISO"
+            type="date"
+            @input="updateFieldValue(field.startKey, $event.target.value)"
+          />
           <span class="ota-search-divider">-</span>
-          <input v-model="hotelForm.checkOutDate" :min="hotelForm.checkInDate || todayISO" type="date" />
+          <input
+            :value="form[field.endKey] || ''"
+            :min="form[field.startKey] || todayISO"
+            type="date"
+            @input="updateFieldValue(field.endKey, $event.target.value)"
+          />
         </label>
 
-        <div class="ota-search-field ota-search-field--meta ota-search-field--guest-room">
-          <span class="ota-search-icon ota-search-icon--users" aria-hidden="true"></span>
+        <div v-else-if="field.type === 'guest-room'" class="ota-search-field ota-search-field--meta ota-search-field--guest-room">
+          <span :class="['ota-search-icon', `ota-search-icon--${field.icon || 'users'}`]" aria-hidden="true"></span>
           <GuestRoomSelector v-model="guestRoomSelection" />
         </div>
-      </template>
-
-      <template v-else-if="activeService === 'ticket'">
-        <label class="ota-search-field">
-          <span class="ota-search-icon ota-search-icon--ticket" aria-hidden="true"></span>
-          <input v-model="ticketForm.destination" type="text" placeholder="Địa điểm hoặc tên khu vui chơi" />
-        </label>
-
-        <label class="ota-search-field">
-          <span class="ota-search-icon ota-search-icon--calendar" aria-hidden="true"></span>
-          <input v-model="ticketForm.useDate" :min="todayISO" type="date" />
-        </label>
-
-        <label class="ota-search-field ota-search-field--meta">
-          <span class="ota-search-icon ota-search-icon--ticket" aria-hidden="true"></span>
-          <input v-model.number="ticketForm.ticketQuantity" type="number" min="1" max="30" placeholder="Số vé" />
-        </label>
-      </template>
-
-      <template v-else-if="activeService === 'tour'">
-        <label class="ota-search-field">
-          <span class="ota-search-icon ota-search-icon--location" aria-hidden="true"></span>
-          <input v-model="tourForm.destination" type="text" placeholder="Điểm đến tour" />
-        </label>
-
-        <label class="ota-search-field">
-          <span class="ota-search-icon ota-search-icon--calendar" aria-hidden="true"></span>
-          <input v-model="tourForm.departureDate" :min="todayISO" type="date" />
-        </label>
-
-        <label class="ota-search-field ota-search-field--meta">
-          <span class="ota-search-icon ota-search-icon--user" aria-hidden="true"></span>
-          <input v-model.number="tourForm.travelers" type="number" min="1" max="20" placeholder="Số người" />
-        </label>
       </template>
 
       <router-link :to="searchTarget" class="primary-button ota-search-cta">{{ searchButtonLabel }}</router-link>
@@ -133,54 +134,64 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
 import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useCategorySearchSchema } from '@/composables/useCategorySearchSchema'
 
+const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 const guestRoomStore = useHotelGuestRoomStore()
-const todayISO = (() => {
-  const now = new Date()
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-})()
 
-const activeService = ref('hotel')
+const activeService = ref('')
 
-const serviceTabs = [
-  { id: 'hotel', label: 'Khách sạn' },
-  { id: 'ticket', label: 'Vé tham quan' },
-  { id: 'tour', label: 'Tour' }
-]
-
-const hotelForm = ref({
-  destination: '',
-  checkInDate: '',
-  checkOutDate: ''
+const {
+  todayISO,
+  categories,
+  activeSearchFields,
+  form,
+  updateFieldValue,
+  guestRoomSelection,
+  searchButtonLabel,
+  searchTarget
+} = useCategorySearchSchema({
+  route,
+  serviceStore,
+  guestRoomStore,
+  activeCategoryId: activeService,
+  storeByCategory: true,
+  includeRouteQueryDefaults: false,
+  forceDefaultSearchPath: true
 })
 
-const guestRoomSelection = computed({
-  get: () => guestRoomStore.selection,
-  set: (value) => {
-    guestRoomStore.setSelection(value)
+const serviceTabs = computed(() => {
+  return categories.value.map((category) => ({
+    id: category.id,
+    label: category.name
+  }))
+})
+
+const ensureActiveService = () => {
+  const tabs = serviceTabs.value
+  if (!tabs.length) {
+    activeService.value = ''
+    return
   }
-})
 
-const ticketForm = ref({
-  destination: '',
-  useDate: '',
-  ticketQuantity: 2
-})
+  const hasCurrent = tabs.some((tab) => tab.id === activeService.value)
+  if (!hasCurrent) {
+    activeService.value = tabs[0].id
+  }
+}
 
-const tourForm = ref({
-  destination: '',
-  departureDate: '',
-  travelers: 2
-})
+watch(serviceTabs, () => {
+  ensureActiveService()
+}, { immediate: true })
 
 const featuredServices = computed(() => (Array.isArray(serviceStore.featuredServices) ? serviceStore.featuredServices : []))
 const activePromotions = computed(() => (Array.isArray(serviceStore.activePromotions) ? serviceStore.activePromotions : []).slice(0, 3))
@@ -200,41 +211,6 @@ const isWishlisted = (serviceId) => {
 
   return wishlist.some((id) => String(id) === String(serviceId))
 }
-
-const searchButtonLabel = computed(() => {
-  if (activeService.value === 'hotel') return 'Tìm khách sạn'
-  if (activeService.value === 'ticket') return 'Tìm vé'
-  return 'Tìm tour'
-})
-
-const searchTarget = computed(() => {
-  const query = new URLSearchParams()
-  query.set('category', activeService.value)
-
-  if (activeService.value === 'hotel') {
-    if (hotelForm.value.destination) query.set('destination', hotelForm.value.destination)
-    if (hotelForm.value.checkInDate) query.set('checkInDate', hotelForm.value.checkInDate)
-    if (hotelForm.value.checkOutDate) query.set('checkOutDate', hotelForm.value.checkOutDate)
-    const guestRoomQuery = guestRoomStore.getQueryPayload()
-    query.set('guests', guestRoomQuery.guests)
-    query.set('adults', guestRoomQuery.adults)
-    query.set('children', guestRoomQuery.children)
-    query.set('rooms', guestRoomQuery.rooms)
-    if (guestRoomQuery.childrenAges) {
-      query.set('childrenAges', guestRoomQuery.childrenAges)
-    }
-  } else if (activeService.value === 'ticket') {
-    if (ticketForm.value.destination) query.set('destination', ticketForm.value.destination)
-    if (ticketForm.value.useDate) query.set('useDate', ticketForm.value.useDate)
-    query.set('ticketQuantity', String(Math.max(1, Number(ticketForm.value.ticketQuantity) || 1)))
-  } else if (activeService.value === 'tour') {
-    if (tourForm.value.destination) query.set('destination', tourForm.value.destination)
-    if (tourForm.value.departureDate) query.set('departureDate', tourForm.value.departureDate)
-    query.set('travelers', String(Math.max(1, Number(tourForm.value.travelers) || 1)))
-  }
-
-  return `/dich-vu?${query.toString()}`
-})
 
 </script>
 

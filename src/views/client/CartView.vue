@@ -146,8 +146,13 @@ const getEditQuery = (item) => {
       checkInDate: item.bookingMeta?.checkInDate || item.startDate || undefined,
       checkOutDate: item.bookingMeta?.checkOutDate || item.endDate || undefined,
       guests: item.bookingMeta?.guests || item.quantity || 1,
+      adults: item.bookingMeta?.adults || undefined,
+      children: item.bookingMeta?.children || undefined,
+      childrenAges: Array.isArray(item.bookingMeta?.childrenAges) ? item.bookingMeta.childrenAges.join(',') : undefined,
       rooms: item.bookingMeta?.rooms || 1,
-      originRooms: item.bookingMeta?.rooms || 1
+      roomType: item.bookingMeta?.roomType || undefined,
+      originRooms: item.bookingMeta?.rooms || 1,
+      originRoomType: item.bookingMeta?.roomType || undefined
     }
   }
 

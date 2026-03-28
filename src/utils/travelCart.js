@@ -11,7 +11,8 @@ export const getCartIdentity = (item) => {
 
   if (bookingType === 'hotel') {
     const rooms = Math.max(1, Number(bookingMeta.rooms || 1) || 1)
-    return `${bookingType}|${item.serviceId}|${startDate}|${endDate}|rooms:${rooms}`
+    const roomType = String(bookingMeta.roomType || '').trim().toLowerCase() || 'default'
+    return `${bookingType}|${item.serviceId}|${startDate}|${endDate}|rooms:${rooms}|roomType:${roomType}`
   }
 
   if (bookingType === 'tour') {
@@ -32,7 +33,10 @@ export const buildBookingSummary = (item) => {
   const durationSuffix = meta.durationLabel ? ` · ${meta.durationLabel}` : ''
 
   if (bookingType === 'hotel') {
-    return `${meta.checkInDate || item.startDate || 'Chưa chọn ngày'} - ${meta.checkOutDate || item.endDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.guests || item.quantity} khách · ${meta.rooms || 1} phòng`
+    const adults = Math.max(1, Number(meta.adults || Math.max(1, (meta.guests || item.quantity || 1) - Number(meta.children || 0))) || 1)
+    const children = Math.max(0, Number(meta.children || 0) || 0)
+    const roomTypeText = meta.roomType ? ` · ${meta.roomType}` : ''
+    return `${meta.checkInDate || item.startDate || 'Chưa chọn ngày'} - ${meta.checkOutDate || item.endDate || 'Chưa chọn ngày'}${durationSuffix} · ${adults} người lớn · ${children} trẻ em · ${meta.rooms || 1} phòng${roomTypeText}`
   }
 
   if (bookingType === 'ticket') {

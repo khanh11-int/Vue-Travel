@@ -115,12 +115,13 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
 
 const router = useRouter()
+const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 
@@ -138,10 +139,17 @@ const searchForm = ref({
 
 const selectedCity = ref('Tat ca')
 
+const currentCategory = computed(() => {
+  const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
+  return categories.find((category) => category.homePath === route.path || category.searchPath === route.path) || null
+})
+
+const currentCategoryId = computed(() => String(currentCategory.value?.id || route.query.category || ''))
+
 const allTickets = computed(() => {
   const source = Array.isArray(serviceStore.services) ? serviceStore.services : []
   return source
-    .filter((service) => service.categoryId === 'ticket')
+    .filter((service) => !currentCategoryId.value || service.categoryId === currentCategoryId.value)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
@@ -172,13 +180,16 @@ const promotionsList = computed(() => {
 })
 
 const searchTarget = computed(() => {
+  const basePath = '/dich-vu'
   const query = new URLSearchParams()
-  query.set('category', 'ticket')
+  if (currentCategoryId.value) {
+    query.set('category', currentCategoryId.value)
+  }
   if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
   if (searchForm.value.useDate) query.set('useDate', searchForm.value.useDate)
   query.set('ticketQuantity', String(Math.max(1, Number(searchForm.value.ticketQuantity) || 1)))
 
-  return `/dich-vu?${query.toString()}`
+  return `${basePath}?${query.toString()}`
 })
 
 const handleToggleWishlist = (serviceId) => {
@@ -188,7 +199,13 @@ const handleToggleWishlist = (serviceId) => {
 const isWishlisted = (service) => wishlistStore.isInWishlist(service.id)
 
 const handleSelectDestination = (destination) => {
-  router.push({ name: 'ticket-search', query: { destination: destination.name } })
+  router.push({
+    name: 'travel-list',
+    query: {
+      destination: destination.name,
+      category: currentCategoryId.value || undefined
+    }
+  })
 }
 </script>
 

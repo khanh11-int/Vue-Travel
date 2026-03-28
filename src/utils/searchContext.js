@@ -75,8 +75,10 @@ export const resolveSearchSummary = (query, category) => {
   const quantityLabel = category === 'ticket' ? `${quantity} vé` : `${quantity} khách`
 
   if (category === 'hotel') {
+    const adults = Math.max(1, Number(query.adults || Math.max(1, quantity - Number(query.children || 0))) || 1)
+    const children = Math.max(0, Number(query.children || 0) || 0)
     const rooms = Number(query.rooms || 1)
-    return `Nhận phòng: ${startDate || 'Chưa chọn'} · Trả phòng: ${endDate || 'Chưa chọn'} · ${quantityLabel} · ${rooms} phòng`
+    return `Nhận phòng: ${startDate || 'Chưa chọn'} · Trả phòng: ${endDate || 'Chưa chọn'} · ${adults} người lớn · ${children} trẻ em · ${rooms} phòng`
   }
 
   if (category === 'ticket') {

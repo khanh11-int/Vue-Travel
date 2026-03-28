@@ -70,17 +70,14 @@
 import { computed, reactive } from 'vue'
 import { useBookingStore } from '@/stores/useBookingStore'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
+import { BOOKING_STATUS_LABELS } from '@/utils/travelBooking'
 
 const store = useBookingStore()
 const filters = reactive({ keyword: '', status: '' })
 
-const statusOptions = [
-  { value: 'pending', label: 'Chờ xác nhận' },
-  { value: 'confirmed', label: 'Đã xác nhận' },
-  { value: 'processing', label: 'Đang xử lý' },
-  { value: 'completed', label: 'Hoàn thành' },
-  { value: 'cancelled', label: 'Hủy' }
-]
+const statusOptions = computed(() =>
+  Object.entries(BOOKING_STATUS_LABELS).map(([value, label]) => ({ value, label }))
+)
 
 const filteredBookings = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()

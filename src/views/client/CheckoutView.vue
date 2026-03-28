@@ -179,7 +179,23 @@ const directCheckoutItem = computed(() => {
       checkInDate: startDate,
       checkOutDate: endDate,
       guests: quantity,
+      adults: Math.max(1, Number(route.query.adults || Math.max(1, quantity - Number(route.query.children || 0))) || 1),
+      children: Math.max(0, Number(route.query.children || 0) || 0),
+      childrenAges: String(route.query.childrenAges || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((item) => Math.min(17, Math.max(0, Number(item) || 8))),
       rooms: Math.max(1, Number(route.query.rooms || 1) || 1),
+      roomType: String(route.query.roomType || ''),
+      roomTypeLabel: String(route.query.roomTypeLabel || ''),
+      nights: Math.max(1, Number(route.query.nights || 1) || 1),
+      chargeableAdults: Math.max(1, Number(route.query.chargeableAdults || route.query.adults || 1) || 1),
+      childrenUnderFour: Math.max(0, Number(route.query.childrenUnderFour || 0) || 0),
+      children4To14: Math.max(0, Number(route.query.children4To14 || 0) || 0),
+      childSurchargeMin: Math.max(500000, Number(route.query.childSurchargeMin || 500000) || 500000),
+      childSurchargeMax: Math.min(1000000, Math.max(500000, Number(route.query.childSurchargeMax || 700000) || 700000)),
+      totalPrice: Math.max(0, Number(route.query.totalPrice || 0) || 0),
       durationLabel: String(route.query.durationLabel || ''),
       unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
     }
@@ -210,7 +226,7 @@ const directCheckoutItem = computed(() => {
   const durationSuffix = bookingMeta.durationLabel ? ` · ${bookingMeta.durationLabel}` : ''
 
   const bookingSummary = bookingType === 'hotel'
-    ? `${bookingMeta.checkInDate || 'Chưa chọn ngày'} - ${bookingMeta.checkOutDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.guests} khách · ${bookingMeta.rooms} phòng`
+    ? `${bookingMeta.checkInDate || 'Chưa chọn ngày'} - ${bookingMeta.checkOutDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.adults} người lớn · ${bookingMeta.children} trẻ em · ${bookingMeta.rooms} phòng${bookingMeta.roomTypeLabel ? ` · ${bookingMeta.roomTypeLabel}` : bookingMeta.roomType ? ` · ${bookingMeta.roomType}` : ''}`
     : bookingType === 'ticket'
       ? `${bookingMeta.useDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.ticketQuantity} vé`
       : bookingType === 'tour'
@@ -228,7 +244,9 @@ const directCheckoutItem = computed(() => {
     travelDate: startDate,
     bookingSummary,
     identityKey: `direct-${serviceId}-${startDate}-${endDate}-${quantity}`,
-    lineTotal: (Number(bookingMeta.unitPrice || 0) || Number(service.salePrice || 0) || 0) * quantity
+    lineTotal: bookingType === 'hotel' && Number(bookingMeta.totalPrice || 0) > 0
+      ? Number(bookingMeta.totalPrice)
+      : (Number(bookingMeta.unitPrice || 0) || Number(service.salePrice || 0) || 0) * quantity
   }
 })
 const checkoutItems = computed(() => {

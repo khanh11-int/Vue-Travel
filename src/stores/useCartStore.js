@@ -72,7 +72,9 @@ export const useCartStore = defineStore('cart', {
           service,
           identityKey: getCartIdentity(normalizedItem),
           bookingSummary: buildBookingSummary(normalizedItem),
-          lineTotal: (Number(normalizedItem.bookingMeta?.unitPrice || 0) || Number(service?.salePrice || 0) || 0) * normalizedItem.quantity
+          lineTotal: normalizedItem.bookingType === 'hotel' && Number(normalizedItem.bookingMeta?.totalPrice || 0) > 0
+            ? Number(normalizedItem.bookingMeta.totalPrice)
+            : (Number(normalizedItem.bookingMeta?.unitPrice || 0) || Number(service?.salePrice || 0) || 0) * normalizedItem.quantity
         }
       })
     },

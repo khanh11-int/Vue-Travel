@@ -57,6 +57,10 @@ const props = defineProps({
     type: Object,
     required: true
   },
+  queryContext: {
+    type: Object,
+    default: () => ({})
+  },
   isWishlisted: {
     type: Boolean,
     default: false
@@ -79,10 +83,14 @@ const categoryLabel = computed(() =>
 
 const detailRoute = computed(() => {
   const baseRoute = getDetailRouteLocation(props.service)
+  const injectedQuery = props.queryContext && Object.keys(props.queryContext).length
+    ? props.queryContext
+    : {}
 
   return {
     ...baseRoute,
     query: {
+      ...injectedQuery,
       ...(route.query || {}),
       ...(baseRoute.query || {})
     }

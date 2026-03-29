@@ -61,9 +61,11 @@
           />
         </label>
 
-        <div v-else-if="field.type === 'guest-room'" class="ota-search-field ota-search-field--meta ota-search-field--guest-room">
+        <div v-else-if="field.type === 'guest-room'" class="ota-search-field ota-search-field--meta ota-search-field--selector">
           <span :class="['ota-search-icon', `ota-search-icon--${field.icon || 'users'}`]" aria-hidden="true"></span>
-          <GuestRoomSelector v-model="guestRoomSelection" />
+          <GuestRoomSelector v-if="activeService === 'hotel'" v-model="guestRoomSelection" />
+          <TicketGuestSelector v-else-if="activeService === 'ticket'" v-model="ticketGuestSelection" />
+          <TourTravelerSelector v-else-if="activeService === 'tour'" v-model="travelerSelection" />
         </div>
       </template>
 
@@ -137,36 +139,205 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
+import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
+import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
+import { useCategorySearchSchemaStore } from '@/stores/useCategorySearchSchemaStore'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
-import { useCategorySearchSchema } from '@/composables/useCategorySearchSchema'
+
+const DEFAULT_GUEST_QUERY_KEYS = {
+  guests: 'guests',
+  adults: 'adults',
+  children: 'children',
+  rooms: 'rooms',
+  childrenAges: 'childrenAges'
+}
 
 const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 const guestRoomStore = useHotelGuestRoomStore()
+const categorySearchSchemaStore = useCategorySearchSchemaStore()
 
 const activeService = ref('')
 
-const {
-  todayISO,
-  categories,
-  activeSearchFields,
-  form,
-  updateFieldValue,
-  guestRoomSelection,
-  searchButtonLabel,
-  searchTarget
-} = useCategorySearchSchema({
-  route,
-  serviceStore,
-  guestRoomStore,
-  activeCategoryId: activeService,
-  storeByCategory: true,
-  includeRouteQueryDefaults: false,
-  forceDefaultSearchPath: true
+const todayISO = (() => {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+})()
+
+const categories = computed(() => {
+  return Array.isArray(serviceStore.categories)
+    ? serviceStore.categories.filter((category) => category?.status !== 'inactive')
+    : []
+})
+
+const matchedCategoryByPath = computed(() => {
+  return categories.value.find((category) => category.searchPath === route.path || category.homePath === route.path) || null
+})
+
+const routeCategoryId = computed(() => {
+  return String(route.query.category || matchedCategoryByPath.value?.id || categories.value[0]?.id || '')
+})
+
+const currentCategoryId = computed(() => {
+  if (activeService.value) return String(activeService.value)
+  return routeCategoryId.value
+})
+
+const activeCategory = computed(() => {
+  return categories.value.find((category) => String(category.id) === currentCategoryId.value)
+    || matchedCategoryByPath.value
+    || categories.value[0]
+    || null
+})
+
+const activeSearchConfig = computed(() => activeCategory.value?.searchConfig || null)
+const activeSearchFields = computed(() => {
+  return Array.isArray(activeSearchConfig.value?.fields) ? activeSearchConfig.value.fields : []
+})
+
+const createDefaultFormState = (searchConfig = null) => {
+  const defaults = searchConfig?.defaults && typeof searchConfig.defaults === 'object'
+    ? { ...searchConfig.defaults }
+    : {}
+  const fields = Array.isArray(searchConfig?.fields) ? searchConfig.fields : []
+
+  fields.forEach((field) => {
+    if (field.type === 'guest-room') return
+
+    if (field.type === 'date-range') {
+      const startKey = field.startKey || 'startDate'
+      const endKey = field.endKey || 'endDate'
+      defaults[startKey] = defaults[startKey] || ''
+      defaults[endKey] = defaults[endKey] || ''
+      return
+    }
+
+    const key = field.key
+    if (!key) return
+
+    if (field.type === 'number') {
+      const minimum = Number(field.min || 1)
+      const parsed = Number(defaults[key] || field.defaultValue || minimum)
+      defaults[key] = Math.max(minimum, Number.isFinite(parsed) ? parsed : minimum)
+      return
+    }
+
+    defaults[key] = defaults[key] || ''
+  })
+
+  return defaults
+}
+
+watch([activeSearchConfig, currentCategoryId], () => {
+  const categoryId = currentCategoryId.value
+  if (!categoryId) return
+
+  categorySearchSchemaStore.ensureCategoryFormState(
+    categoryId,
+    createDefaultFormState(activeSearchConfig.value)
+  )
+}, { immediate: true })
+
+watch([categories, activeSearchConfig], () => {
+  categorySearchSchemaStore.syncCategoryFormState(
+    categories.value,
+    (category) => createDefaultFormState(category.searchConfig || null)
+  )
+}, { immediate: true })
+
+const form = computed(() => {
+  return categorySearchSchemaStore.getCurrentFormState({
+    storeByCategory: true,
+    categoryId: currentCategoryId.value
+  })
+})
+
+const updateFieldValue = (key, value) => {
+  if (!key) return
+  categorySearchSchemaStore.setFieldValue({
+    storeByCategory: true,
+    categoryId: currentCategoryId.value,
+    key,
+    value
+  })
+}
+
+const guestRoomSelection = computed({
+  get: () => guestRoomStore.selection,
+  set: (value) => guestRoomStore.setSelection(value)
+})
+
+const searchButtonLabel = computed(() => {
+  return activeSearchConfig.value?.submitLabel || 'Tìm dịch vụ'
+})
+
+const baseSearchTarget = computed(() => {
+  const query = new URLSearchParams()
+  if (currentCategoryId.value) {
+    query.set('category', currentCategoryId.value)
+  }
+
+  activeSearchFields.value.forEach((field) => {
+    if (field.type === 'guest-room') {
+      const guestRoomQuery = guestRoomStore.getQueryPayload()
+      const queryKeys = { ...DEFAULT_GUEST_QUERY_KEYS, ...(field.queryKeys || {}) }
+
+      query.set(queryKeys.guests, guestRoomQuery.guests)
+      query.set(queryKeys.adults, guestRoomQuery.adults)
+      query.set(queryKeys.children, guestRoomQuery.children)
+      query.set(queryKeys.rooms, guestRoomQuery.rooms)
+
+      if (guestRoomQuery.childrenAges) {
+        query.set(queryKeys.childrenAges, guestRoomQuery.childrenAges)
+      }
+      return
+    }
+
+    if (field.type === 'date-range') {
+      const startKey = field.startKey || 'startDate'
+      const endKey = field.endKey || 'endDate'
+      const startValue = form.value[startKey]
+      const endValue = form.value[endKey]
+
+      if (startValue) query.set(field.startQueryKey || startKey, startValue)
+      if (endValue) query.set(field.endQueryKey || endKey, endValue)
+      return
+    }
+
+    if (!field.key) return
+
+    if (field.type === 'number') {
+      const min = Number(field.min || 1)
+      const raw = Number(form.value[field.key] || field.defaultValue || min)
+      const normalized = Math.max(min, Number.isFinite(raw) ? raw : min)
+      query.set(field.queryKey || field.key, String(normalized))
+      return
+    }
+
+    const fieldValue = form.value[field.key]
+    if (fieldValue) {
+      query.set(field.queryKey || field.key, String(fieldValue))
+    }
+  })
+
+  return `/dich-vu?${query.toString()}`
+})
+
+const ticketGuestSelection = ref({
+  tickets: 2,
+  children: 0,
+  childrenAges: []
+})
+
+const travelerSelection = ref({
+  adults: 2,
+  children: 0,
+  childrenAges: []
 })
 
 const serviceTabs = computed(() => {
@@ -193,6 +364,60 @@ watch(serviceTabs, () => {
   ensureActiveService()
 }, { immediate: true })
 
+const searchTarget = computed(() => {
+  if (activeService.value === 'hotel') {
+    return baseSearchTarget.value
+  }
+
+  const basePath = '/dich-vu'
+  const query = new URLSearchParams()
+  
+  query.set('category', String(activeService.value))
+
+  if (activeService.value === 'ticket') {
+    if (form.value.destination) query.set('destination', form.value.destination)
+    if (form.value.useDate) query.set('useDate', form.value.useDate)
+
+    const tickets = Math.max(1, Number(ticketGuestSelection.value.tickets || 1) || 1)
+    const children = Math.max(0, Number(ticketGuestSelection.value.children || 0) || 0)
+    const childrenAges = Array.isArray(ticketGuestSelection.value.childrenAges)
+      ? ticketGuestSelection.value.childrenAges
+          .slice(0, children)
+          .map((age) => Math.min(17, Math.max(1, Number(age) || 8)))
+      : []
+
+    query.set('ticketQuantity', String(tickets))
+    query.set('adults', String(tickets))
+    query.set('children', String(children))
+    query.set('quantity', String(tickets + children))
+    if (childrenAges.length) {
+      query.set('childrenAges', childrenAges.join(','))
+    }
+  } else if (activeService.value === 'tour') {
+    if (form.value.destination) query.set('destination', form.value.destination)
+    if (form.value.startDate) query.set('startDate', form.value.startDate)
+    if (form.value.endDate) query.set('endDate', form.value.endDate)
+
+    const adults = Math.max(1, Number(travelerSelection.value.adults || 1) || 1)
+    const children = Math.max(0, Number(travelerSelection.value.children || 0) || 0)
+    const childrenAges = Array.isArray(travelerSelection.value.childrenAges)
+      ? travelerSelection.value.childrenAges
+          .slice(0, children)
+          .map((age) => Math.min(17, Math.max(1, Number(age) || 8)))
+      : []
+
+    query.set('travelers', String(adults + children))
+    query.set('adults', String(adults))
+    query.set('children', String(children))
+    query.set('quantity', String(adults + children))
+    if (childrenAges.length) {
+      query.set('childrenAges', childrenAges.join(','))
+    }
+  }
+
+  return `${basePath}?${query.toString()}`
+})
+
 const featuredServices = computed(() => (Array.isArray(serviceStore.featuredServices) ? serviceStore.featuredServices : []))
 const activePromotions = computed(() => (Array.isArray(serviceStore.activePromotions) ? serviceStore.activePromotions : []).slice(0, 3))
 const featuredDestinations = computed(() => (Array.isArray(serviceStore.destinations) ? serviceStore.destinations : []).slice(0, 6))
@@ -215,12 +440,13 @@ const isWishlisted = (serviceId) => {
 </script>
 
 <style scoped>
-.ota-search-field--guest-room {
+.ota-search-field--selector {
   grid-template-columns: auto minmax(0, 1fr);
   padding-right: 8px;
 }
 
-.ota-search-field--guest-room :deep(.guest-room-selector__trigger) {
+.ota-search-field--selector :deep(.selector__trigger),
+.ota-search-field--selector :deep(.guest-room-selector__trigger) {
   border: none;
   border-radius: 0;
   background: transparent;
@@ -229,8 +455,9 @@ const isWishlisted = (serviceId) => {
   color: #1d2d45;
 }
 
-.ota-search-field--guest-room :deep(.guest-room-selector__popup) {
-  left: -34px;
+.ota-search-field--selector :deep(.selector__popup),
+.ota-search-field--selector :deep(.guest-room-selector__popup) {
+  left: 0;
   top: calc(100% + 10px);
 }
 </style>

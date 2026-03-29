@@ -4,13 +4,13 @@
       <div class="hotel-home__hero-banner">
         <img
           src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80"
-          alt="Khach san noi dia"
+          alt="Khách sạn nội địa"
           class="hotel-home__hero-image"
         />
         <div class="hotel-home__hero-overlay"></div>
         <div class="hotel-home__hero-content">
-          <h1>Kham pha cac khach san hang dau Viet Nam</h1>
-          <p>Tu Ha Noi toi TP.HCM, tim kiem noi luu tru phu hop cho ky nghi cua ban.</p>
+          <h1>Khám phá các khách sạn hàng đầu Việt Nam</h1>
+          <p>Từ Hà Nội tới TP.HCM, tìm kiếm nơi lưu trú phù hợp cho kỳ nghỉ của bạn.</p>
         </div>
       </div>
 
@@ -19,24 +19,24 @@
           <div class="service-search-panel__row">
             <div class="home-search-panel">
               <div class="home-search-panel__destination">
-                <label>Diem den</label>
-                <input v-model="searchForm.destination" type="text" placeholder="Vi du: Da Nang" />
+                <label>Điểm đến</label>
+                <input v-model="searchForm.destination" type="text" placeholder="Ví dụ: Đà Nẵng" />
               </div>
               <div class="home-search-panel__date">
-                <label>Ngay nhan phong</label>
+                <label>Ngày nhận phòng</label>
                 <input v-model="searchForm.checkInDate" :min="todayISO" type="date" />
               </div>
               <div class="home-search-panel__return-date">
-                <label>Ngay tra phong</label>
+                <label>Ngày trả phòng</label>
                 <input v-model="searchForm.checkOutDate" :min="searchForm.checkInDate || todayISO" type="date" />
               </div>
               <div class="home-search-panel__guest-room">
-                <label>Khach va Phong</label>
+                <label>Khách và phòng</label>
                 <GuestRoomSelector v-model="guestRoomSelection" />
               </div>
             </div>
 
-            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tim kiem khach san</router-link>
+            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tìm kiếm khách sạn</router-link>
           </div>
         </div>
       </div>
@@ -45,8 +45,8 @@
     <section class="page-section hotel-home__section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Uu dai noi bat</p>
-          <h2>Khach san dang giam gia theo diem den.</h2>
+          <p class="eyebrow">Ưu đãi nổi bật</p>
+          <h2>Khách sạn đang giảm giá theo điểm đến.</h2>
         </div>
       </div>
 
@@ -76,8 +76,8 @@
     <section class="page-section hotel-home__section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Khuyen mai</p>
-          <h2>Ma giam gia dang ap dung.</h2>
+          <p class="eyebrow">Khuyến mại</p>
+          <h2>Mã giảm giá đang áp dụng.</h2>
         </div>
       </div>
 
@@ -93,8 +93,8 @@
     <section class="page-section hotel-home__section hotel-home__section--last">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Diem den pho bien</p>
-          <h2>Khach san tot nhat tai cac diem den.</h2>
+          <p class="eyebrow">Điểm đến phổ biến</p>
+          <h2>Khách sạn tốt nhất tại các điểm đến.</h2>
         </div>
       </div>
 
@@ -151,7 +151,7 @@ const guestRoomSelection = computed({
   }
 })
 
-const selectedCity = ref('Tat ca')
+const selectedCity = ref('Tất cả')
 
 const currentCategory = computed(() => {
   const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
@@ -167,10 +167,10 @@ const allHotels = computed(() => {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
-const citiesList = computed(() => ['Tat ca', ...new Set(allHotels.value.map((hotel) => hotel.destination))])
+const citiesList = computed(() => ['Tất cả', ...new Set(allHotels.value.map((hotel) => hotel.destination))])
 
 const filteredHotels = computed(() => {
-  if (selectedCity.value === 'Tat ca') return allHotels.value.slice(0, 8)
+  if (selectedCity.value === 'Tất cả') return allHotels.value.slice(0, 8)
   return allHotels.value.filter((hotel) => hotel.destination === selectedCity.value).slice(0, 8)
 })
 
@@ -287,6 +287,17 @@ const handleSelectDestination = (destination) => {
 .hotel-home__search-wrap .search-panel {
   grid-template-columns: 1fr;
   margin-top: 0;
+}
+
+.hotel-home__search-wrap .home-search-panel {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.25fr);
+}
+
+.hotel-home__search-wrap .home-search-panel__destination,
+.hotel-home__search-wrap .home-search-panel__date,
+.hotel-home__search-wrap .home-search-panel__return-date,
+.hotel-home__search-wrap .home-search-panel__guest-room {
+  grid-column: auto;
 }
 
 .hotel-home__search-wrap .service-search-panel__submit {
@@ -461,6 +472,14 @@ const handleSelectDestination = (destination) => {
 
   .hotel-home__search-wrap {
     margin-top: -20px;
+  }
+
+  .hotel-home__search-wrap .home-search-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hotel-home__search-wrap .home-search-panel__guest-room {
+    grid-column: 1 / -1;
   }
 
   .hotel-home__dest-grid {

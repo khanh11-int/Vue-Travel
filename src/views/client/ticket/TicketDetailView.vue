@@ -12,17 +12,55 @@
 
     <aside class="booking-panel sticky-card detail-booking-panel">
       <p class="eyebrow">Đặt chỗ</p>
-      <h3 class="detail-price">{{ formatCurrencyVND(displaySalePrice) }}</h3>
+      <h3 class="detail-price">{{ formatCurrencyVND(effectiveUnitPrice) }}</h3>
       <p class="muted">Giá áp dụng cho thị trường Việt Nam, chưa bao gồm phí dịch vụ.</p>
 
-      <label>{{ primaryDateLabel }}</label>
-      <input v-model="bookingForm.startDate" :min="todayISO" type="date" />
+      <div class="booking-block">
+        <label>{{ primaryDateLabel }}</label>
+        <input v-model="bookingForm.startDate" :min="todayISO" type="date" />
 
-      <label>{{ quantityLabel }}</label>
-      <div class="quantity-box">
-        <button type="button" @click="decreaseQuantity">-</button>
-        <span>{{ bookingForm.quantity }}</span>
-        <button type="button" @click="increaseQuantity">+</button>
+        <label>Gói dịch vụ tại địa điểm</label>
+        <select v-model="bookingForm.packageId" class="ticket-package-select">
+          <option v-for="pkg in ticketPackages" :key="pkg.id" :value="pkg.id">
+            {{ pkg.name }} - {{ formatCurrencyVND(pkg.salePrice) }}
+          </option>
+        </select>
+
+        <ul v-if="selectedTicketPackage && selectedTicketPackage.features?.length" class="ticket-package-features">
+          <li v-for="feature in selectedTicketPackage.features" :key="feature">{{ feature }}</li>
+        </ul>
+
+        <div class="ticket-pricing-breakdown">
+          <div class="booking-summary-row">
+            <span>Loại dịch vụ vé</span>
+            <strong>{{ ticketServiceTypeLabel }}</strong>
+          </div>
+          <div class="booking-summary-row">
+            <span>Gói đã chọn</span>
+            <strong>{{ selectedTicketPackage?.name || 'Gói cơ bản' }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="booking-block">
+        <label>Số vé và trẻ em</label>
+        <TicketGuestSelector v-model="ticketGuestSelection" />
+
+        <div class="ticket-pricing-breakdown">
+          <div class="booking-summary-row">
+            <span>Khách tổng</span>
+            <strong>{{ totalGuests }} khách</strong>
+          </div>
+          <div class="booking-summary-row">
+            <span>Vé tính giá người lớn</span>
+            <strong>{{ chargeableAdultCount }} vé</strong>
+          </div>
+          <div class="booking-summary-row" v-if="childSurchargeCount > 0">
+            <span>Phụ thu trẻ em (8-14 tuổi)</span>
+            <strong>{{ formatCurrencyVND(childSurchargeTotal) }}</strong>
+          </div>
+          <p class="muted" v-if="freeChildrenCount > 0">Trẻ dưới 8 tuổi miễn phí: {{ freeChildrenCount }} trẻ</p>
+        </div>
       </div>
 
       <div class="booking-summary-row">
@@ -65,6 +103,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
+import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
 import { useAdminStore } from '@/stores/useAdminStore'
 import { useCartStore } from '@/stores/useCartStore'
 import { useServiceStore } from '@/stores/useServiceStore'
@@ -72,32 +111,57 @@ import { useWishlistStore } from '@/stores/useWishlistStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
 
+const parseChildrenAgesFromQuery = (query) => {
+  const raw = String(query.childrenAges || '').trim()
+  if (!raw) return []
+
+  return raw
+    .split(',')
+    .map((item) => Math.min(17, Math.max(1, Number(item.trim()) || 8)))
+}
+
 const ticketDetailLogic = {
-  quantityLabel: 'Số lượng vé',
-  scheduleLabel: 'Chọn lịch phù hợp',
   parseQuery: (query) => ({
     startDate: String(query.useDate || query.startDate || query.date || '').trim(),
-    endDate: '',
-    quantity: Number(query.ticketQuantity || query.quantity || 2),
-    scheduleId: ''
+    adults: Number(query.adults || query.ticketQuantity || query.quantity || 2),
+    children: Number(query.children || 0),
+    childrenAges: parseChildrenAgesFromQuery(query),
+    packageId: String(query.packageId || '').trim()
   }),
-  buildScheduleOptions: () => [],
-  requiresScheduleSelection: () => false,
-  buildSelectedScheduleMeta: () => '',
-  buildBookingMeta: ({ bookingForm, selectedSchedule, displaySalePrice }) => ({
+  buildBookingMeta: ({ bookingForm, selectedTicketPackage, effectiveUnitPrice, pricingSummary }) => ({
     useDate: bookingForm.startDate,
-    ticketQuantity: bookingForm.quantity,
-    durationLabel: selectedSchedule?.durationLabel || '',
-    unitPrice: displaySalePrice
+    packageId: bookingForm.packageId,
+    packageName: selectedTicketPackage?.name || 'Gói cơ bản',
+    adults: bookingForm.adults,
+    children: bookingForm.children,
+    childrenAges: [...bookingForm.childrenAges],
+    totalGuests: pricingSummary.totalGuests,
+    ticketQuantity: pricingSummary.chargeableAdultCount,
+    freeChildren: pricingSummary.freeChildrenCount,
+    chargeableAdults: pricingSummary.chargeableAdultCount,
+    childSurchargeCount: pricingSummary.childSurchargeCount,
+    childSurchargeUnit: pricingSummary.childSurchargeUnit,
+    childSurchargeTotal: pricingSummary.childSurchargeTotal,
+    totalPrice: pricingSummary.totalPrice,
+    unitPrice: effectiveUnitPrice
   }),
-  buildCheckoutQuery: ({ bookingForm, selectedSchedule, displaySalePrice, requiresEndDate }) => ({
+  buildCheckoutQuery: ({ bookingForm, selectedTicketPackage, effectiveUnitPrice, pricingSummary }) => ({
     useDate: bookingForm.startDate,
-    ticketQuantity: bookingForm.quantity,
-    durationLabel: selectedSchedule?.durationLabel || undefined,
-    unitPrice: displaySalePrice,
-    startDate: bookingForm.startDate,
-    endDate: requiresEndDate ? bookingForm.endDate : '',
-    quantity: bookingForm.quantity
+    packageId: bookingForm.packageId || undefined,
+    packageName: selectedTicketPackage?.name || undefined,
+    adults: bookingForm.adults,
+    children: bookingForm.children,
+    childrenAges: bookingForm.childrenAges.join(',') || undefined,
+    ticketQuantity: pricingSummary.chargeableAdultCount,
+    quantity: pricingSummary.totalGuests,
+    totalGuests: pricingSummary.totalGuests,
+    freeChildren: pricingSummary.freeChildrenCount,
+    childSurchargeCount: pricingSummary.childSurchargeCount,
+    childSurchargeUnit: pricingSummary.childSurchargeUnit,
+    childSurchargeTotal: pricingSummary.childSurchargeTotal,
+    totalPrice: pricingSummary.totalPrice,
+    unitPrice: effectiveUnitPrice,
+    startDate: bookingForm.startDate
   })
 }
 
@@ -121,7 +185,6 @@ const service = computed(() => {
 const serviceComments = computed(() => (service.value ? serviceStore.getCommentsByService(service.value.id) : []))
 const isWishlisted = computed(() => wishlistStore.isInWishlist(service.value?.id))
 const primaryDateLabel = computed(() => getPrimaryDateLabel(service.value))
-const quantityLabel = computed(() => ticketDetailLogic.quantityLabel)
 const relatedServices = computed(() => {
   if (!service.value) return []
 
@@ -137,7 +200,43 @@ const galleryImages = computed(() => {
   return [...new Set(merged)]
 })
 
-const displaySalePrice = computed(() => Number(service.value?.salePrice || 0))
+const ticketPackages = computed(() => {
+  const rawPackages = Array.isArray(service.value?.ticketPackages) ? service.value.ticketPackages : []
+  if (rawPackages.length > 0) {
+    return rawPackages.map((pkg, index) => ({
+      id: String(pkg.id || `pkg-${index + 1}`),
+      name: String(pkg.name || `Gói ${index + 1}`),
+      salePrice: Math.max(0, Number(pkg.salePrice || pkg.price || service.value?.salePrice || 0)),
+      price: Math.max(0, Number(pkg.price || pkg.salePrice || service.value?.price || 0)),
+      childSurcharge: Number(pkg.childSurcharge || service.value?.childSurcharge || service.value?.ticketChildPolicy?.surcharge || 120000),
+      features: Array.isArray(pkg.features) ? pkg.features : []
+    }))
+  }
+
+  return [{
+    id: 'basic-default',
+    name: 'Gói cơ bản',
+    salePrice: Math.max(0, Number(service.value?.salePrice || 0)),
+    price: Math.max(0, Number(service.value?.price || service.value?.salePrice || 0)),
+    childSurcharge: Number(service.value?.childSurcharge || service.value?.ticketChildPolicy?.surcharge || 120000),
+    features: []
+  }]
+})
+const selectedTicketPackage = computed(() => {
+  const currentId = String(bookingForm.packageId || '').trim()
+  return ticketPackages.value.find((pkg) => pkg.id === currentId) || ticketPackages.value[0] || null
+})
+const effectiveUnitPrice = computed(() => Number(selectedTicketPackage.value?.salePrice || service.value?.salePrice || 0))
+const ticketServiceTypeLabel = computed(() => String(service.value?.ticketServiceType || 'Vé tham quan'))
+const childSurchargeUnit = computed(() => {
+  const configured = Number(
+    selectedTicketPackage.value?.childSurcharge
+      || service.value?.ticketChildPolicy?.surcharge
+      || service.value?.childSurcharge
+      || 120000
+  )
+  return Math.max(50000, Math.min(200000, configured || 120000))
+})
 const maxSelectableSlots = computed(() => Math.max(0, Number(service.value?.availableSlots || 0)))
 const isEditingFromCart = computed(() => route.query.edit === '1')
 const originalCartItem = computed(() => ({
@@ -150,11 +249,46 @@ const originalCartItem = computed(() => ({
 
 const bookingForm = reactive({
   startDate: '',
-  quantity: 2
+  packageId: '',
+  adults: 2,
+  children: 0,
+  childrenAges: []
 })
 const bookingFeedback = ref('')
 const bookingSuccess = ref('')
 const selectedImage = ref('')
+const ticketGuestSelection = ref({
+  tickets: bookingForm.adults,
+  children: bookingForm.children,
+  childrenAges: [...bookingForm.childrenAges]
+})
+
+const normalizedChildrenAges = computed(() => {
+  const targetLength = Math.max(0, Number(bookingForm.children) || 0)
+  return Array.from({ length: targetLength }, (_, index) => {
+    const age = Number(bookingForm.childrenAges[index] ?? 8)
+    return Math.min(17, Math.max(1, Number.isFinite(age) ? age : 8))
+  })
+})
+
+const freeChildrenCount = computed(() => normalizedChildrenAges.value.filter((age) => age < 8).length)
+const surchargeChildrenCount = computed(() => normalizedChildrenAges.value.filter((age) => age >= 8 && age <= 14).length)
+const chargedAsAdultChildrenCount = computed(() => normalizedChildrenAges.value.filter((age) => age >= 15).length)
+const chargeableAdultCount = computed(() => Math.max(1, bookingForm.adults) + chargedAsAdultChildrenCount.value)
+const childSurchargeCount = computed(() => surchargeChildrenCount.value)
+const childSurchargeTotal = computed(() => childSurchargeCount.value * childSurchargeUnit.value)
+const totalGuests = computed(() => Math.max(1, bookingForm.adults) + Math.max(0, bookingForm.children))
+const totalPrice = computed(() => (chargeableAdultCount.value * effectiveUnitPrice.value) + childSurchargeTotal.value)
+
+const pricingSummary = computed(() => ({
+  totalGuests: totalGuests.value,
+  chargeableAdultCount: chargeableAdultCount.value,
+  freeChildrenCount: freeChildrenCount.value,
+  childSurchargeCount: childSurchargeCount.value,
+  childSurchargeUnit: childSurchargeUnit.value,
+  childSurchargeTotal: childSurchargeTotal.value,
+  totalPrice: totalPrice.value
+}))
 
 watch([service, () => route.query], ([nextService]) => {
   if (!nextService) return
@@ -162,13 +296,48 @@ watch([service, () => route.query], ([nextService]) => {
   selectedImage.value = nextService.image
   const queryDefaults = ticketDetailLogic.parseQuery(route.query)
   bookingForm.startDate = queryDefaults.startDate
-  bookingForm.quantity = Math.min(
-    Math.max(1, Number.isFinite(queryDefaults.quantity) ? queryDefaults.quantity : 2),
-    Math.max(nextService.availableSlots, 1)
-  )
+  bookingForm.packageId = queryDefaults.packageId
+  bookingForm.adults = Math.max(1, Number.isFinite(queryDefaults.adults) ? queryDefaults.adults : 2)
+  bookingForm.children = Math.max(0, Number.isFinite(queryDefaults.children) ? queryDefaults.children : 0)
+  bookingForm.childrenAges = queryDefaults.childrenAges.slice(0, bookingForm.children)
+  ticketGuestSelection.value = {
+    tickets: bookingForm.adults,
+    children: bookingForm.children,
+    childrenAges: [...bookingForm.childrenAges]
+  }
 }, { immediate: true, deep: true })
 
-const totalPrice = computed(() => displaySalePrice.value * bookingForm.quantity)
+watch([service, ticketPackages], () => {
+  if (!service.value) return
+  const validIds = new Set(ticketPackages.value.map((pkg) => pkg.id))
+  if (!bookingForm.packageId || !validIds.has(bookingForm.packageId)) {
+    bookingForm.packageId = ticketPackages.value[0]?.id || ''
+  }
+}, { immediate: true })
+
+watch(() => bookingForm.children, (nextChildren) => {
+  const normalizedChildren = Math.max(0, Math.floor(Number(nextChildren) || 0))
+  bookingForm.children = normalizedChildren
+
+  if (bookingForm.childrenAges.length > normalizedChildren) {
+    bookingForm.childrenAges = bookingForm.childrenAges.slice(0, normalizedChildren)
+    return
+  }
+
+  if (bookingForm.childrenAges.length < normalizedChildren) {
+    bookingForm.childrenAges = [
+      ...bookingForm.childrenAges,
+      ...Array.from({ length: normalizedChildren - bookingForm.childrenAges.length }, () => 8)
+    ]
+  }
+}, { immediate: true })
+
+watch(() => ticketGuestSelection.value, (nextSelection) => {
+  if (!nextSelection) return
+  bookingForm.adults = Math.max(1, Number(nextSelection.tickets) || 1)
+  bookingForm.children = Math.max(0, Number(nextSelection.children) || 0)
+  bookingForm.childrenAges = Array.isArray(nextSelection.childrenAges) ? [...nextSelection.childrenAges] : []
+}, { deep: true })
 
 const validateBookingInput = () => {
   bookingFeedback.value = ''
@@ -187,7 +356,7 @@ const validateBookingInput = () => {
     bookingFeedback.value = `${primaryDateLabel.value} không được nhỏ hơn ngày hiện tại.`
     return false
   }
-  if (bookingForm.quantity > maxSelectableSlots.value) {
+  if (totalGuests.value > maxSelectableSlots.value) {
     bookingFeedback.value = `Số lượng vượt quá ${maxSelectableSlots.value} chỗ còn lại.`
     return false
   }
@@ -197,12 +366,13 @@ const validateBookingInput = () => {
 const addToCartWithCurrentSelection = () => {
   const nextItem = {
     serviceId: service.value.id,
-    quantity: bookingForm.quantity,
+    quantity: totalGuests.value,
     bookingType: 'ticket',
     bookingMeta: ticketDetailLogic.buildBookingMeta({
       bookingForm,
-      selectedSchedule: null,
-      displaySalePrice: displaySalePrice.value
+      selectedTicketPackage: selectedTicketPackage.value,
+      effectiveUnitPrice: effectiveUnitPrice.value,
+      pricingSummary: pricingSummary.value
     }),
     startDate: bookingForm.startDate,
     endDate: ''
@@ -221,22 +391,6 @@ const addToCartWithCurrentSelection = () => {
   }
 
   cartStore.addToCart(nextItem)
-}
-
-const decreaseQuantity = () => {
-  bookingFeedback.value = ''
-  bookingSuccess.value = ''
-  if (bookingForm.quantity > 1) bookingForm.quantity -= 1
-}
-
-const increaseQuantity = () => {
-  bookingFeedback.value = ''
-  bookingSuccess.value = ''
-  if (bookingForm.quantity >= maxSelectableSlots.value) {
-    bookingFeedback.value = `Dịch vụ này chỉ còn ${maxSelectableSlots.value} chỗ.`
-    return
-  }
-  bookingForm.quantity += 1
 }
 
 const toggleWishlist = () => {
@@ -266,9 +420,9 @@ const handleBookNow = () => {
       serviceId: service.value.id,
       ...ticketDetailLogic.buildCheckoutQuery({
         bookingForm,
-        selectedSchedule: null,
-        displaySalePrice: displaySalePrice.value,
-        requiresEndDate: false
+        selectedTicketPackage: selectedTicketPackage.value,
+        effectiveUnitPrice: effectiveUnitPrice.value,
+        pricingSummary: pricingSummary.value
       })
     }
   })
@@ -284,3 +438,89 @@ const submitComment = (payload) => {
   })
 }
 </script>
+
+<style scoped>
+.detail-booking-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.booking-block {
+  display: grid;
+  gap: 10px;
+}
+
+.ticket-package-select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d2deee;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.ticket-package-features {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  color: #3d5674;
+  font-size: 0.9rem;
+}
+
+.detail-booking-panel > input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d2deee;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.detail-booking-panel > input:focus {
+  outline: none;
+  border-color: #77a8e8;
+  box-shadow: 0 0 0 3px rgba(65, 131, 217, 0.18);
+}
+
+.ticket-child-age-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ticket-child-age-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+  color: #506581;
+}
+
+.ticket-child-age-grid input {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid #d2deee;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.ticket-pricing-breakdown {
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #dbe6f5;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+}
+
+.ticket-pricing-breakdown .booking-summary-row {
+  margin: 0;
+}
+
+.ticket-pricing-breakdown .booking-summary-row + .booking-summary-row {
+  margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .ticket-child-age-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

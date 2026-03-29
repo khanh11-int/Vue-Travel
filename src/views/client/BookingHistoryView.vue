@@ -94,13 +94,19 @@ const getBookingSummary = (item) => {
   }
 
   if (bookingType === 'ticket') {
+    const adults = bookingMeta.adults || 1
+    const children = bookingMeta.children || 0
     const ticketQuantity = bookingMeta.ticketQuantity || item.quantity || 1
-    return `${formatDateVN(bookingMeta.useDate || startDate)}${durationSuffix} · ${ticketQuantity} vé`
+    return `${formatDateVN(bookingMeta.useDate || startDate)}${durationSuffix} · ${adults} người lớn · ${children} trẻ em · ${ticketQuantity} vé tính phí`
   }
 
   if (bookingType === 'tour') {
-    const travelers = bookingMeta.travelers || item.quantity || 1
-    return `Khởi hành ${formatDateVN(bookingMeta.departureDate || startDate)}${durationSuffix} · ${travelers} người`
+    const adults = bookingMeta.adults || 1
+    const children = bookingMeta.children || 0
+    if (bookingMeta.scheduleMode === 'flexible') {
+      return `Linh hoạt ${formatDateRangeVN(bookingMeta.departureDate || startDate, bookingMeta.endDate || endDate)}${durationSuffix} · ${adults} người lớn · ${children} trẻ em`
+    }
+    return `Khởi hành ${formatDateVN(bookingMeta.departureDate || startDate)}${durationSuffix} · ${adults} người lớn · ${children} trẻ em`
   }
 
   const travelers = bookingMeta.travelers || item.quantity || 1

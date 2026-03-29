@@ -16,7 +16,9 @@ export const getCartIdentity = (item) => {
   }
 
   if (bookingType === 'tour') {
-    return `${bookingType}|${item.serviceId}|${startDate}|dep:${bookingMeta.departureId || ''}`
+    const scheduleMode = bookingMeta.scheduleMode || 'fixed'
+    const flexibleEndDate = bookingMeta.endDate || endDate || ''
+    return `${bookingType}|${item.serviceId}|mode:${scheduleMode}|${startDate}|${flexibleEndDate}|dep:${bookingMeta.departureId || ''}`
   }
 
   return `${bookingType}|${item.serviceId}|${startDate}`
@@ -40,11 +42,19 @@ export const buildBookingSummary = (item) => {
   }
 
   if (bookingType === 'ticket') {
-    return `${meta.useDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.ticketQuantity || item.quantity} vé`
+    const adults = Math.max(1, Number(meta.adults || 1) || 1)
+    const children = Math.max(0, Number(meta.children || 0) || 0)
+    const chargeableTickets = Math.max(1, Number(meta.ticketQuantity || 1) || 1)
+    return `${meta.useDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${adults} người lớn · ${children} trẻ em · ${chargeableTickets} vé tính phí`
   }
 
   if (bookingType === 'tour') {
-    return `Khởi hành ${meta.departureDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${meta.travelers || item.quantity} người`
+    const adults = Math.max(1, Number(meta.adults || 1) || 1)
+    const children = Math.max(0, Number(meta.children || 0) || 0)
+    if (meta.scheduleMode === 'flexible') {
+      return `Linh hoạt ${meta.departureDate || item.startDate || 'Chưa chọn ngày'} - ${meta.endDate || item.endDate || 'Chưa chọn ngày'}${durationSuffix} · ${adults} người lớn · ${children} trẻ em`
+    }
+    return `Khởi hành ${meta.departureDate || item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${adults} người lớn · ${children} trẻ em`
   }
 
   return `Ngày bắt đầu ${item.startDate || 'Chưa chọn ngày'}${durationSuffix} · ${item.quantity || 1} người`

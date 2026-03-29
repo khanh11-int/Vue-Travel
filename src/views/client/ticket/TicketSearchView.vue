@@ -1,71 +1,28 @@
 <template>
-  <section class="page-section service-search-page">
+  <section class="page-section service-search-page service-search-page--compact">
     <div class="service-search-page__main">
-      <p class="eyebrow">Vé tham quan</p>
-      <h1 class="home-hero__title">Tìm vé tham quan nhanh theo ngày sử dụng</h1>
-      <p class="hero-copy">Tối ưu đặt vé nội địa theo điểm đến và số lượng vé, phù hợp lịch trình của bạn.</p>
-
       <div class="search-panel service-search-panel home-search-tabs">
         <ServiceSearchNav :active-id="currentCategoryId" />
 
         <div class="service-search-panel__row">
           <div class="home-search-panel">
-            <template v-for="(field, index) in activeSearchFields" :key="`${field.type}-${field.key || index}`">
-              <label
-                v-if="['text', 'date', 'number'].includes(field.type)"
-                :class="['ota-search-field', { 'ota-search-field--meta': field.type === 'number' }]"
-              >
-                <span :class="['ota-search-icon', `ota-search-icon--${field.icon || 'location'}`]" aria-hidden="true"></span>
-                <input
-                  v-if="field.type === 'text'"
-                  :value="form[field.key] || ''"
-                  type="text"
-                  :placeholder="field.placeholder || 'Nhập thông tin tìm kiếm'"
-                  @input="updateFieldValue(field.key, $event.target.value)"
-                />
-                <input
-                  v-else-if="field.type === 'date'"
-                  :value="form[field.key] || ''"
-                  :min="todayISO"
-                  type="date"
-                  @input="updateFieldValue(field.key, $event.target.value)"
-                />
-                <input
-                  v-else
-                  :value="form[field.key]"
-                  type="number"
-                  :min="field.min || 1"
-                  :max="field.max || 50"
-                  :placeholder="field.placeholder || 'Số lượng'"
-                  @input="updateFieldValue(field.key, Number($event.target.value))"
-                />
-              </label>
+            <label class="ota-search-field">
+              <span class="ota-search-icon ota-search-icon--location" aria-hidden="true"></span>
+              <input v-model="searchForm.destination" type="text" placeholder="Điểm tham quan" />
+            </label>
 
-              <label v-else-if="field.type === 'date-range'" class="ota-search-field ota-search-field--range">
-                <span :class="['ota-search-icon', `ota-search-icon--${field.icon || 'calendar'}`]" aria-hidden="true"></span>
-                <input
-                  :value="form[field.startKey] || ''"
-                  :min="todayISO"
-                  type="date"
-                  @input="updateFieldValue(field.startKey, $event.target.value)"
-                />
-                <span class="ota-search-divider">-</span>
-                <input
-                  :value="form[field.endKey] || ''"
-                  :min="form[field.startKey] || todayISO"
-                  type="date"
-                  @input="updateFieldValue(field.endKey, $event.target.value)"
-                />
-              </label>
+            <label class="ota-search-field">
+              <span class="ota-search-icon ota-search-icon--calendar" aria-hidden="true"></span>
+              <input v-model="searchForm.useDate" :min="todayISO" type="date" />
+            </label>
 
-              <div v-else-if="field.type === 'guest-room'" class="ota-search-field ota-search-field--meta ota-search-field--guest-room">
-                <span :class="['ota-search-icon', `ota-search-icon--${field.icon || 'users'}`]" aria-hidden="true"></span>
-                <GuestRoomSelector v-model="guestRoomSelection" />
-              </div>
-            </template>
+            <div class="ota-search-field ota-search-field--meta ota-search-field--selector">
+              <span class="ota-search-icon ota-search-icon--users" aria-hidden="true"></span>
+              <TicketGuestSelector v-model="ticketGuestSelection" />
+            </div>
           </div>
 
-          <router-link :to="searchTarget" class="primary-button service-search-panel__submit">{{ searchButtonLabel }}</router-link>
+          <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tìm vé</router-link>
         </div>
       </div>
     </div>
@@ -73,50 +30,74 @@
 </template>
 
 <script setup>
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
 import ServiceSearchNav from '@/components/travel/ServiceSearchNav.vue'
-import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
-import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
 import { useServiceStore } from '@/stores/useServiceStore'
-import { useCategorySearchSchema } from '@/composables/useCategorySearchSchema'
 
 const route = useRoute()
 const serviceStore = useServiceStore()
-const guestRoomStore = useHotelGuestRoomStore()
 
-const {
-  todayISO,
-  currentCategoryId,
-  activeSearchFields,
-  form,
-  updateFieldValue,
-  guestRoomSelection,
-  searchButtonLabel,
-  searchTarget
-} = useCategorySearchSchema({
-  route,
-  serviceStore,
-  guestRoomStore
+const todayISO = (() => {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+})()
+
+const categories = computed(() => (Array.isArray(serviceStore.categories) ? serviceStore.categories : []))
+const activeCategory = computed(() => {
+  return categories.value.find((category) => category.searchPath === route.path || category.homePath === route.path) || null
+})
+
+const currentCategoryId = computed(() => String(route.query.category || activeCategory.value?.id || 'ticket'))
+
+const searchForm = ref({
+  destination: String(route.query.destination || ''),
+  useDate: String(route.query.useDate || route.query.startDate || '')
+})
+
+const ticketGuestSelection = ref({
+  tickets: Math.max(1, Number(route.query.ticketQuantity || route.query.adults || route.query.quantity || 2) || 2),
+  children: Math.max(0, Number(route.query.children || 0) || 0),
+  childrenAges: String(route.query.childrenAges || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => Math.min(17, Math.max(1, Number(item) || 8)))
+})
+
+const searchTarget = computed(() => {
+  const basePath = activeCategory.value?.searchPath || '/dich-vu'
+  const query = new URLSearchParams()
+
+  if (currentCategoryId.value) query.set('category', currentCategoryId.value)
+  if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
+  if (searchForm.value.useDate) query.set('useDate', searchForm.value.useDate)
+
+  const tickets = Math.max(1, Number(ticketGuestSelection.value.tickets || 1) || 1)
+  const children = Math.max(0, Number(ticketGuestSelection.value.children || 0) || 0)
+  const childrenAges = Array.isArray(ticketGuestSelection.value.childrenAges)
+    ? ticketGuestSelection.value.childrenAges
+        .slice(0, children)
+        .map((age) => Math.min(17, Math.max(1, Number(age) || 8)))
+    : []
+
+  query.set('ticketQuantity', String(tickets))
+  query.set('adults', String(tickets))
+  query.set('children', String(children))
+  query.set('quantity', String(tickets + children))
+  if (childrenAges.length) {
+    query.set('childrenAges', childrenAges.join(','))
+  }
+
+  return `${basePath}?${query.toString()}`
 })
 </script>
 
 <style scoped>
-.ota-search-field--guest-room {
+.ota-search-field--selector {
   grid-template-columns: auto minmax(0, 1fr);
   padding-right: 8px;
-}
-
-.ota-search-field--guest-room :deep(.guest-room-selector__trigger) {
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  padding: 0;
-  font-weight: 700;
-  color: #1d2d45;
-}
-
-.ota-search-field--guest-room :deep(.guest-room-selector__popup) {
-  left: -34px;
-  top: calc(100% + 10px);
 }
 </style>

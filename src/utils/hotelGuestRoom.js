@@ -16,7 +16,7 @@ const normalizeInteger = (value, minimum) => {
 const normalizeChildAge = (value) => {
   const age = Math.floor(Number(value))
   if (Number.isNaN(age)) return DEFAULT_CHILD_AGE
-  return Math.min(17, Math.max(0, age))
+  return Math.min(17, Math.max(1, age))
 }
 
 export const normalizeGuestRoomSelection = (payload = {}) => {

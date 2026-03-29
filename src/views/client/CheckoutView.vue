@@ -160,8 +160,8 @@ const directCheckoutItem = computed(() => {
 
   const bookingType = service.categoryId
   const quantity = bookingType === 'ticket'
-    ? Math.max(1, Math.min(Number(route.query.ticketQuantity || route.query.quantity) || 1, service.availableSlots || 1))
-    : Math.max(1, Math.min(Number(route.query.travelers || route.query.guests || route.query.quantity) || 1, service.availableSlots || 1))
+    ? Math.max(1, Math.min(Number(route.query.totalGuests || route.query.quantity || route.query.ticketQuantity) || 1, service.availableSlots || 1))
+    : Math.max(1, Math.min(Number(route.query.totalGuests || route.query.travelers || route.query.guests || route.query.quantity) || 1, service.availableSlots || 1))
 
   const startDate = bookingType === 'hotel'
     ? String(route.query.checkInDate || route.query.startDate || '')
@@ -202,7 +202,20 @@ const directCheckoutItem = computed(() => {
     : bookingType === 'ticket'
       ? {
         useDate: startDate,
-        ticketQuantity: quantity,
+        adults: Math.max(1, Number(route.query.adults || route.query.ticketQuantity || quantity) || 1),
+        children: Math.max(0, Number(route.query.children || 0) || 0),
+        childrenAges: String(route.query.childrenAges || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .map((item) => Math.min(17, Math.max(1, Number(item) || 8))),
+        totalGuests: Math.max(1, Number(route.query.totalGuests || quantity) || 1),
+        ticketQuantity: Math.max(1, Number(route.query.ticketQuantity || route.query.chargeableAdults || quantity) || 1),
+        freeChildren: Math.max(0, Number(route.query.freeChildren || 0) || 0),
+        childSurchargeCount: Math.max(0, Number(route.query.childSurchargeCount || 0) || 0),
+        childSurchargeUnit: Math.max(0, Number(route.query.childSurchargeUnit || 0) || 0),
+        childSurchargeTotal: Math.max(0, Number(route.query.childSurchargeTotal || 0) || 0),
+        totalPrice: Math.max(0, Number(route.query.totalPrice || 0) || 0),
         durationLabel: String(route.query.durationLabel || ''),
         unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
       }
@@ -210,7 +223,21 @@ const directCheckoutItem = computed(() => {
         ? {
           departureDate: startDate,
           departureId: String(route.query.departureId || ''),
-          travelers: quantity,
+          endDate: String(route.query.endDate || ''),
+          scheduleMode: String(route.query.scheduleMode || 'fixed'),
+          adults: Math.max(1, Number(route.query.adults || quantity) || 1),
+          children: Math.max(0, Number(route.query.children || 0) || 0),
+          childrenAges: String(route.query.childrenAges || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .map((item) => Math.min(17, Math.max(1, Number(item) || 8))),
+          totalGuests: Math.max(1, Number(route.query.totalGuests || quantity) || 1),
+          travelers: Math.max(1, Number(route.query.totalGuests || route.query.travelers || quantity) || 1),
+          freeChildren: Math.max(0, Number(route.query.freeChildren || 0) || 0),
+          childDiscountRate: Math.max(0, Math.min(1, Number(route.query.childDiscountRate || 0.75) || 0.75)),
+          childChargedAsAdultCount: Math.max(0, Number(route.query.childChargedAsAdultCount || 0) || 0),
+          totalPrice: Math.max(0, Number(route.query.totalPrice || 0) || 0),
           durationLabel: String(route.query.durationLabel || ''),
           unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
         }
@@ -228,9 +255,9 @@ const directCheckoutItem = computed(() => {
   const bookingSummary = bookingType === 'hotel'
     ? `${bookingMeta.checkInDate || 'Chưa chọn ngày'} - ${bookingMeta.checkOutDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.adults} người lớn · ${bookingMeta.children} trẻ em · ${bookingMeta.rooms} phòng${bookingMeta.roomTypeLabel ? ` · ${bookingMeta.roomTypeLabel}` : bookingMeta.roomType ? ` · ${bookingMeta.roomType}` : ''}`
     : bookingType === 'ticket'
-      ? `${bookingMeta.useDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.ticketQuantity} vé`
+      ? `${bookingMeta.useDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.adults || 1} người lớn · ${bookingMeta.children || 0} trẻ em · ${bookingMeta.ticketQuantity || 1} vé tính phí`
       : bookingType === 'tour'
-        ? `Khởi hành ${bookingMeta.departureDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.travelers} người`
+        ? `${bookingMeta.scheduleMode === 'flexible' ? 'Linh hoạt' : 'Khởi hành'} ${bookingMeta.departureDate || 'Chưa chọn ngày'}${bookingMeta.scheduleMode === 'flexible' ? ` - ${bookingMeta.endDate || 'Chưa chọn ngày'}` : ''}${durationSuffix} · ${bookingMeta.adults || 1} người lớn · ${bookingMeta.children || 0} trẻ em`
         : `Áp dụng ${bookingMeta.applyDate || 'Chưa chọn ngày'}${durationSuffix} · ${bookingMeta.travelers} người`
 
   return {
@@ -244,7 +271,7 @@ const directCheckoutItem = computed(() => {
     travelDate: startDate,
     bookingSummary,
     identityKey: `direct-${serviceId}-${startDate}-${endDate}-${quantity}`,
-    lineTotal: bookingType === 'hotel' && Number(bookingMeta.totalPrice || 0) > 0
+    lineTotal: Number(bookingMeta.totalPrice || 0) > 0
       ? Number(bookingMeta.totalPrice)
       : (Number(bookingMeta.unitPrice || 0) || Number(service.salePrice || 0) || 0) * quantity
   }
@@ -273,6 +300,23 @@ const getSlotValidationError = (item) => {
   const bookingMeta = item.bookingMeta || {}
 
   if (bookingType === 'tour') {
+    const scheduleMode = String(bookingMeta.scheduleMode || 'fixed')
+    if (scheduleMode === 'flexible') {
+      if (!bookingMeta.departureDate || !bookingMeta.endDate) {
+        return 'Tour linh hoạt cần có ngày bắt đầu và ngày kết thúc.'
+      }
+      if (new Date(bookingMeta.endDate) < new Date(bookingMeta.departureDate)) {
+        return 'Khoảng ngày tour linh hoạt không hợp lệ.'
+      }
+      if (item.service?.flexibleWindow?.startDate && bookingMeta.departureDate < item.service.flexibleWindow.startDate) {
+        return `Tour linh hoạt chỉ nhận từ ${item.service.flexibleWindow.startDate}.`
+      }
+      if (item.service?.flexibleWindow?.endDate && bookingMeta.endDate > item.service.flexibleWindow.endDate) {
+        return `Tour linh hoạt chỉ nhận đến ${item.service.flexibleWindow.endDate}.`
+      }
+      return ''
+    }
+
     const departureId = bookingMeta.departureId
     if (!departureId) return 'Tour chưa chọn lịch khởi hành hợp lệ.'
     const departure = (item.service?.departures || []).find((entry) => entry.departureId === departureId)

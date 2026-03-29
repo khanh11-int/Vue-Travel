@@ -4,13 +4,13 @@
       <div class="ticket-home__hero-banner">
         <img
           src="https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=1400&q=80"
-          alt="Ve tham quan noi dia"
+          alt="Vé tham quan nội địa"
           class="ticket-home__hero-image"
         />
         <div class="ticket-home__hero-overlay"></div>
         <div class="ticket-home__hero-content">
-          <h1>Kham pha ve tham quan noi bat tai Viet Nam</h1>
-          <p>Tim ve nhanh theo diem den, ngay su dung va so luong ve phu hop lich trinh.</p>
+          <h1>Khám phá vé tham quan nổi bật tại Việt Nam</h1>
+          <p>Tìm vé nhanh theo điểm đến, ngày sử dụng và số lượng phù hợp lịch trình.</p>
         </div>
       </div>
 
@@ -19,20 +19,20 @@
           <div class="service-search-panel__row">
             <div class="home-search-panel">
               <div class="home-search-panel__destination">
-                <label>Diem den</label>
-                <input v-model="searchForm.destination" type="text" placeholder="Vi du: Phu Quoc" />
+                <label>Điểm đến</label>
+                <input v-model="searchForm.destination" type="text" placeholder="Ví dụ: Phú Quốc" />
               </div>
               <div class="home-search-panel__date">
-                <label>Ngay su dung</label>
+                <label>Ngày sử dụng</label>
                 <input v-model="searchForm.useDate" :min="todayISO" type="date" />
               </div>
               <div class="home-search-panel__tickets">
-                <label>So luong ve</label>
-                <input v-model.number="searchForm.ticketQuantity" type="number" min="1" max="30" />
+                <label>Số vé và trẻ em</label>
+                <TicketGuestSelector v-model="ticketGuestSelection" />
               </div>
             </div>
 
-            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tim kiem ve</router-link>
+            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tìm kiếm vé</router-link>
           </div>
         </div>
       </div>
@@ -41,8 +41,8 @@
     <section class="page-section ticket-home__section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Uu dai noi bat</p>
-          <h2>Ve tham quan dang co gia uu dai theo diem den.</h2>
+          <p class="eyebrow">Ưu đãi nổi bật</p>
+          <h2>Vé tham quan đang có giá ưu đãi theo điểm đến.</h2>
         </div>
       </div>
 
@@ -72,8 +72,8 @@
     <section class="page-section ticket-home__section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Khuyen mai</p>
-          <h2>Ma giam gia dang ap dung cho ve tham quan.</h2>
+          <p class="eyebrow">Khuyến mại</p>
+          <h2>Mã giảm giá đang áp dụng cho vé tham quan.</h2>
         </div>
       </div>
 
@@ -89,8 +89,8 @@
     <section class="page-section ticket-home__section ticket-home__section--last">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Diem den pho bien</p>
-          <h2>Top diem den duoc tim ve nhieu nhat.</h2>
+          <p class="eyebrow">Điểm đến phổ biến</p>
+          <h2>Top điểm đến được tìm vé nhiều nhất.</h2>
         </div>
       </div>
 
@@ -116,6 +116,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
@@ -133,11 +134,19 @@ const todayISO = (() => {
 
 const searchForm = ref({
   destination: '',
-  useDate: '',
-  ticketQuantity: 2
+  useDate: ''
 })
 
-const selectedCity = ref('Tat ca')
+const ticketGuestSelection = ref({
+  tickets: Math.max(1, Number(route.query.ticketQuantity || route.query.adults || route.query.quantity || 2) || 2),
+  children: Math.max(0, Number(route.query.children || 0) || 0),
+  childrenAges: String(route.query.childrenAges || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => Math.min(17, Math.max(1, Number(item) || 8)))
+})
+const selectedCity = ref('Tất cả')
 
 const currentCategory = computed(() => {
   const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
@@ -153,10 +162,10 @@ const allTickets = computed(() => {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
-const citiesList = computed(() => ['Tat ca', ...new Set(allTickets.value.map((ticket) => ticket.destination))])
+const citiesList = computed(() => ['Tất cả', ...new Set(allTickets.value.map((ticket) => ticket.destination))])
 
 const filteredTickets = computed(() => {
-  if (selectedCity.value === 'Tat ca') return allTickets.value.slice(0, 8)
+  if (selectedCity.value === 'Tất cả') return allTickets.value.slice(0, 8)
   return allTickets.value.filter((ticket) => ticket.destination === selectedCity.value).slice(0, 8)
 })
 
@@ -187,7 +196,22 @@ const searchTarget = computed(() => {
   }
   if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
   if (searchForm.value.useDate) query.set('useDate', searchForm.value.useDate)
-  query.set('ticketQuantity', String(Math.max(1, Number(searchForm.value.ticketQuantity) || 1)))
+
+  const tickets = Math.max(1, Number(ticketGuestSelection.value.tickets || 1) || 1)
+  const children = Math.max(0, Number(ticketGuestSelection.value.children || 0) || 0)
+  const childrenAges = Array.isArray(ticketGuestSelection.value.childrenAges)
+    ? ticketGuestSelection.value.childrenAges
+        .slice(0, children)
+        .map((age) => Math.min(17, Math.max(1, Number(age) || 8)))
+    : []
+
+  query.set('ticketQuantity', String(tickets))
+  query.set('adults', String(tickets))
+  query.set('children', String(children))
+  query.set('quantity', String(tickets + children))
+  if (childrenAges.length) {
+    query.set('childrenAges', childrenAges.join(','))
+  }
 
   return `${basePath}?${query.toString()}`
 })
@@ -266,6 +290,16 @@ const handleSelectDestination = (destination) => {
 .ticket-home__search-wrap .search-panel {
   grid-template-columns: 1fr;
   margin-top: 0;
+}
+
+.ticket-home__search-wrap .home-search-panel {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1.2fr);
+}
+
+.ticket-home__search-wrap .home-search-panel__destination,
+.ticket-home__search-wrap .home-search-panel__date,
+.ticket-home__search-wrap .home-search-panel__tickets {
+  grid-column: auto;
 }
 
 .ticket-home__search-wrap .service-search-panel__submit {
@@ -385,6 +419,10 @@ const handleSelectDestination = (destination) => {
 
   .ticket-home__search-wrap {
     margin-top: -20px;
+  }
+
+  .ticket-home__search-wrap .home-search-panel {
+    grid-template-columns: 1fr;
   }
 
   .ticket-home__dest-grid {

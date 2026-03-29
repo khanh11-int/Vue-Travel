@@ -31,7 +31,7 @@ export const buildBookingMeta = ({ bookingType, startDate = '', endDate = '', qu
     const childrenAges = Array.isArray(bookingMeta.childrenAges)
       ? bookingMeta.childrenAges
           .slice(0, children)
-          .map((age) => Math.min(17, Math.max(0, Math.floor(Number(age) || 8))))
+          .map((age) => Math.min(17, Math.max(1, Math.floor(Number(age) || 8))))
       : []
 
     return {
@@ -57,19 +57,57 @@ export const buildBookingMeta = ({ bookingType, startDate = '', endDate = '', qu
   }
 
   if (bookingType === 'ticket') {
+    const adults = Math.max(1, Number(bookingMeta.adults ?? normalizedQuantity) || 1)
+    const children = Math.max(0, Number(bookingMeta.children ?? 0) || 0)
+    const totalGuests = Math.max(1, Number(bookingMeta.totalGuests ?? (adults + children) ?? normalizedQuantity) || 1)
+    const childrenAges = Array.isArray(bookingMeta.childrenAges)
+      ? bookingMeta.childrenAges
+          .slice(0, children)
+          .map((age) => Math.min(17, Math.max(1, Math.floor(Number(age) || 8))))
+      : []
+
     return {
       useDate: bookingMeta.useDate || startDate || '',
-      ticketQuantity: Math.max(1, Number(bookingMeta.ticketQuantity ?? normalizedQuantity) || 1),
+      adults,
+      children,
+      childrenAges,
+      totalGuests,
+      ticketQuantity: Math.max(1, Number(bookingMeta.ticketQuantity ?? totalGuests) || 1),
+      freeChildren: Math.max(0, Number(bookingMeta.freeChildren ?? 0) || 0),
+      chargeableAdults: Math.max(1, Number(bookingMeta.chargeableAdults ?? adults) || 1),
+      childSurchargeCount: Math.max(0, Number(bookingMeta.childSurchargeCount ?? 0) || 0),
+      childSurchargeUnit: Math.max(0, Number(bookingMeta.childSurchargeUnit ?? 0) || 0),
+      childSurchargeTotal: Math.max(0, Number(bookingMeta.childSurchargeTotal ?? 0) || 0),
+      totalPrice: Math.max(0, Number(bookingMeta.totalPrice ?? 0) || 0),
       durationLabel: bookingMeta.durationLabel || '',
       unitPrice: Number(bookingMeta.unitPrice || 0) || 0
     }
   }
 
   if (bookingType === 'tour') {
+    const adults = Math.max(1, Number(bookingMeta.adults ?? normalizedQuantity) || 1)
+    const children = Math.max(0, Number(bookingMeta.children ?? 0) || 0)
+    const totalGuests = Math.max(1, Number(bookingMeta.totalGuests ?? (adults + children) ?? normalizedQuantity) || 1)
+    const childrenAges = Array.isArray(bookingMeta.childrenAges)
+      ? bookingMeta.childrenAges
+          .slice(0, children)
+          .map((age) => Math.min(17, Math.max(0, Math.floor(Number(age) || 8))))
+      : []
+
     return {
       departureId: bookingMeta.departureId || '',
       departureDate: bookingMeta.departureDate || startDate || '',
-      travelers: Math.max(1, Number(bookingMeta.travelers ?? normalizedQuantity) || 1),
+      endDate: bookingMeta.endDate || endDate || '',
+      scheduleMode: bookingMeta.scheduleMode || 'fixed',
+      adults,
+      children,
+      childrenAges,
+      totalGuests,
+      travelers: Math.max(1, Number(bookingMeta.travelers ?? totalGuests) || 1),
+      freeChildren: Math.max(0, Number(bookingMeta.freeChildren ?? 0) || 0),
+      childDiscountRate: Math.max(0, Math.min(1, Number(bookingMeta.childDiscountRate ?? 0.75) || 0.75)),
+      childChargedAsAdultCount: Math.max(0, Number(bookingMeta.childChargedAsAdultCount ?? 0) || 0),
+      totalPrice: Math.max(0, Number(bookingMeta.totalPrice ?? 0) || 0),
       durationLabel: bookingMeta.durationLabel || '',
       unitPrice: Number(bookingMeta.unitPrice || 0) || 0
     }
@@ -108,7 +146,7 @@ export const extractDateRangeFromBookingMeta = (bookingType, bookingMeta) => {
   if (bookingType === 'tour') {
     return {
       startDate: bookingMeta.departureDate || '',
-      endDate: ''
+      endDate: bookingMeta.endDate || ''
     }
   }
 
@@ -131,7 +169,8 @@ export const extractQuantityFromBookingMeta = (bookingType, bookingMeta) => {
     const children = Math.max(0, Number(bookingMeta.children || 0) || 0)
     return Math.max(guests, adults + children)
   }
-  if (bookingType === 'ticket') return Math.max(1, Number(bookingMeta.ticketQuantity || 1) || 1)
+  if (bookingType === 'ticket') return Math.max(1, Number(bookingMeta.totalGuests || bookingMeta.ticketQuantity || 1) || 1)
+  if (bookingType === 'tour') return Math.max(1, Number(bookingMeta.totalGuests || bookingMeta.travelers || 1) || 1)
   return Math.max(1, Number(bookingMeta.travelers || 1) || 1)
 }
 

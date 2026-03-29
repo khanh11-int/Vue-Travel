@@ -4,13 +4,13 @@
       <div class="tour-home__hero-banner">
         <img
           src="https://images.unsplash.com/photo-1493558103817-58b2924bce98?auto=format&fit=crop&w=1400&q=80"
-          alt="Tour noi dia"
+          alt="Tour nội địa"
           class="tour-home__hero-image"
         />
         <div class="tour-home__hero-overlay"></div>
         <div class="tour-home__hero-content">
-          <h1>Kham pha cac tour noi dia duoc yeu thich nhat</h1>
-          <p>Loc tour theo diem den, ngay khoi hanh va so nguoi de chon lich trinh phu hop.</p>
+          <h1>Khám phá các tour nội địa được yêu thích nhất</h1>
+          <p>Lọc tour theo điểm đến, ngày khởi hành, ngày về và số khách phù hợp.</p>
         </div>
       </div>
 
@@ -19,20 +19,24 @@
           <div class="service-search-panel__row">
             <div class="home-search-panel">
               <div class="home-search-panel__destination">
-                <label>Diem den</label>
-                <input v-model="searchForm.destination" type="text" placeholder="Vi du: Hoi An" />
+                <label>Điểm đến</label>
+                <input v-model="searchForm.destination" type="text" placeholder="Ví dụ: Hội An" />
               </div>
               <div class="home-search-panel__date">
-                <label>Ngay khoi hanh</label>
-                <input v-model="searchForm.departureDate" :min="todayISO" type="date" />
+                <label>Ngày khởi hành</label>
+                <input v-model="searchForm.startDate" :min="todayISO" type="date" />
+              </div>
+              <div class="home-search-panel__return-date">
+                <label>Ngày về</label>
+                <input v-model="searchForm.endDate" :min="searchForm.startDate || todayISO" type="date" />
               </div>
               <div class="home-search-panel__travelers">
-                <label>So nguoi</label>
-                <input v-model.number="searchForm.travelers" type="number" min="1" max="20" />
+                <label>Người lớn và trẻ em</label>
+                <TourTravelerSelector v-model="travelerSelection" />
               </div>
             </div>
 
-            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tim kiem tour</router-link>
+            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tìm kiếm tour</router-link>
           </div>
         </div>
       </div>
@@ -41,8 +45,8 @@
     <section class="page-section tour-home__section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Uu dai noi bat</p>
-          <h2>Cac tour dang co gia uu dai theo diem den.</h2>
+          <p class="eyebrow">Ưu đãi nổi bật</p>
+          <h2>Các tour đang có giá ưu đãi theo điểm đến.</h2>
         </div>
       </div>
 
@@ -72,8 +76,8 @@
     <section class="page-section tour-home__section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Khuyen mai</p>
-          <h2>Ma giam gia dang ap dung cho tour.</h2>
+          <p class="eyebrow">Khuyến mại</p>
+          <h2>Mã giảm giá đang áp dụng cho tour.</h2>
         </div>
       </div>
 
@@ -89,8 +93,8 @@
     <section class="page-section tour-home__section tour-home__section--last">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Diem den pho bien</p>
-          <h2>Top diem den duoc dat tour nhieu nhat.</h2>
+          <p class="eyebrow">Điểm đến phổ biến</p>
+          <h2>Top điểm đến được đặt tour nhiều nhất.</h2>
         </div>
       </div>
 
@@ -116,6 +120,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'
@@ -133,11 +138,21 @@ const todayISO = (() => {
 
 const searchForm = ref({
   destination: '',
-  departureDate: '',
-  travelers: 2
+  startDate: '',
+  endDate: ''
 })
 
-const selectedCity = ref('Tat ca')
+const travelerSelection = ref({
+  adults: Math.max(1, Number(route.query.adults || route.query.travelers || route.query.quantity || 2) || 2),
+  children: Math.max(0, Number(route.query.children || 0) || 0),
+  childrenAges: String(route.query.childrenAges || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => Math.min(17, Math.max(1, Number(item) || 8)))
+})
+
+const selectedCity = ref('Tất cả')
 
 const currentCategory = computed(() => {
   const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
@@ -153,10 +168,10 @@ const allTours = computed(() => {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
-const citiesList = computed(() => ['Tat ca', ...new Set(allTours.value.map((tour) => tour.destination))])
+const citiesList = computed(() => ['Tất cả', ...new Set(allTours.value.map((tour) => tour.destination))])
 
 const filteredTours = computed(() => {
-  if (selectedCity.value === 'Tat ca') return allTours.value.slice(0, 8)
+  if (selectedCity.value === 'Tất cả') return allTours.value.slice(0, 8)
   return allTours.value.filter((tour) => tour.destination === selectedCity.value).slice(0, 8)
 })
 
@@ -186,8 +201,24 @@ const searchTarget = computed(() => {
     query.set('category', currentCategoryId.value)
   }
   if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
-  if (searchForm.value.departureDate) query.set('departureDate', searchForm.value.departureDate)
-  query.set('travelers', String(Math.max(1, Number(searchForm.value.travelers) || 1)))
+  if (searchForm.value.startDate) query.set('startDate', searchForm.value.startDate)
+  if (searchForm.value.endDate) query.set('endDate', searchForm.value.endDate)
+
+  const adults = Math.max(1, Number(travelerSelection.value.adults || 1) || 1)
+  const children = Math.max(0, Number(travelerSelection.value.children || 0) || 0)
+  const childrenAges = Array.isArray(travelerSelection.value.childrenAges)
+    ? travelerSelection.value.childrenAges
+        .slice(0, children)
+        .map((age) => Math.min(17, Math.max(1, Number(age) || 8)))
+    : []
+
+  query.set('travelers', String(adults + children))
+  query.set('adults', String(adults))
+  query.set('children', String(children))
+  query.set('quantity', String(adults + children))
+  if (childrenAges.length) {
+    query.set('childrenAges', childrenAges.join(','))
+  }
 
   return `${basePath}?${query.toString()}`
 })
@@ -266,6 +297,17 @@ const handleSelectDestination = (destination) => {
 .tour-home__search-wrap .search-panel {
   grid-template-columns: 1fr;
   margin-top: 0;
+}
+
+.tour-home__search-wrap .home-search-panel {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.25fr);
+}
+
+.tour-home__search-wrap .home-search-panel__destination,
+.tour-home__search-wrap .home-search-panel__date,
+.tour-home__search-wrap .home-search-panel__return-date,
+.tour-home__search-wrap .home-search-panel__travelers {
+  grid-column: auto;
 }
 
 .tour-home__search-wrap .service-search-panel__submit {
@@ -385,6 +427,14 @@ const handleSelectDestination = (destination) => {
 
   .tour-home__search-wrap {
     margin-top: -20px;
+  }
+
+  .tour-home__search-wrap .home-search-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tour-home__search-wrap .home-search-panel__travelers {
+    grid-column: 1 / -1;
   }
 
   .tour-home__dest-grid {

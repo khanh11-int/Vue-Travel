@@ -160,6 +160,10 @@ const getEditQuery = (item) => {
     return {
       ...baseEditQuery,
       useDate: item.bookingMeta?.useDate || item.startDate || undefined,
+      adults: item.bookingMeta?.adults || undefined,
+      children: item.bookingMeta?.children || undefined,
+      childrenAges: Array.isArray(item.bookingMeta?.childrenAges) ? item.bookingMeta.childrenAges.join(',') : undefined,
+      quantity: item.bookingMeta?.ticketQuantity || item.quantity || 1,
       ticketQuantity: item.bookingMeta?.ticketQuantity || item.quantity || 1
     }
   }
@@ -168,7 +172,15 @@ const getEditQuery = (item) => {
     return {
       ...baseEditQuery,
       departureDate: item.bookingMeta?.departureDate || item.startDate || undefined,
+      startDate: item.bookingMeta?.departureDate || item.startDate || undefined,
+      endDate: item.bookingMeta?.endDate || item.endDate || undefined,
       departureId: item.bookingMeta?.departureId || undefined,
+      originDepartureId: item.bookingMeta?.departureId || undefined,
+      scheduleMode: item.bookingMeta?.scheduleMode || undefined,
+      originScheduleMode: item.bookingMeta?.scheduleMode || undefined,
+      adults: item.bookingMeta?.adults || undefined,
+      children: item.bookingMeta?.children || undefined,
+      childrenAges: Array.isArray(item.bookingMeta?.childrenAges) ? item.bookingMeta.childrenAges.join(',') : undefined,
       travelers: item.bookingMeta?.travelers || item.quantity || 1
     }
   }

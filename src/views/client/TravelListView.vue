@@ -74,6 +74,7 @@
           v-for="service in filteredServices"
           :key="service.id"
           :service="service"
+          :query-context="searchQueryContext"
           :is-wishlisted="isWishlisted(service.id)"
           @toggle-wishlist="handleToggleWishlist"
         />
@@ -132,6 +133,45 @@ const filters = reactive(createInitialFilters())
 
 const selectedCategory = computed(() => resolveCategoryFromQuery(route.query, filters.categoryId))
 
+const searchQueryContext = computed(() => {
+  const base = { ...route.query }
+  const category = String(selectedCategory.value || '').trim()
+
+  if (category === 'tour') {
+    const startDate = String(base.startDate || base.departureDate || base.useDate || base.date || '').trim()
+    const adults = Math.max(1, Number(base.adults || 2) || 2)
+    const children = Math.max(0, Number(base.children || 0) || 0)
+    return {
+      ...base,
+      category,
+      startDate,
+      departureDate: startDate,
+      adults: String(adults),
+      children: String(children),
+      travelers: String(adults + children),
+      quantity: String(adults + children)
+    }
+  }
+
+  if (category === 'ticket') {
+    const useDate = String(base.useDate || base.startDate || base.departureDate || base.date || '').trim()
+    const adults = Math.max(1, Number(base.adults || base.ticketQuantity || 1) || 1)
+    const children = Math.max(0, Number(base.children || 0) || 0)
+    return {
+      ...base,
+      category,
+      useDate,
+      startDate: useDate,
+      adults: String(adults),
+      children: String(children),
+      ticketQuantity: String(adults),
+      quantity: String(adults + children)
+    }
+  }
+
+  return base
+})
+
 watch(
   () => route.query,
   (query) => {
@@ -141,7 +181,7 @@ watch(
   }
 )
 
-const searchContextSummary = computed(() => resolveSearchSummary(route.query, selectedCategory.value))
+const searchContextSummary = computed(() => resolveSearchSummary(searchQueryContext.value, selectedCategory.value))
 
 const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()

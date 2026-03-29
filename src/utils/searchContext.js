@@ -47,8 +47,8 @@ export const resolveEndDateByCategory = (query, category) => {
  * @returns {number} Số lượng đầu vào đã quy đổi.
  */
 export const resolveQuantityByCategory = (query, category) => {
-  if (category === 'ticket') return Number(query.ticketQuantity || 1)
-  if (category === 'tour') return Number(query.travelers || 1)
+  if (category === 'ticket') return Number(query.quantity || query.ticketQuantity || 1)
+  if (category === 'tour') return Number(query.travelers || query.quantity || 1)
   if (category === 'hotel') {
     const hasHotelGuestFields = query.adults !== undefined || query.children !== undefined
     if (hasHotelGuestFields) {
@@ -82,11 +82,15 @@ export const resolveSearchSummary = (query, category) => {
   }
 
   if (category === 'ticket') {
-    return `Ngày sử dụng: ${startDate || 'Chưa chọn'} · ${quantityLabel}`
+    const adults = Math.max(1, Number(query.adults || query.ticketQuantity || Math.max(1, quantity - Number(query.children || 0))) || 1)
+    const children = Math.max(0, Number(query.children || 0) || 0)
+    return `Ngày sử dụng: ${startDate || 'Chưa chọn'} · ${adults} người lớn · ${children} trẻ em`
   }
 
   if (category === 'tour') {
-    return `Ngày khởi hành: ${startDate || 'Chưa chọn'} · ${quantityLabel}`
+    const adults = Math.max(1, Number(query.adults || Math.max(1, quantity - Number(query.children || 0))) || 1)
+    const children = Math.max(0, Number(query.children || 0) || 0)
+    return `Ngày khởi hành: ${startDate || 'Chưa chọn'} · ${adults} người lớn · ${children} trẻ em`
   }
 
   return `Ngày bắt đầu: ${startDate || 'Chưa chọn'} · ${quantityLabel}`

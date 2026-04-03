@@ -1,6 +1,23 @@
 <template>
   <section class="admin-dashboard">
-    <div class="stats-grid">
+    <article v-if="adminStore.dashboardLoading" class="panel-card">
+      <p class="eyebrow">Đang tải</p>
+      <h2>Đang đồng bộ dữ liệu dashboard từ db.json...</h2>
+    </article>
+
+    <article v-else-if="adminStore.dashboardError" class="panel-card">
+      <p class="eyebrow">Lỗi tải dữ liệu</p>
+      <h2>{{ adminStore.dashboardError }}</h2>
+      <button class="ghost-button" type="button" @click="loadDashboard">Tải lại</button>
+    </article>
+
+    <article v-else-if="!hasData" class="panel-card">
+      <p class="eyebrow">Chưa có dữ liệu</p>
+      <h2>Dashboard chưa có bản ghi dịch vụ hoặc booking để hiển thị.</h2>
+    </article>
+
+    <template v-else>
+      <div class="stats-grid">
       <article class="stat-card">
         <p>Tổng dịch vụ</p>
         <h3>{{ adminSummary.totalServices }}</h3>
@@ -17,20 +34,21 @@
         <p>Booking chờ xử lý</p>
         <h3>{{ adminSummary.pendingBookings }}</h3>
       </article>
-    </div>
+      </div>
 
-    <div class="admin-grid">
+      <div class="admin-grid">
       <article class="panel-card">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Biểu đồ mock</p>
-            <h2>Doanh thu 7 ngày gần nhất</h2>
+            <p class="eyebrow">Biểu đồ doanh thu thật</p>
+            <h2>Doanh thu 7 ngày gần nhất (VND)</h2>
           </div>
         </div>
         <div class="chart-bars">
-          <div v-for="(value, index) in adminSummary.revenueSeries" :key="index" class="chart-item">
-            <div class="chart-bar" :style="{ height: `${value}px` }"></div>
-            <span>T{{ index + 1 }}</span>
+          <div v-for="item in revenueBars" :key="item.label" class="chart-item">
+            <div class="chart-bar" :style="{ height: `${item.height}px` }"></div>
+            <span>{{ item.label }}</span>
+            <small class="muted small-text">{{ formatCurrencyVND(item.value) }}</small>
           </div>
         </div>
       </article>
@@ -43,52 +61,82 @@
             <strong>{{ service.name }}</strong>
             <span>{{ service.availableSlots }} chỗ còn lại</span>
           </li>
+          <li v-if="!adminSummary.lowStockServices.length">
+            <strong>Không có cảnh báo</strong>
+            <span>Tất cả dịch vụ còn đủ chỗ.</span>
+          </li>
         </ul>
       </article>
-    </div>
+
+      <article class="panel-card">
+        <p class="eyebrow">Phân bổ dịch vụ</p>
+        <h2>Số lượng theo danh mục</h2>
+        <ul class="warning-list">
+          <li v-for="item in adminSummary.categoryDistribution" :key="item.categoryId">
+            <strong>{{ item.label }}</strong>
+            <span>{{ item.value }} dịch vụ</span>
+          </li>
+        </ul>
+      </article>
+
+      <article class="panel-card">
+        <p class="eyebrow">Trạng thái booking</p>
+        <h2>Tỷ trọng trạng thái đơn</h2>
+        <ul class="warning-list">
+          <li v-for="item in adminSummary.bookingStatusDistribution" :key="item.label">
+            <strong>{{ getStatusLabel(item.label) }}</strong>
+            <span>{{ item.value }} đơn</span>
+          </li>
+        </ul>
+      </article>
+      </div>
+    </template>
   </section>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useBookingStore } from '@/stores/useBookingStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { computed, onMounted } from 'vue'
+import { useAdminStore } from '@/stores/useAdminStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
-const serviceStore = useServiceStore()
-const bookingStore = useBookingStore()
+const adminStore = useAdminStore()
+
+const loadDashboard = async () => {
+  await adminStore.fetchDashboardSnapshot()
+}
+
+onMounted(async () => {
+  await loadDashboard()
+})
+
+const hasData = computed(() => adminSummary.value.totalServices > 0 || adminSummary.value.totalBookings > 0)
 
 const adminSummary = computed(() => {
-  const services = serviceStore.services
-  const bookings = bookingStore.adminBookingHistory
-  const now = new Date()
-
-  const monthlyRevenue = bookings
-    .filter((booking) => {
-      const bookingDate = new Date(booking.createdAt)
-      return bookingDate.getFullYear() === now.getFullYear()
-        && bookingDate.getMonth() === now.getMonth()
-    })
-    .reduce((sum, booking) => sum + Number(booking.total || 0), 0)
-
-  const revenueSeries = Array.from({ length: 7 }, (_, index) => {
-    const target = new Date(now)
-    target.setDate(now.getDate() - (6 - index))
-    return bookings
-      .filter((booking) => {
-        const bookingDate = new Date(booking.createdAt)
-        return bookingDate.toDateString() === target.toDateString()
-      })
-      .reduce((sum, booking) => sum + Math.round(Number(booking.total || 0) / 100000), 0)
-  })
-
-  return {
-    totalServices: services.length,
-    totalBookings: bookings.length,
-    monthlyRevenue,
-    pendingBookings: bookings.filter((booking) => booking.status === 'pending').length,
-    lowStockServices: services.filter((service) => Number(service.availableSlots || 0) <= 5),
-    revenueSeries
-  }
+  return adminStore.dashboard
 })
+
+const revenueBars = computed(() => {
+  const series = Array.isArray(adminSummary.value.revenueSeries) ? adminSummary.value.revenueSeries : []
+  const maxValue = series.reduce((maximum, item) => Math.max(maximum, Number(item.value || 0)), 0)
+  const baseHeight = 32
+  const maxHeight = 220
+
+  return series.map((item) => {
+    const value = Number(item.value || 0)
+    const ratio = maxValue > 0 ? value / maxValue : 0
+    return {
+      ...item,
+      value,
+      height: Math.round(baseHeight + ratio * (maxHeight - baseHeight))
+    }
+  })
+})
+
+const getStatusLabel = (status) => ({
+  pending: 'Chờ xử lý',
+  confirmed: 'Đã xác nhận',
+  processing: 'Đang xử lý',
+  completed: 'Hoàn tất',
+  cancelled: 'Đã hủy'
+}[status] || status)
 </script>

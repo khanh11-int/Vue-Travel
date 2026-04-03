@@ -15,6 +15,7 @@
           <router-link to="/wishlist">Yêu thích <span class="nav-pill">{{ wishlistCount }}</span></router-link>
           <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
           <router-link to="/lich-su-dat-cho">Đặt chỗ của tôi</router-link>
+          <router-link v-if="isAdmin" to="/admin">Quản trị</router-link>
 
           <div v-if="!isLoggedIn" class="ota-account-links">
             <router-link to="/dang-nhap">Đăng nhập</router-link>
@@ -69,6 +70,7 @@ const wishlistStore = useWishlistStore()
 const wishlistCount = computed(() => wishlistStore.wishlistCount)
 const cartCount = computed(() => cartStore.cartItems.length)
 const isLoggedIn = computed(() => authStore.isLoggedIn)
+const isAdmin = computed(() => authStore.isAdmin)
 const currentUserLabel = computed(() => {
   if (!authStore.currentUser) return 'Tài khoản'
   return authStore.currentUser.fullName

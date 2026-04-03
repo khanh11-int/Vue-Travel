@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { commentsApi, promotionsApi, servicesApi } from '@/services/api'
+import { bookingsApi, categoriesApi, commentsApi, promotionsApi, servicesApi, usersApi } from '@/services/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { fireAndForget } from '@/utils/travelBooking'
@@ -15,14 +15,495 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(numericValue) ? numericValue : fallback
 }
 
+const toPositiveNumber = (value, fallback = 0) => Math.max(0, toNumber(value, fallback))
+
+const positiveOrFallback = (value, fallback = 0) => {
+  const numericValue = toNumber(value, fallback)
+  return numericValue > 0 ? numericValue : fallback
+}
+
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
+
+const normalizeText = (value, fallback = '') => String(value ?? fallback).trim()
+
+const buildDefaultHotelRoomTypes = (serviceInput = {}) => {
+  const basePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
+  const standardSurcharge = Math.max(300000, Math.round(basePrice * 0.3))
+  const deluxeSurcharge = Math.max(350000, Math.round(basePrice * 0.35))
+  const familySurcharge = Math.max(450000, Math.round(basePrice * 0.42))
+
+  return [
+    {
+      value: 'standard',
+      label: 'Phòng tiêu chuẩn',
+      priceMultiplier: 1,
+      childSurcharge: standardSurcharge
+    },
+    {
+      value: 'deluxe',
+      label: 'Phòng deluxe',
+      priceMultiplier: 1.15,
+      childSurcharge: deluxeSurcharge
+    },
+    {
+      value: 'family',
+      label: 'Phòng gia đình',
+      priceMultiplier: 1.3,
+      childSurcharge: familySurcharge
+    }
+  ]
+}
+
+const buildDefaultTourChildPolicy = () => ({
+  freeUnderAge: 5,
+  childRate: 0.75,
+  adultAgeThreshold: 10
+})
+
+const buildDefaultTourPricingTiers = (serviceInput = {}) => {
+  const baseSalePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
+  const basePrice = Math.max(baseSalePrice, toNumber(serviceInput.price || baseSalePrice, baseSalePrice))
+  const childRate = buildDefaultTourChildPolicy().childRate
+
+  return {
+    fixed: {
+      label: 'Lịch cố định (ưu đãi)',
+      adultPrice: baseSalePrice,
+      childPrice: Math.round(baseSalePrice * childRate),
+      note: 'Giá ưu đãi áp dụng theo lịch cố định'
+    },
+    flexible: {
+      label: 'Lịch linh hoạt',
+      adultPrice: basePrice,
+      childPrice: Math.round(basePrice * childRate),
+      note: 'Giá gốc không ưu đãi'
+    }
+  }
+}
+
+const buildDefaultTicketChildPolicy = (serviceInput = {}) => {
+  const basePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
+  return {
+    freeUnderAge: 8,
+    adultAgeThreshold: 15,
+    surchargeAgeMin: 8,
+    surchargeAgeMax: 14,
+    surcharge: Math.max(90000, Math.round(basePrice * 0.3))
+  }
+}
+
+const buildDefaultTicketPackages = (serviceInput = {}) => {
+  const salePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
+  const price = Math.max(salePrice, toNumber(serviceInput.price || salePrice, salePrice))
+  const childSurcharge = buildDefaultTicketChildPolicy(serviceInput).surcharge
+
+  return [
+    {
+      id: 'entry',
+      name: 'Gói vào cổng',
+      salePrice: Math.round(salePrice * 0.9),
+      price: Math.round(price * 0.9),
+      childSurcharge: Math.round(childSurcharge * 0.9),
+      features: ['Vé vào cổng', 'Không gồm khu trò chơi mở rộng']
+    },
+    {
+      id: 'fun',
+      name: 'Gói vui chơi',
+      salePrice,
+      price,
+      childSurcharge,
+      features: ['Vé vào cổng', 'Bao gồm khu trò chơi chính']
+    },
+    {
+      id: 'allin',
+      name: 'Gói trọn gói',
+      salePrice: Math.round(salePrice * 1.1),
+      price: Math.round(price * 1.1),
+      childSurcharge: Math.round(childSurcharge * 1.15),
+      features: ['Vé vào cổng', 'Khu trải nghiệm mở rộng', 'Ưu tiên check-in']
+    }
+  ]
+}
+
+const normalizeRoomTypes = (value, serviceInput = {}) => {
+  const fallback = buildDefaultHotelRoomTypes(serviceInput)
+  const source = Array.isArray(value) ? value : []
+  const normalized = source.map((roomType, index) => ({
+    value: normalizeText(roomType?.value || roomType?.id || `room-type-${index + 1}`, `room-type-${index + 1}`),
+    label: normalizeText(roomType?.label || roomType?.name || `Loại phòng ${index + 1}`, `Loại phòng ${index + 1}`),
+    priceMultiplier: Math.max(0.8, Number(roomType?.priceMultiplier || 1) || 1),
+    childSurcharge: Math.max(0, toPositiveNumber(roomType?.childSurcharge, 0))
+  }))
+
+  if (!normalized.length) return fallback
+
+  return normalized.map((roomType, index) => ({
+    ...roomType,
+    childSurcharge: roomType.childSurcharge > 0 ? roomType.childSurcharge : fallback[index % fallback.length].childSurcharge
+  }))
+}
+
+const normalizeTourPricingTiers = (value, serviceInput = {}) => {
+  const fallback = buildDefaultTourPricingTiers(serviceInput)
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  const fixed = source.fixed && typeof source.fixed === 'object' ? source.fixed : null
+  const flexible = source.flexible && typeof source.flexible === 'object' ? source.flexible : null
+
+  return {
+    fixed: {
+      label: normalizeText(fixed?.label || fallback.fixed.label, fallback.fixed.label),
+      adultPrice: positiveOrFallback(fixed?.adultPrice, fallback.fixed.adultPrice),
+      childPrice: positiveOrFallback(fixed?.childPrice, fallback.fixed.childPrice),
+      note: normalizeText(fixed?.note || fallback.fixed.note, fallback.fixed.note)
+    },
+    flexible: {
+      label: normalizeText(flexible?.label || fallback.flexible.label, fallback.flexible.label),
+      adultPrice: positiveOrFallback(flexible?.adultPrice, fallback.flexible.adultPrice),
+      childPrice: positiveOrFallback(flexible?.childPrice, fallback.flexible.childPrice),
+      note: normalizeText(flexible?.note || fallback.flexible.note, fallback.flexible.note)
+    }
+  }
+}
+
+const normalizeTourChildPolicy = (value) => {
+  const fallback = buildDefaultTourChildPolicy()
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+
+  return {
+    freeUnderAge: toNumber(source.freeUnderAge, fallback.freeUnderAge),
+    childRate: Math.max(0, Math.min(1, Number(source.childRate ?? fallback.childRate) || fallback.childRate)),
+    adultAgeThreshold: toNumber(source.adultAgeThreshold, fallback.adultAgeThreshold)
+  }
+}
+
+const normalizeTicketChildPolicy = (value, serviceInput = {}) => {
+  const fallback = buildDefaultTicketChildPolicy(serviceInput)
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+
+  return {
+    freeUnderAge: toNumber(source.freeUnderAge, fallback.freeUnderAge),
+    adultAgeThreshold: toNumber(source.adultAgeThreshold, fallback.adultAgeThreshold),
+    surchargeAgeMin: toNumber(source.surchargeAgeMin, fallback.surchargeAgeMin),
+    surchargeAgeMax: toNumber(source.surchargeAgeMax, fallback.surchargeAgeMax),
+    surcharge: positiveOrFallback(source.surcharge, fallback.surcharge)
+  }
+}
+
+const normalizeTicketPackages = (value, serviceInput = {}) => {
+  const fallback = buildDefaultTicketPackages(serviceInput)
+  const source = Array.isArray(value) ? value : []
+  const normalized = source
+    .map((pkg, index) => ({
+      id: normalizeText(pkg?.id || `pkg-${index + 1}`, `pkg-${index + 1}`),
+      name: normalizeText(pkg?.name || `Gói ${index + 1}`, `Gói ${index + 1}`),
+      salePrice: positiveOrFallback(pkg?.salePrice, 0),
+      price: positiveOrFallback(pkg?.price, 0),
+      childSurcharge: positiveOrFallback(pkg?.childSurcharge, 0),
+      features: ensureArray(pkg?.features).filter(Boolean)
+    }))
+    .filter((pkg) => pkg.salePrice > 0 || pkg.price > 0)
+
+  if (!normalized.length) return fallback
+
+  return normalized.map((pkg, index) => ({
+    ...pkg,
+    salePrice: pkg.salePrice > 0 ? pkg.salePrice : fallback[index % fallback.length].salePrice,
+    price: pkg.price > 0 ? pkg.price : fallback[index % fallback.length].price,
+    childSurcharge: pkg.childSurcharge > 0 ? pkg.childSurcharge : fallback[index % fallback.length].childSurcharge,
+    features: pkg.features.length ? pkg.features : fallback[index % fallback.length].features
+  }))
+}
+
+const normalizeDepartures = (value) => {
+  const source = Array.isArray(value) ? value : []
+  return source
+    .map((departure, index) => ({
+      departureId: normalizeText(departure?.departureId || `DEP-${index + 1}`, `DEP-${index + 1}`),
+      startDate: normalizeText(departure?.startDate || ''),
+      endDate: normalizeText(departure?.endDate || departure?.startDate || ''),
+      durationDays: toNumber(departure?.durationDays, 0),
+      durationNights: toNumber(departure?.durationNights, 0),
+      remainingSlots: toPositiveNumber(departure?.remainingSlots, 0),
+      priceOverride: toPositiveNumber(departure?.priceOverride, 0)
+    }))
+    .filter((departure) => departure.startDate && departure.endDate)
+}
+
+const parseJsonLike = (value, fallback) => {
+  if (value == null || value === '') return fallback
+  if (typeof value === 'object') return value
+
+  try {
+    return JSON.parse(String(value))
+  } catch (error) {
+    return fallback
+  }
+}
+
+const normalizeServiceModelPayload = (serviceInput = {}) => {
+  const categoryId = normalizeText(serviceInput.categoryId, 'hotel')
+  const nextService = {
+    ...serviceInput,
+    categoryId,
+    name: normalizeText(serviceInput.name),
+    slug: normalizeText(serviceInput.slug),
+    destination: normalizeText(serviceInput.destination),
+    province: normalizeText(serviceInput.province),
+    status: serviceInput.status || 'active',
+    description: normalizeText(serviceInput.description || serviceInput.shortDescription),
+    shortDescription: normalizeText(serviceInput.shortDescription || serviceInput.description),
+    image: normalizeText(serviceInput.image),
+    imageAssetPath: normalizeText(serviceInput.imageAssetPath),
+    gallery: ensureArray(serviceInput.gallery).filter(Boolean),
+    amenities: ensureArray(serviceInput.amenities).filter(Boolean),
+    itinerary: ensureArray(serviceInput.itinerary).filter(Boolean),
+    departures: ensureArray(serviceInput.departures).filter(Boolean),
+    rating: toNumber(serviceInput.rating, 4.5),
+    price: toPositiveNumber(serviceInput.price, 0),
+    salePrice: toPositiveNumber(serviceInput.salePrice, 0),
+    availableSlots: toPositiveNumber(serviceInput.availableSlots, 0),
+    featured: Boolean(serviceInput.featured),
+    createdAt: serviceInput.createdAt || new Date().toISOString()
+  }
+
+  if (!nextService.gallery.length && nextService.image) {
+    nextService.gallery = [nextService.image]
+  }
+
+  if (categoryId === 'hotel') {
+    const roomTypes = parseJsonLike(serviceInput.roomTypes, null)
+    nextService.roomTypes = normalizeRoomTypes(roomTypes, nextService)
+  }
+
+  if (categoryId === 'tour') {
+    const pricingTiers = parseJsonLike(serviceInput.pricingTiers, null)
+    const childPolicy = parseJsonLike(serviceInput.tourChildPolicy, null)
+    const departures = parseJsonLike(serviceInput.departures, null)
+
+    nextService.scheduleType = ['fixed', 'flexible', 'hybrid'].includes(String(serviceInput.scheduleType || '').toLowerCase())
+      ? String(serviceInput.scheduleType).toLowerCase()
+      : 'hybrid'
+    nextService.flexibleWindow = {
+      startDate: normalizeText(serviceInput.flexibleWindow?.startDate || serviceInput.flexibleStartDate || ''),
+      endDate: normalizeText(serviceInput.flexibleWindow?.endDate || serviceInput.flexibleEndDate || '')
+    }
+    nextService.tourChildPolicy = normalizeTourChildPolicy(childPolicy)
+    nextService.pricingTiers = normalizeTourPricingTiers(pricingTiers, nextService)
+    nextService.departures = normalizeDepartures(departures)
+  }
+
+  if (categoryId === 'ticket') {
+    const ticketChildPolicy = parseJsonLike(serviceInput.ticketChildPolicy, null)
+    const ticketPackages = parseJsonLike(serviceInput.ticketPackages, null)
+
+    nextService.ticketServiceType = normalizeText(serviceInput.ticketServiceType, 'Vé tham quan')
+    nextService.ticketChildPolicy = normalizeTicketChildPolicy(ticketChildPolicy, nextService)
+    nextService.childSurcharge = nextService.ticketChildPolicy.surcharge
+    nextService.ticketPackages = normalizeTicketPackages(ticketPackages, nextService)
+  }
+
+  return nextService
+}
+
 export const useAdminStore = defineStore('travelAdmin', {
   /**
-   * Store admin chỉ dùng action nên không cần state cục bộ.
-   * @returns {Object} State rỗng.
+   * Store admin gom thao tác CRUD/analytics cho khu vực quản trị.
+   * @returns {Object} State quản trị.
    */
-  state: () => ({}),
+  state: () => ({
+    users: [],
+    dashboard: {
+      totalServices: 0,
+      totalBookings: 0,
+      monthlyRevenue: 0,
+      pendingBookings: 0,
+      lowStockServices: [],
+      revenueSeries: [],
+      categoryDistribution: [],
+      bookingStatusDistribution: []
+    },
+    dashboardLoading: false,
+    dashboardError: null
+  }),
 
   actions: {
+    /**
+     * Tải danh sách khách hàng từ API và cache vào store.
+     * @returns {Promise<Array<Object>>} Danh sách user.
+     */
+    async fetchUsers() {
+      const data = await usersApi.getAll()
+      this.users = Array.isArray(data) ? data : []
+      return this.users
+    },
+
+    /**
+     * Tạo mới hoặc cập nhật user theo payload admin.
+     * @param {Object} userInput - Dữ liệu khách hàng.
+     * @returns {Promise<Object>} User sau khi lưu.
+     */
+    async saveUser(userInput) {
+      const payload = {
+        ...userInput,
+        email: String(userInput.email || '').trim().toLowerCase(),
+        fullName: String(userInput.fullName || '').trim(),
+        role: userInput.role || 'customer'
+      }
+
+      if (payload.id) {
+        const updated = await usersApi.update(payload.id, payload)
+        this.users = this.users.map((user) => (String(user.id) === String(payload.id) ? updated : user))
+        return updated
+      }
+
+      const created = await usersApi.create({
+        ...payload,
+        id: String(Date.now())
+      })
+      this.users = [created, ...this.users]
+      return created
+    },
+
+    /**
+     * Xóa user theo id.
+     * @param {string|number} userId - Id user.
+     * @returns {Promise<void>}
+     */
+    async deleteUser(userId) {
+      await usersApi.remove(userId)
+      this.users = this.users.filter((user) => String(user.id) !== String(userId))
+    },
+
+    /**
+     * Tạo mới hoặc cập nhật category và đồng bộ ServiceStore.
+     * @param {Object} categoryInput - Dữ liệu danh mục.
+     * @returns {Promise<Object>} Category sau khi lưu.
+     */
+    async saveCategory(categoryInput) {
+      const serviceStore = useServiceStore()
+      const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
+      const payload = {
+        ...categoryInput,
+        id: String(categoryInput.id || '').trim(),
+        name: String(categoryInput.name || '').trim(),
+        description: String(categoryInput.description || '').trim(),
+        status: categoryInput.status || 'active'
+      }
+
+      if (payload.id && categories.some((category) => String(category.id) === payload.id)) {
+        const updated = await categoriesApi.update(payload.id, payload)
+        serviceStore.setCategories(categories.map((category) => (String(category.id) === payload.id ? updated : category)))
+        return updated
+      }
+
+      const created = await categoriesApi.create(payload)
+      serviceStore.setCategories([created, ...categories])
+      return created
+    },
+
+    /**
+     * Xóa category nếu không còn service liên kết.
+     * @param {string|number} categoryId - Id category.
+     * @returns {Promise<void>}
+     */
+    async deleteCategory(categoryId) {
+      const serviceStore = useServiceStore()
+      const categories = Array.isArray(serviceStore.categories) ? serviceStore.categories : []
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
+      const hasDependency = services.some((service) => String(service.categoryId) === String(categoryId))
+
+      if (hasDependency) {
+        throw new Error('Không thể xóa danh mục đang có dịch vụ liên kết.')
+      }
+
+      await categoriesApi.remove(categoryId)
+      serviceStore.setCategories(categories.filter((category) => String(category.id) !== String(categoryId)))
+    },
+
+    /**
+     * Tải số liệu dashboard từ API thật và tính toán cho biểu đồ.
+     * @returns {Promise<Object|null>} Snapshot dashboard hoặc null khi lỗi.
+     */
+    async fetchDashboardSnapshot() {
+      this.dashboardLoading = true
+      this.dashboardError = null
+
+      try {
+        const [services, bookings, categories, users] = await Promise.all([
+          servicesApi.getAll(),
+          bookingsApi.getAll(),
+          categoriesApi.getAll(),
+          usersApi.getAll()
+        ])
+
+        const safeServices = Array.isArray(services) ? services : []
+        const safeBookings = Array.isArray(bookings) ? bookings : []
+        const safeCategories = Array.isArray(categories) ? categories : []
+        const safeUsers = Array.isArray(users) ? users : []
+        const now = new Date()
+
+        const monthlyRevenue = safeBookings
+          .filter((booking) => {
+            const bookingDate = new Date(booking.createdAt)
+            return bookingDate.getFullYear() === now.getFullYear()
+              && bookingDate.getMonth() === now.getMonth()
+          })
+          .reduce((sum, booking) => sum + Number(booking.total || 0), 0)
+
+        const revenueSeries = Array.from({ length: 7 }, (_, index) => {
+          const target = new Date(now)
+          target.setDate(now.getDate() - (6 - index))
+          const amount = safeBookings
+            .filter((booking) => {
+              const bookingDate = new Date(booking.createdAt)
+              return bookingDate.toDateString() === target.toDateString()
+            })
+            .reduce((sum, booking) => sum + Number(booking.total || 0), 0)
+
+          return {
+            label: `${target.getDate()}/${target.getMonth() + 1}`,
+            value: amount
+          }
+        })
+
+        const categoryDistribution = safeCategories.map((category) => ({
+          categoryId: category.id,
+          label: category.name,
+          value: safeServices.filter((service) => String(service.categoryId) === String(category.id)).length
+        }))
+
+        const statusMap = safeBookings.reduce((accumulator, booking) => {
+          const key = booking.status || 'unknown'
+          accumulator[key] = (accumulator[key] || 0) + 1
+          return accumulator
+        }, {})
+
+        const bookingStatusDistribution = Object.entries(statusMap).map(([key, value]) => ({
+          label: key,
+          value
+        }))
+
+        this.users = safeUsers
+        this.dashboard = {
+          totalServices: safeServices.length,
+          totalBookings: safeBookings.length,
+          monthlyRevenue,
+          pendingBookings: safeBookings.filter((booking) => booking.status === 'pending').length,
+          lowStockServices: safeServices.filter((service) => Number(service.availableSlots || 0) <= 5),
+          revenueSeries,
+          categoryDistribution,
+          bookingStatusDistribution
+        }
+
+        return this.dashboard
+      } catch (error) {
+        this.dashboardError = error?.message || 'Không thể tải dashboard admin.'
+        return null
+      } finally {
+        this.dashboardLoading = false
+      }
+    },
+
     /**
      * Tạo mới hoặc cập nhật dịch vụ và đồng bộ lên API theo chế độ nền.
      * @param {Object} serviceInput - Dữ liệu dịch vụ từ form admin.
@@ -31,24 +512,18 @@ export const useAdminStore = defineStore('travelAdmin', {
     saveService(serviceInput) {
       const serviceStore = useServiceStore()
       const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
-      const payload = {
-        ...serviceInput,
-        salePrice: toNumber(serviceInput.salePrice, 0),
-        price: toNumber(serviceInput.price, 0),
-        availableSlots: toNumber(serviceInput.availableSlots, 0),
-        rating: toNumber(serviceInput.rating, 4.5)
-      }
+      const payload = normalizeServiceModelPayload(serviceInput)
 
       if (payload.id) {
         const nextServices = services.map((service) =>
-          service.id === payload.id ? { ...service, ...payload } : service
+          String(service.id) === String(payload.id) ? { ...service, ...payload } : service
         )
         serviceStore.setServices(nextServices)
         fireAndForget(() => servicesApi.update(payload.id, payload))
       } else {
         const newService = {
           ...payload,
-          id: Date.now(),
+          id: String(Date.now()),
           createdAt: new Date().toISOString()
         }
         serviceStore.setServices([newService, ...services])
@@ -77,6 +552,19 @@ export const useAdminStore = defineStore('travelAdmin', {
       if (updatedService) {
         fireAndForget(() => servicesApi.update(serviceId, updatedService))
       }
+    },
+
+    /**
+     * Xóa dịch vụ khỏi store và đồng bộ xóa lên API.
+     * @param {number|string} serviceId - Id dịch vụ cần xóa.
+     * @returns {void}
+     */
+    deleteService(serviceId) {
+      const serviceStore = useServiceStore()
+      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
+      const nextServices = services.filter((service) => String(service.id) !== String(serviceId))
+      serviceStore.setServices(nextServices)
+      fireAndForget(() => servicesApi.remove(serviceId))
     },
 
     /**

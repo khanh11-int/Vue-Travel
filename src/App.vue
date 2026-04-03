@@ -1,9 +1,11 @@
 <template>
-  <section v-if="isBootstrapping" class="app-loading">
-    <p>Đang tải dữ liệu từ db.json...</p>
-  </section>
+  <div class="app-shell-root">
+    <section v-if="isBootstrapping" class="app-loading">
+      <p>Đang tải dữ liệu từ db.json...</p>
+    </section>
 
-  <router-view v-else />
+    <router-view />
+  </div>
 </template>
 
 <script setup>
@@ -20,8 +22,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.app-loading {
+.app-shell-root {
   min-height: 100vh;
+}
+
+.app-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(245, 248, 253, 0.92);
+  backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
   color: #4a5a73;

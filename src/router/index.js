@@ -21,6 +21,8 @@ import AdminServiceManagementView from '@/views/admin/AdminServiceManagementView
 import AdminBookingManagementView from '@/views/admin/AdminBookingManagementView.vue'
 import AdminCommentManagementView from '@/views/admin/AdminCommentManagementView.vue'
 import AdminPromotionManagementView from '@/views/admin/AdminPromotionManagementView.vue'
+import AdminCategoryManagementView from '@/views/admin/AdminCategoryManagementView.vue'
+import AdminCustomerManagementView from '@/views/admin/AdminCustomerManagementView.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 const routes = [
@@ -145,6 +147,18 @@ const routes = [
         name: 'admin-bookings',
         component: AdminBookingManagementView,
         meta: { requiresAdmin: true, title: 'Quản lý đơn đặt chỗ' }
+      },
+      {
+        path: 'categories',
+        name: 'admin-categories',
+        component: AdminCategoryManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý danh mục' }
+      },
+      {
+        path: 'customers',
+        name: 'admin-customers',
+        component: AdminCustomerManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý khách hàng' }
       },
       {
         path: 'comments',

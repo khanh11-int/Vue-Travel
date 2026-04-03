@@ -116,7 +116,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
+import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
 import { useAdminStore } from '@/stores/useAdminStore'
 import { useCartStore } from '@/stores/useCartStore'

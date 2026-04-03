@@ -3,4 +3,4 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.met
 export const API_URL =
   env.VITE_API_URL
   || process.env.VUE_APP_API_BASE_URL
-  || 'http://localhost:3002'
+  || 'http://localhost:3000'

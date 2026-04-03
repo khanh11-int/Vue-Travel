@@ -1,5 +1,10 @@
 <template>
   <section class="page-section home-ota-search-section">
+    <div class="home-ota-banner-copy">
+      <h1>Web du lịch hàng đầu Việt Nam</h1>
+      <p>Tìm kiếm nhanh tại đây</p>
+    </div>
+
     <div class="home-service-tabs" role="tablist" aria-label="Danh mục dịch vụ">
       <button
         v-for="tab in serviceTabs"
@@ -138,7 +143,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
+import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
 import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
 import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'

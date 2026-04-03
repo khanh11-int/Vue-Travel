@@ -48,7 +48,8 @@
         "submitLabel": "Tìm tour",
         "defaults": {
           "destination": "",
-          "startDate": ""
+          "startDate": "",
+          "endDate": ""
         },
         "fields": [
           {
@@ -59,9 +60,11 @@
             "icon": "location"
           },
           {
-            "type": "date",
-            "key": "startDate",
-            "queryKey": "startDate",
+            "type": "date-range",
+            "startKey": "startDate",
+            "endKey": "endDate",
+            "startQueryKey": "startDate",
+            "endQueryKey": "endDate",
             "icon": "calendar"
           },
           {
@@ -1055,7 +1058,7 @@
         "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
       ],
       "shortDescription": "Vé tham quan vườn hoa và tiểu cảnh tại Đà Lạt.",
-      "description": "Combo check-in trong ngày cho nhóm bạn và gia đình. Chính sách trẻ em theo độ tuổi giúp linh hoạt chi phí cho từng nhóm khách.",
+      "description": "Vé check-in trong ngày cho nhóm bạn và gia đình. Chính sách trẻ em theo độ tuổi giúp linh hoạt chi phí cho từng nhóm khách.",
       "amenities": [
         "Vé điện tử",
         "Check-in nhanh",
@@ -1217,7 +1220,7 @@
       "salePrice": 996000,
       "discount": 17,
       "rating": 4.5,
-      "availableSlots": 18,
+      "availableSlots": 21,
       "status": "active",
       "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
       "gallery": [
@@ -1261,153 +1264,228 @@
     },
     {
       "id": "125",
-      "name": "Khách sạn Hà Nội Lake Side",
-      "slug": "khach-san-ha-noi-lake-side",
-      "categoryId": "hotel",
-      "destination": "Hà Nội",
-      "province": "Hà Nội",
-      "price": 300000,
-      "salePrice": 285000,
-      "discount": 5,
-      "rating": 4.1,
-      "availableSlots": 16,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Khách sạn tiết kiệm gần Hồ Tây.",
-      "description": "Phù hợp khách đi công tác ngắn ngày hoặc du lịch tiết kiệm tại Hà Nội.",
-      "amenities": [
-        "Wifi",
-        "Lễ tân 24/7",
-        "Giữ hành lý"
-      ],
-      "createdAt": "2026-03-29T01:00:00Z",
-      "featured": false,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
+      "name": "Tour Cát Tiên - Thiên Ân 3N2Đ",
+      "slug": "tour-cat-tien-thien-an-3n2d",
+      "categoryId": "tour",
+      "destination": "Đồng Nai",
+      "province": "Đồng Nai",
+      "price": 4700000,
+      "salePrice": 4100000,
+      "rating": 4.5,
+      "availableSlots": 12,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-07-15",
+        "endDate": "2026-12-31"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 4100000,
+          "childPrice": 3075000,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
+        },
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 4700000,
+          "childPrice": 3525000,
+          "note": "Giá gốc không ưu đãi"
+        }
+      },
+      "departures": [
         {
-          "value": "compact",
-          "label": "Phòng compact",
-          "priceMultiplier": 1,
-          "childSurcharge": 300000
+          "departureId": "T125-2026-08-02",
+          "startDate": "2026-08-02",
+          "endDate": "2026-08-04",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 6
         },
         {
-          "value": "standard",
-          "label": "Phòng tiêu chuẩn",
-          "priceMultiplier": 1.1,
-          "childSurcharge": 300000
+          "departureId": "T125-2026-08-23",
+          "startDate": "2026-08-23",
+          "endDate": "2026-08-25",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 6
         }
+      ],
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Cát Tiên - lặn nước, thiên nhiên hoang dã 3N2Đ.",
+      "description": "Khám phá vườn quốc gia Cát Tiên, lặn nước. Khách sạn 3 sao.",
+      "amenities": [
+        "Khách sạn 3 sao",
+        "Xe đưa đón",
+        "Ăn sáng",
+        "Lặn nước",
+        "Thiên nhiên"
+      ],
+      "createdAt": "2026-03-26T08:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Ngày 1: Sài Gòn - Cát Tiên",
+        "Ngày 2: Lặn nước - Khám phá",
+        "Ngày 3: Về Sài Gòn"
       ]
     },
     {
       "id": "121",
-      "name": "Khách sạn Hạ Long Bay View",
-      "slug": "khach-san-ha-long-bay-view",
-      "categoryId": "hotel",
-      "destination": "Hạ Long",
-      "province": "Quảng Ninh",
-      "price": 980000,
-      "salePrice": 842800,
-      "discount": 14,
-      "rating": 4.4,
-      "availableSlots": 16,
+      "name": "Tour Hà Giang - Bắc Yên 4N3Đ",
+      "slug": "tour-ha-giang-bac-yen-4n3d",
+      "categoryId": "tour",
+      "destination": "Hà Giang",
+      "province": "Hà Giang",
+      "price": 5700000,
+      "salePrice": 4950000,
+      "rating": 4.7,
+      "availableSlots": 14,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-09-01",
+        "endDate": "2026-12-15"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 4950000,
+          "childPrice": 3712500,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
+        },
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 5700000,
+          "childPrice": 4275000,
+          "note": "Giá gốc không ưu đãi"
+        }
+      },
+      "departures": [
+        {
+          "departureId": "T121-2026-09-10",
+          "startDate": "2026-09-10",
+          "endDate": "2026-09-13",
+          "durationDays": 4,
+          "durationNights": 3,
+          "remainingSlots": 7
+        },
+        {
+          "departureId": "T121-2026-10-01",
+          "startDate": "2026-10-01",
+          "endDate": "2026-10-04",
+          "durationDays": 4,
+          "durationNights": 3,
+          "remainingSlots": 7
+        }
+      ],
       "status": "active",
-      "image": "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=900&q=80",
+      "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
       "gallery": [
-        "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Khách sạn gần bến tàu tham quan vịnh Hạ Long.",
-      "description": "Tiện lợi cho lịch trình tham quan trong ngày và nghỉ ngắn ngày.",
+      "shortDescription": "Đường Hoa Hồng Hà Giang, Bắc Yên, phong cảnh Tây Bắc 4N3Đ.",
+      "description": "Khám phá cảnh đẹp Hà Giang, dân tộc Tây Bắc. Khách sạn 3 sao.",
       "amenities": [
+        "Khách sạn 3 sao",
+        "Xe đưa đón",
         "Ăn sáng",
-        "Xe điện",
-        "Lễ tân 24/7",
-        "Wifi"
+        "Đường Hoa Hồng",
+        "Dân tộc"
       ],
-      "createdAt": "2026-03-20T16:00:00Z",
+      "createdAt": "2026-03-24T08:00:00Z",
       "featured": false,
       "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
-        {
-          "value": "standard",
-          "label": "Phòng tiêu chuẩn",
-          "priceMultiplier": 1,
-          "childSurcharge": 300000
-        },
-        {
-          "value": "bay",
-          "label": "Phòng view vịnh",
-          "priceMultiplier": 1.2,
-          "childSurcharge": 420000
-        },
-        {
-          "value": "executive",
-          "label": "Phòng executive",
-          "priceMultiplier": 1.35,
-          "childSurcharge": 520000
-        }
+        "Ngày 1: Hà Nội - Hà Giang",
+        "Ngày 2: Đường Hoa Hồng",
+        "Ngày 3: Bắc Yên",
+        "Ngày 4: Về Hà Nội"
       ]
     },
     {
       "id": "122",
-      "name": "Khách sạn Hội An Riverside",
-      "slug": "khach-san-hoi-an-riverside",
-      "categoryId": "hotel",
-      "destination": "Hội An",
-      "province": "Quảng Nam",
-      "price": 760000,
-      "salePrice": 653600,
-      "discount": 14,
-      "rating": 4.5,
-      "availableSlots": 10,
+      "name": "Tour Mộc Châu - Mù Cang Chải 3N2Đ",
+      "slug": "tour-moc-chau-mu-cang-chai-3n2d",
+      "categoryId": "tour",
+      "destination": "Mộc Châu",
+      "province": "Sơn La",
+      "price": 4400000,
+      "salePrice": 3850000,
+      "rating": 4.6,
+      "availableSlots": 16,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-08-15",
+        "endDate": "2026-12-15"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 3850000,
+          "childPrice": 2887500,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
+        },
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 4400000,
+          "childPrice": 3300000,
+          "note": "Giá gốc không ưu đãi"
+        }
+      },
+      "departures": [
+        {
+          "departureId": "T122-2026-09-01",
+          "startDate": "2026-09-01",
+          "endDate": "2026-09-03",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 8
+        },
+        {
+          "departureId": "T122-2026-09-20",
+          "startDate": "2026-09-20",
+          "endDate": "2026-09-22",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 8
+        }
+      ],
       "status": "active",
-      "image": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=80",
+      "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
       "gallery": [
-        "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80"
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Khách sạn gần phố cổ và bờ sông Hội An.",
-      "description": "Phù hợp cặp đôi và gia đình nhỏ thích đi bộ khám phá phố cổ.",
+      "shortDescription": "Mộc Châu - Mù Cang Chải, ruộng bậc thang, dân tộc 3N2Đ.",
+      "description": "Khám phá cao nguyên Mộc Châu, ruộng bậc thang Mù Cang Chải. Khách sạn 3 sao.",
       "amenities": [
+        "Khách sạn 3 sao",
+        "Xe đưa đón",
         "Ăn sáng",
-        "Xe đạp miễn phí",
-        "Wifi",
-        "Đưa đón sân bay"
+        "Ruộng bậc thang",
+        "Dân tộc"
       ],
-      "createdAt": "2026-03-20T17:00:00Z",
+      "createdAt": "2026-03-24T09:00:00Z",
       "featured": false,
       "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
-        {
-          "value": "superior",
-          "label": "Phòng superior",
-          "priceMultiplier": 1,
-          "childSurcharge": 300000
-        },
-        {
-          "value": "deluxe",
-          "label": "Phòng deluxe",
-          "priceMultiplier": 1.15,
-          "childSurcharge": 360000
-        },
-        {
-          "value": "family",
-          "label": "Phòng gia đình",
-          "priceMultiplier": 1.3,
-          "childSurcharge": 480000
-        }
+        "Ngày 1: Hà Nội - Mộc Châu",
+        "Ngày 2: Mù Cang Chải ruộng bậc thang",
+        "Ngày 3: Về Hà Nội"
       ]
     },
     {
@@ -1463,55 +1541,77 @@
     },
     {
       "id": "120",
-      "name": "Khách sạn Biển Nha Trang",
-      "slug": "khach-san-bien-nha-trang",
-      "categoryId": "hotel",
-      "destination": "Nha Trang",
-      "province": "Khánh Hòa",
-      "price": 1300000,
-      "salePrice": 1118000,
-      "discount": 14,
-      "rating": 4.6,
-      "availableSlots": 13,
+      "name": "Tour Đà Lạt - Thung Lũng Tình Yêu 3N2Đ",
+      "slug": "tour-da-lat-thung-lung-tinh-yeu-3n2d",
+      "categoryId": "tour",
+      "destination": "Đà Lạt",
+      "province": "Lâm Đồng",
+      "price": 4600000,
+      "salePrice": 4000000,
+      "rating": 4.8,
+      "availableSlots": 16,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-07-15",
+        "endDate": "2026-12-15"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 4000000,
+          "childPrice": 3000000,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
+        },
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 4600000,
+          "childPrice": 3450000,
+          "note": "Giá gốc không ưu đãi"
+        }
+      },
+      "departures": [
+        {
+          "departureId": "T120-2026-07-20",
+          "startDate": "2026-07-20",
+          "endDate": "2026-07-22",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 8
+        },
+        {
+          "departureId": "T120-2026-08-10",
+          "startDate": "2026-08-10",
+          "endDate": "2026-08-12",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 8
+        }
+      ],
       "status": "active",
-      "image": "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=80",
+      "image": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80",
       "gallery": [
-        "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80"
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Khách sạn sát biển với nhiều hạng phòng.",
-      "description": "Phù hợp kỳ nghỉ biển với gia đình và nhóm bạn.",
+      "shortDescription": "Đà Lạt - Thung Lũng Tình Yêu, Trảng Trombă, thác Prenn 3N2Đ.",
+      "description": "Khám phá thành phố Đà Lạt, vườn hoa, thác nước. Khách sạn 3 sao.",
       "amenities": [
-        "Hồ bơi",
-        "Bữa sáng",
-        "Spa",
-        "Wifi"
+        "Khách sạn 3 sao",
+        "Xe đưa đón",
+        "Ăn sáng",
+        "Vườn hoa",
+        "Thác nước"
       ],
-      "createdAt": "2026-03-20T15:00:00Z",
+      "createdAt": "2026-03-23T08:00:00Z",
       "featured": true,
       "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
-        {
-          "value": "city",
-          "label": "Phòng hướng phố",
-          "priceMultiplier": 1,
-          "childSurcharge": 320000
-        },
-        {
-          "value": "sea",
-          "label": "Phòng hướng biển",
-          "priceMultiplier": 1.2,
-          "childSurcharge": 420000
-        },
-        {
-          "value": "suite",
-          "label": "Suite biển",
-          "priceMultiplier": 1.45,
-          "childSurcharge": 600000
-        }
+        "Ngày 1: Đà Lạt - Thung lũng",
+        "Ngày 2: Trảng Trombă - Thác Prenn",
+        "Ngày 3: Về Đà Lạt"
       ]
     },
     {
@@ -1561,55 +1661,77 @@
     },
     {
       "id": "124",
-      "name": "Khách sạn Phú Quốc Island Resort",
-      "slug": "khach-san-phu-quoc-island-resort",
-      "categoryId": "hotel",
-      "destination": "Phú Quốc",
-      "province": "Kiên Giang",
-      "price": 1450000,
-      "salePrice": 1247000,
-      "discount": 14,
-      "rating": 4.7,
-      "availableSlots": 12,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Resort gần biển với nhiều hạng phòng nghỉ dưỡng.",
-      "description": "Phù hợp gia đình, cặp đôi muốn trải nghiệm nghỉ dưỡng đảo.",
-      "amenities": [
-        "Bãi biển riêng",
-        "Hồ bơi",
-        "Spa",
-        "Buffet sáng"
-      ],
-      "createdAt": "2026-03-20T19:00:00Z",
-      "featured": true,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
-        {
-          "value": "garden",
-          "label": "Bungalow vườn",
-          "priceMultiplier": 1,
-          "childSurcharge": 320000
+      "name": "Tour Quy Nhơn - Eo Gió 3N2Đ",
+      "slug": "tour-quy-nhon-eo-gio-3n2d",
+      "categoryId": "tour",
+      "destination": "Quy Nhơn",
+      "province": "Bình Định",
+      "price": 5100000,
+      "salePrice": 4450000,
+      "rating": 4.6,
+      "availableSlots": 14,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-08-15",
+        "endDate": "2026-12-15"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 4450000,
+          "childPrice": 3337500,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
         },
-        {
-          "value": "pool",
-          "label": "Phòng hướng hồ bơi",
-          "priceMultiplier": 1.2,
-          "childSurcharge": 420000
-        },
-        {
-          "value": "beachfront",
-          "label": "Villa sát biển",
-          "priceMultiplier": 1.45,
-          "childSurcharge": 600000
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 5100000,
+          "childPrice": 3825000,
+          "note": "Giá gốc không ưu đãi"
         }
+      },
+      "departures": [
+        {
+          "departureId": "T124-2026-09-08",
+          "startDate": "2026-09-08",
+          "endDate": "2026-09-10",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 7
+        },
+        {
+          "departureId": "T124-2026-10-01",
+          "startDate": "2026-10-01",
+          "endDate": "2026-10-03",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 7
+        }
+      ],
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Quy Nhơn - Eo Gió, Tháp Chàm, biển 3N2Đ.",
+      "description": "Khám phá Quy Nhơn, Eo Gió, Tháp Chàm, biển cát trắng. Khách sạn 3 sao.",
+      "amenities": [
+        "Khách sạn 3 sao",
+        "Xe đưa đón",
+        "Ăn sáng",
+        "Biển",
+        "Tháp Chàm"
+      ],
+      "createdAt": "2026-03-25T08:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Ngày 1: Quy Nhơn - Eo Gió",
+        "Ngày 2: Tháp Chàm - Biển",
+        "Ngày 3: Quy Nhơn"
       ]
     },
     {
@@ -1665,106 +1787,152 @@
     },
     {
       "id": "123",
-      "name": "Khách sạn Sapa Mountain View",
-      "slug": "khach-san-sapa-mountain-view",
-      "categoryId": "hotel",
-      "destination": "Sapa",
-      "province": "Lào Cai",
-      "price": 680000,
-      "salePrice": 557600,
-      "discount": 18,
-      "rating": 4.4,
-      "availableSlots": 9,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1504457047772-27faf1c00561?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Khách sạn view núi cho kỳ nghỉ Sapa mát mẻ.",
-      "description": "Không gian ấm cúng, thuận tiện tham quan bản làng và cáp treo Fansipan.",
-      "amenities": [
-        "Bữa sáng",
-        "Lò sưởi",
-        "Quầy tour",
-        "Wifi"
-      ],
-      "createdAt": "2026-03-20T18:00:00Z",
-      "featured": false,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
-        {
-          "value": "classic",
-          "label": "Phòng classic",
-          "priceMultiplier": 1,
-          "childSurcharge": 300000
+      "name": "Tour Bạn Giốc - Cao Bằng 3N2Đ",
+      "slug": "tour-ban-gioc-cao-bang-3n2d",
+      "categoryId": "tour",
+      "destination": "Cao Bằng",
+      "province": "Cao Bằng",
+      "price": 4300000,
+      "salePrice": 3750000,
+      "rating": 4.5,
+      "availableSlots": 14,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-09-01",
+        "endDate": "2026-12-31"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 3750000,
+          "childPrice": 2812500,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
         },
-        {
-          "value": "mountain",
-          "label": "Phòng view núi",
-          "priceMultiplier": 1.18,
-          "childSurcharge": 380000
-        },
-        {
-          "value": "suite",
-          "label": "Suite ấm cúng",
-          "priceMultiplier": 1.35,
-          "childSurcharge": 520000
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 4300000,
+          "childPrice": 3225000,
+          "note": "Giá gốc không ưu đãi"
         }
-      ]
-    },
-    {
-      "id": "127",
-      "name": "Khách sạn Sapa Cloud Nest",
-      "slug": "khach-san-sapa-cloud-nest",
-      "categoryId": "hotel",
-      "destination": "Sapa",
-      "province": "Lào Cai",
-      "price": 740000,
-      "salePrice": 651200,
-      "discount": 12,
-      "rating": 4.4,
-      "availableSlots": 12,
+      },
+      "departures": [
+        {
+          "departureId": "T123-2026-09-05",
+          "startDate": "2026-09-05",
+          "endDate": "2026-09-07",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 7
+        },
+        {
+          "departureId": "T123-2026-10-10",
+          "startDate": "2026-10-10",
+          "endDate": "2026-10-12",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 7
+        }
+      ],
       "status": "active",
       "image": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
       "gallery": [
         "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Lưu trú ấm cúng với view núi Sapa.",
-      "description": "Phù hợp nghỉ dưỡng cuối tuần và khám phá bản làng quanh Sapa.",
+      "shortDescription": "Thác Bạn Giốc, Cao Bằng, hang động 3N2Đ.",
+      "description": "Khám phá thác Bạn Giốc hùng vĩ, hang Mã Phục, thiên nhiên Cao Bằng. Khách sạn 3 sao.",
       "amenities": [
-        "Lò sưởi",
-        "Wifi",
-        "Bữa sáng"
+        "Khách sạn 3 sao",
+        "Xe đưa đón",
+        "Ăn sáng",
+        "Thác Bạn Giốc",
+        "Hang động"
       ],
-      "createdAt": "2026-03-29T01:20:00Z",
+      "createdAt": "2026-03-25T08:00:00Z",
       "featured": false,
       "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
-        {
-          "value": "classic",
-          "label": "Phòng classic",
-          "priceMultiplier": 1,
-          "childSurcharge": 300000
+        "Ngày 1: Hà Nội - Cao Bằng",
+        "Ngày 2: Thác Bạn Giốc - Hang Mã Phục",
+        "Ngày 3: Về Hà Nội"
+      ]
+    },
+    {
+      "id": "127",
+      "name": "Tour Cô Tô - Hòn Dầu 3N2Đ",
+      "slug": "tour-co-to-hon-dau-3n2d",
+      "categoryId": "tour",
+      "destination": "Cô Tô",
+      "province": "Quảng Ninh",
+      "price": 5300000,
+      "salePrice": 4650000,
+      "rating": 4.6,
+      "availableSlots": 14,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-08-01",
+        "endDate": "2026-11-30"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 4650000,
+          "childPrice": 3487500,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
         },
-        {
-          "value": "mountain",
-          "label": "Phòng view núi",
-          "priceMultiplier": 1.2,
-          "childSurcharge": 380000
-        },
-        {
-          "value": "suite",
-          "label": "Suite",
-          "priceMultiplier": 1.35,
-          "childSurcharge": 520000
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 5300000,
+          "childPrice": 3975000,
+          "note": "Giá gốc không ưu đãi"
         }
+      },
+      "departures": [
+        {
+          "departureId": "T127-2026-08-15",
+          "startDate": "2026-08-15",
+          "endDate": "2026-08-17",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 7
+        },
+        {
+          "departureId": "T127-2026-09-12",
+          "startDate": "2026-09-12",
+          "endDate": "2026-09-14",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 7
+        }
+      ],
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Cô Tô - Hòn Dầu, biển hoang sơ, câu cá 3N2Đ.",
+      "description": "Khám phá đảo Cô Tô, Hòn Dầu, biển sạch. Câu cá, tắm biển. Resort 3 sao.",
+      "amenities": [
+        "Resort 3 sao",
+        "Tàu biển",
+        "Ăn sáng",
+        "Câu cá",
+        "Tắm biển"
+      ],
+      "createdAt": "2026-03-28T08:00:00Z",
+      "featured": false,
+      "itinerary": [
+        "Ngày 1: Hải Phòng - Cô Tô",
+        "Ngày 2: Hòn Dầu - Câu cá",
+        "Ngày 3: Về Hải Phòng"
       ]
     },
     {
@@ -1822,53 +1990,77 @@
     },
     {
       "id": "126",
-      "name": "Khách sạn Saigon Metro Stay",
-      "slug": "khach-san-saigon-metro-stay",
-      "categoryId": "hotel",
-      "destination": "TP.HCM",
-      "province": "TP.HCM",
-      "price": 520000,
-      "salePrice": 468000,
-      "discount": 10,
-      "rating": 4.2,
-      "availableSlots": 14,
-      "status": "active",
-      "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
-      "gallery": [
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80"
-      ],
-      "shortDescription": "Khách sạn hiện đại gần tuyến metro trung tâm.",
-      "description": "Thuận tiện di chuyển, phù hợp cặp đôi và gia đình nhỏ.",
-      "amenities": [
-        "Wifi",
-        "Bữa sáng",
-        "Dọn phòng"
-      ],
-      "createdAt": "2026-03-29T01:10:00Z",
-      "featured": false,
-      "itinerary": [
-        "Nhận phòng từ 14:00",
-        "Trả phòng trước 12:00"
-      ],
-      "roomTypes": [
-        {
-          "value": "economy",
-          "label": "Phòng economy",
-          "priceMultiplier": 1,
-          "childSurcharge": 300000
+      "name": "Tour Côn Đảo - Nhà Tù Lịch Sử 3N2Đ",
+      "slug": "tour-con-dao-nha-tu-lich-su-3n2d",
+      "categoryId": "tour",
+      "destination": "Côn Đảo",
+      "province": "Bà Rịa - Vũng Tàu",
+      "price": 6400000,
+      "salePrice": 5600000,
+      "rating": 4.7,
+      "availableSlots": 12,
+      "scheduleType": "hybrid",
+      "flexibleWindow": {
+        "startDate": "2026-09-01",
+        "endDate": "2026-12-31"
+      },
+      "tourChildPolicy": {
+        "freeUnderAge": 5,
+        "childRate": 0.75,
+        "adultAgeThreshold": 10
+      },
+      "pricingTiers": {
+        "fixed": {
+          "label": "Lịch cố định (ưu đãi)",
+          "adultPrice": 5600000,
+          "childPrice": 4200000,
+          "note": "Giá ưu đãi áp dụng theo lịch cố định"
         },
-        {
-          "value": "deluxe",
-          "label": "Phòng deluxe",
-          "priceMultiplier": 1.15,
-          "childSurcharge": 350000
-        },
-        {
-          "value": "family",
-          "label": "Phòng gia đình",
-          "priceMultiplier": 1.3,
-          "childSurcharge": 420000
+        "flexible": {
+          "label": "Lịch linh hoạt",
+          "adultPrice": 6400000,
+          "childPrice": 4800000,
+          "note": "Giá gốc không ưu đãi"
         }
+      },
+      "departures": [
+        {
+          "departureId": "T126-2026-09-15",
+          "startDate": "2026-09-15",
+          "endDate": "2026-09-17",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 6
+        },
+        {
+          "departureId": "T126-2026-10-20",
+          "startDate": "2026-10-20",
+          "endDate": "2026-10-22",
+          "durationDays": 3,
+          "durationNights": 2,
+          "remainingSlots": 6
+        }
+      ],
+      "status": "active",
+      "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
+      "gallery": [
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "shortDescription": "Côn Đảo - nhà tù lịch sử, biển 3N2Đ.",
+      "description": "Khám phá Côn Đảo, lịch sử tù nhân, biển đẹp. Resort 3 sao.",
+      "amenities": [
+        "Resort 3 sao",
+        "Xe đưa đón",
+        "Ăn sáng",
+        "Lặn snorkel",
+        "Biển"
+      ],
+      "createdAt": "2026-03-27T08:00:00Z",
+      "featured": true,
+      "itinerary": [
+        "Ngày 1: Sài Gòn - Côn Đảo",
+        "Ngày 2: Nhà tù lịch sử - Lặn snorkel",
+        "Ngày 3: Về Sài Gòn"
       ]
     },
     {
@@ -2941,7 +3133,7 @@
       "price": 620000,
       "salePrice": 560000,
       "rating": 4.8,
-      "availableSlots": 28,
+      "availableSlots": 26,
       "childSurcharge": 220000,
       "ticketChildPolicy": {
         "freeUnderAge": 8,
@@ -3111,7 +3303,7 @@
       "gallery": [
         "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Combo vé tham quan quần thể di tích cố đô Huế.",
+      "shortDescription": "Vé tham quan quần thể di tích cố đô Huế.",
       "description": "Gồm Đại Nội và một số lăng tẩm tiêu biểu, phù hợp khách yêu thích lịch sử văn hóa.",
       "amenities": [
         "Vé điện tử",
@@ -3122,7 +3314,7 @@
       "featured": false,
       "itinerary": [
         "Sử dụng trong ngày",
-        "Áp dụng tại các điểm trong combo",
+        "Áp dụng tại các điểm tham quan đã chọn",
         "Không bao gồm xe di chuyển"
       ],
       "ticketPackages": [
@@ -3267,7 +3459,7 @@
       "gallery": [
         "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Combo vé tham quan Tràng An và điểm check-in lân cận.",
+      "shortDescription": "Vé tham quan Tràng An và điểm check-in lân cận.",
       "description": "Gợi ý phù hợp cho chuyến đi cuối tuần từ Hà Nội, trải nghiệm non nước hữu tình.",
       "amenities": [
         "Vé điện tử",
@@ -4416,6 +4608,264 @@
       "address": "Cầu Giấy, Hà Nội"
     }
   ],
-  "bookings": [],
+  "bookings": [
+    {
+      "id": "tU4ReXkMTNI",
+      "code": "VV318939",
+      "customer": {
+        "fullName": "Khách du lịch Việt",
+        "email": "user@vtravel.vn",
+        "phone": "0987654321",
+        "city": "TP.HCM",
+        "address": "Cầu Giấy, Hà Nội",
+        "note": "",
+        "id": "2",
+        "userId": "2"
+      },
+      "items": [
+        {
+          "serviceId": "105",
+          "bookingType": "hotel",
+          "bookingMeta": {
+            "checkInDate": "2026-04-03",
+            "checkOutDate": "2026-04-10",
+            "guests": 3,
+            "adults": 2,
+            "children": 1,
+            "childrenAges": [
+              8
+            ],
+            "rooms": 1,
+            "roomType": "standard",
+            "roomTypeLabel": "Phòng tiêu chuẩn",
+            "nights": 7,
+            "chargeableAdults": 2,
+            "childrenUnderFour": 0,
+            "children4To14": 1,
+            "childSurchargeMin": 500000,
+            "childSurchargeMax": 500000,
+            "totalPrice": 16184000,
+            "durationLabel": "",
+            "unitPrice": 996000
+          },
+          "quantity": 3,
+          "startDate": "2026-04-03",
+          "endDate": "2026-04-10",
+          "travelDate": "2026-04-03",
+          "service": {
+            "id": "105",
+            "name": "Khách sạn Phố Cổ Hà Nội",
+            "slug": "khach-san-pho-co-ha-noi",
+            "categoryId": "hotel",
+            "destination": "Hà Nội",
+            "province": "Hà Nội",
+            "price": 1200000,
+            "salePrice": 996000,
+            "discount": 17,
+            "rating": 4.5,
+            "availableSlots": 18,
+            "status": "active",
+            "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
+            "gallery": [
+              "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
+              "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80"
+            ],
+            "shortDescription": "Khách sạn trung tâm gần Hồ Gươm và phố cổ.",
+            "description": "Thiết kế hiện đại, thuận tiện di chuyển, phù hợp lưu trú ngắn ngày.",
+            "amenities": [
+              "Bữa sáng",
+              "Lễ tân 24/7",
+              "Wifi",
+              "Dọn phòng hàng ngày"
+            ],
+            "createdAt": "2026-03-20T11:00:00Z",
+            "featured": true,
+            "itinerary": [
+              "Nhận phòng từ 14:00",
+              "Trả phòng trước 12:00"
+            ],
+            "roomTypes": [
+              {
+                "value": "economy",
+                "label": "Phòng economy",
+                "priceMultiplier": 0.95,
+                "childSurcharge": 300000
+              },
+              {
+                "value": "standard",
+                "label": "Phòng tiêu chuẩn",
+                "priceMultiplier": 1,
+                "childSurcharge": 320000
+              },
+              {
+                "value": "family",
+                "label": "Phòng gia đình",
+                "priceMultiplier": 1.25,
+                "childSurcharge": 420000
+              }
+            ]
+          },
+          "identityKey": "hotel|105|2026-04-03|2026-04-10|rooms:1|roomType:standard",
+          "bookingSummary": "2026-04-03 - 2026-04-10 · 2 người lớn · 1 trẻ em · 1 phòng · standard",
+          "lineTotal": 16184000
+        }
+      ],
+      "subtotal": 16184000,
+      "discount": 1618400,
+      "serviceFee": 50000,
+      "total": 14615600,
+      "promotion": {
+        "id": "3001",
+        "code": "VTRAVEL10",
+        "type": "percent",
+        "value": 10,
+        "description": "Giảm 10% cho booking nội địa",
+        "status": "active",
+        "startDate": "2026-03-01",
+        "endDate": "2026-12-31"
+      },
+      "status": "pending",
+      "statusLabel": "Chờ xác nhận",
+      "createdAt": "2026-04-02T07:35:18.939Z",
+      "visible": true
+    },
+    {
+      "id": "bM7gasNOowk",
+      "code": "VV630123",
+      "customer": {
+        "fullName": "khanh",
+        "email": "banhtrangnao@gmail.com",
+        "phone": "0123456789",
+        "city": "Hà Nội",
+        "address": "123hcm",
+        "note": "",
+        "userId": "guest"
+      },
+      "items": [
+        {
+          "serviceId": "153",
+          "bookingType": "ticket",
+          "bookingMeta": {
+            "useDate": "2026-04-03",
+            "adults": 2,
+            "children": 0,
+            "childrenAges": [],
+            "totalGuests": 2,
+            "ticketQuantity": 2,
+            "freeChildren": 0,
+            "childSurchargeCount": 0,
+            "childSurchargeUnit": 198000,
+            "childSurchargeTotal": 0,
+            "totalPrice": 1008000,
+            "durationLabel": "",
+            "unitPrice": 504000
+          },
+          "service": {
+            "id": "153",
+            "name": "Vé Vinpearl Safari Phú Quốc",
+            "slug": "ve-phu-quoc-safari-vinpearl",
+            "categoryId": "ticket",
+            "ticketServiceType": "Safari",
+            "destination": "Phú Quốc",
+            "province": "Kiên Giang",
+            "price": 620000,
+            "salePrice": 560000,
+            "rating": 4.8,
+            "availableSlots": 28,
+            "childSurcharge": 220000,
+            "ticketChildPolicy": {
+              "freeUnderAge": 8,
+              "adultAgeThreshold": 15,
+              "surchargeAgeMin": 8,
+              "surchargeAgeMax": 14,
+              "surcharge": 220000
+            },
+            "status": "active",
+            "image": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=900&q=80",
+            "gallery": [
+              "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1200&q=80"
+            ],
+            "shortDescription": "Vé khám phá safari bán hoang dã tại Phú Quốc.",
+            "description": "Hành trình tham quan động vật bằng xe chuyên dụng, phù hợp cho gia đình có trẻ nhỏ.",
+            "amenities": [
+              "Vé điện tử",
+              "Xe bus safari",
+              "Hỗ trợ đổi ngày"
+            ],
+            "createdAt": "2026-03-29T09:20:00Z",
+            "featured": true,
+            "itinerary": [
+              "Sử dụng trong ngày",
+              "Bao gồm xe safari nội khu",
+              "Không bao gồm ăn trưa"
+            ],
+            "ticketPackages": [
+              {
+                "id": "entry",
+                "name": "Gói vào cổng",
+                "salePrice": 504000,
+                "price": 558000,
+                "childSurcharge": 198000,
+                "features": [
+                  "Vé vào cổng safari",
+                  "Không gồm xe chuyên dụng",
+                  "Không kèm nước"
+                ]
+              },
+              {
+                "id": "safari",
+                "name": "Gói safari",
+                "salePrice": 560000,
+                "price": 620000,
+                "childSurcharge": 220000,
+                "features": [
+                  "Vé vào cổng",
+                  "Bao gồm xe safari",
+                  "Ưu tiên cổng vào"
+                ]
+              },
+              {
+                "id": "safari-plus",
+                "name": "Gói safari mở rộng + nước",
+                "salePrice": 672000,
+                "price": 744000,
+                "childSurcharge": 242000,
+                "features": [
+                  "Bao gồm xe safari",
+                  "Thêm khu tương tác",
+                  "Tặng 1 ly nước"
+                ]
+              }
+            ]
+          },
+          "quantity": 2,
+          "startDate": "2026-04-03",
+          "endDate": "",
+          "travelDate": "2026-04-03",
+          "bookingSummary": "2026-04-03 · 2 người lớn · 0 trẻ em · 2 vé tính phí",
+          "identityKey": "direct-153-2026-04-03--2",
+          "lineTotal": 1008000
+        }
+      ],
+      "subtotal": 1008000,
+      "discount": 500000,
+      "serviceFee": 50000,
+      "total": 558000,
+      "promotion": {
+        "id": "3002",
+        "code": "PHUQUOC500K",
+        "type": "amount",
+        "value": 500000,
+        "description": "Giảm 500.000 VND cho đơn từ 5.000.000 VND",
+        "status": "active",
+        "startDate": "2026-03-01",
+        "endDate": "2026-09-30"
+      },
+      "status": "pending",
+      "statusLabel": "Chờ xác nhận",
+      "createdAt": "2026-04-03T03:07:10.123Z",
+      "visible": true
+    }
+  ],
   "$schema": "./node_modules/json-server/schema.json"
 }

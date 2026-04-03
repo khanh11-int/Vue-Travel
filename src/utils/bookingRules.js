@@ -5,6 +5,7 @@ const DATE_REQUIREMENTS_BY_CATEGORY = Object.freeze({
 })
 
 const DEFAULT_DATE_REQUIREMENT = 'single'
+const BOOKING_CANCELLATION_WINDOW_MS = 3 * 24 * 60 * 60 * 1000
 
 /**
  * Chuẩn hóa đầu vào để luôn lấy được category id từ string hoặc object service.
@@ -69,4 +70,26 @@ export const isDateSelectionInvalid = ({ startDate = '', endDate = '', service }
   }
 
   return false
+}
+
+/**
+ * Kiểm tra booking còn được phép hủy hay không.
+ * Điều kiện: đang chờ xác nhận hoặc tạo trong vòng 3 ngày gần nhất.
+ * @param {Object} booking - Booking cần kiểm tra.
+ * @param {Date} [referenceDate=new Date()] - Mốc thời gian so sánh.
+ * @returns {boolean} True nếu booking được phép hủy.
+ */
+export const canCancelBooking = (booking, referenceDate = new Date()) => {
+  if (!booking) return false
+  if (booking.status === 'cancelled' || booking.status === 'completed') return false
+  if (booking.status === 'pending') return true
+  if (!booking.createdAt) return false
+
+  const createdAt = new Date(booking.createdAt)
+  const referenceTime = referenceDate instanceof Date ? referenceDate.getTime() : new Date(referenceDate).getTime()
+  const createdTime = createdAt.getTime()
+
+  if (Number.isNaN(createdTime) || Number.isNaN(referenceTime)) return false
+
+  return referenceTime - createdTime <= BOOKING_CANCELLATION_WINDOW_MS
 }

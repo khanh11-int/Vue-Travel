@@ -72,7 +72,7 @@
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ServiceSearchNav from '@/components/travel/ServiceSearchNav.vue'
-import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
+import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
 import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useCategorySearchSchemaStore } from '@/stores/useCategorySearchSchemaStore'

@@ -89,31 +89,31 @@ const routes = [
         path: 'wishlist',
         name: 'wishlist',
         component: WishlistView,
-        meta: { title: 'Danh sách yêu thích', requiresAuth: true }
+        meta: { title: 'Danh sách yêu thích' }
       },
       {
         path: 'gio-hang',
         name: 'cart',
         component: CartView,
-        meta: { title: 'Giỏ đặt chỗ', requiresAuth: true }
+        meta: { title: 'Giỏ đặt chỗ' }
       },
       {
         path: 'thanh-toan',
         name: 'checkout',
         component: CheckoutView,
-        meta: { title: 'Thanh toán đặt chỗ', requiresAuth: true }
+        meta: { title: 'Thanh toán đặt chỗ' }
       },
       {
         path: 'dat-cho-thanh-cong',
         name: 'booking-success',
         component: BookingSuccessView,
-        meta: { title: 'Đặt chỗ thành công', requiresAuth: true }
+        meta: { title: 'Đặt chỗ thành công' }
       },
       {
         path: 'lich-su-dat-cho',
         name: 'booking-history',
         component: BookingHistoryView,
-        meta: { title: 'Lịch sử đặt chỗ', requiresAuth: true }
+        meta: { title: 'Lịch sử đặt chỗ' }
       },
       {
         path: 'dang-nhap',

@@ -17,6 +17,7 @@ import {
   persistStorage,
   readStorage
 } from '@/utils/travelStorage'
+import { canCancelBooking } from '@/utils/bookingRules'
 
 /**
  * Ép dữ liệu bất kỳ về mảng để giảm xử lý null/undefined ở các bước sau.
@@ -354,7 +355,12 @@ export const useBookingStore = defineStore('travelBooking', {
      * @returns {void}
      */
     cancelBooking(bookingId) {
+      const booking = this.allBookings.find((entry) => entry.id === bookingId) || this.bookings.find((entry) => entry.id === bookingId)
+
+      if (!canCancelBooking(booking)) return false
+
       this.updateBookingStatus(bookingId, 'cancelled')
+      return true
     }
   }
 })

@@ -10,10 +10,22 @@ import { normalizeServicesFromStorage } from '@/utils/travelNormalize'
  */
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
-const sanitizeCategories = (categories) => ensureArray(categories).filter((category) => category?.id !== 'combo')
+const sanitizeCategories = (categories) => ensureArray(categories)
 
 const sanitizeServices = (services) =>
-  normalizeServicesFromStorage(ensureArray(services)).filter((service) => service?.categoryId !== 'combo')
+  normalizeServicesFromStorage(ensureArray(services))
+    .filter((service, index, list) => {
+      const normalizedId = String(service?.id ?? '')
+      const normalizedSlug = String(service?.slug ?? '')
+
+      return index === list.findIndex((entry) => {
+        const entryId = String(entry?.id ?? '')
+        const entrySlug = String(entry?.slug ?? '')
+        if (normalizedId && entryId) return entryId === normalizedId
+        if (normalizedSlug && entrySlug) return entrySlug === normalizedSlug
+        return false
+      })
+    })
 
 export const useServiceStore = defineStore('services', {
   /**
@@ -39,7 +51,22 @@ export const useServiceStore = defineStore('services', {
      */
     featuredServices(state) {
       const services = Array.isArray(state.services) ? state.services : []
-      return services.filter((service) => service.featured)
+      return services.filter((service, index, list) => {
+        if (!service.featured) return false
+
+        const normalizedId = String(service?.id ?? '')
+        const normalizedSlug = String(service?.slug ?? '')
+
+        return index === list.findIndex((entry) => {
+          if (!entry.featured) return false
+
+          const entryId = String(entry?.id ?? '')
+          const entrySlug = String(entry?.slug ?? '')
+          if (normalizedId && entryId) return entryId === normalizedId
+          if (normalizedSlug && entrySlug) return entrySlug === normalizedSlug
+          return false
+        })
+      })
     },
 
     /**

@@ -121,7 +121,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import GuestRoomSelector from '@/components/hotel-home/GuestRoomSelector.vue'
+import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
 import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useWishlistStore } from '@/stores/useWishlistStore'

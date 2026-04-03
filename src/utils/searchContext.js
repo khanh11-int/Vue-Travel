@@ -37,6 +37,9 @@ export const resolveEndDateByCategory = (query, category) => {
   if (category === 'hotel') {
     return query.checkOutDate || query.endDate || query.returnDate || ''
   }
+  if (category === 'tour') {
+    return query.endDate || query.returnDate || ''
+  }
   return ''
 }
 
@@ -90,7 +93,7 @@ export const resolveSearchSummary = (query, category) => {
   if (category === 'tour') {
     const adults = Math.max(1, Number(query.adults || Math.max(1, quantity - Number(query.children || 0))) || 1)
     const children = Math.max(0, Number(query.children || 0) || 0)
-    return `Ngày khởi hành: ${startDate || 'Chưa chọn'} · ${adults} người lớn · ${children} trẻ em`
+    return `Khởi hành: ${startDate || 'Chưa chọn'} · Kết thúc: ${endDate || 'Chưa chọn'} · ${adults} người lớn · ${children} trẻ em`
   }
 
   return `Ngày bắt đầu: ${startDate || 'Chưa chọn'} · ${quantityLabel}`

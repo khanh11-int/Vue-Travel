@@ -71,6 +71,9 @@ img {
   padding: 10px 0;
   border-bottom: 1px solid #e6edf6;
   background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .ota-utility-nav {
@@ -440,43 +443,82 @@ p {
 }
 
 .home-ota-search-section {
-  padding-top: 10px;
-  padding-bottom: 18px;
+  position: relative;
+  overflow: visible;
+  z-index: 6;
+  padding: 42px 24px 28px;
+  border-radius: 28px;
+  background-image:
+    linear-gradient(180deg, rgba(8, 24, 52, 0.34), rgba(8, 24, 52, 0.52)),
+    url('@/assets/banner.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 24px 44px rgba(8, 24, 52, 0.22);
+}
+
+.home-ota-search-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-ota-banner-copy {
+  margin: 0 auto 14px;
+  text-align: center;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.32);
+}
+
+.home-ota-banner-copy h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.home-ota-banner-copy p {
+  margin: 4px 0 0;
+  font-size: clamp(0.95rem, 1.4vw, 1.06rem);
+  font-weight: 600;
+  color: rgba(244, 248, 255, 0.96);
 }
 
 .home-service-tabs {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 0 2px 10px;
-  border-bottom: 1px solid #e2ebf6;
+  padding: 0 2px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.42);
   overflow-x: auto;
 }
 
 .home-service-tab {
-  border: 1px solid transparent;
-  background: transparent;
-  color: #6a778f;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  color: #f3f7ff;
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: 999px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  backdrop-filter: blur(2px);
 }
 
 .home-service-tab.active {
-  color: #0b63c3;
-  border-color: #cfe0f6;
-  background: #eef5ff;
+  color: #083a78;
+  border-color: transparent;
+  background: #ffffff;
 }
 
 .home-ota-searchbar {
   margin-top: 12px;
   padding: 10px;
-  border: 1px solid #d9e5f4;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 8px 20px rgba(14, 40, 76, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 30px rgba(7, 28, 56, 0.18);
+  backdrop-filter: blur(3px);
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(0, 1.3fr) minmax(0, 1.1fr) auto;
   gap: 8px;
@@ -1844,6 +1886,15 @@ p {
     grid-template-columns: 1fr;
   }
 
+  .home-ota-search-section {
+    padding: 28px 16px 18px;
+    border-radius: 22px;
+  }
+
+  .home-ota-banner-copy {
+    margin-bottom: 12px;
+  }
+
   .cart-layout,
   .form-grid,
   .history-row--booking {
@@ -1868,6 +1919,23 @@ p {
   .ota-utility-nav {
     gap: 10px;
     font-size: 0.88rem;
+  }
+
+  .home-ota-search-section {
+    padding: 22px 12px 14px;
+    border-radius: 18px;
+  }
+
+  .home-service-tabs {
+    justify-content: flex-start;
+  }
+
+  .home-ota-banner-copy h1 {
+    font-size: 1.2rem;
+  }
+
+  .home-ota-banner-copy p {
+    font-size: 0.92rem;
   }
 
   .ota-account-chip {

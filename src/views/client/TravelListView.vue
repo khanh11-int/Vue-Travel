@@ -139,12 +139,14 @@ const searchQueryContext = computed(() => {
 
   if (category === 'tour') {
     const startDate = String(base.startDate || base.departureDate || base.useDate || base.date || '').trim()
+    const endDate = String(base.endDate || base.returnDate || '').trim()
     const adults = Math.max(1, Number(base.adults || 2) || 2)
     const children = Math.max(0, Number(base.children || 0) || 0)
     return {
       ...base,
       category,
       startDate,
+      endDate,
       departureDate: startDate,
       adults: String(adults),
       children: String(children),

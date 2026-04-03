@@ -43,7 +43,7 @@ const isActive = (path) => {
   background: transparent;
   border-bottom: 0;
   position: sticky;
-  top: 0;
+  top: 60px;
   z-index: 50;
   box-shadow: none;
 }

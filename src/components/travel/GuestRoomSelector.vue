@@ -186,6 +186,9 @@ const handleDone = () => {
   text-align: left;
   color: var(--text);
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .guest-room-selector__popup {

@@ -17,7 +17,7 @@ import {
   persistStorage,
   readStorage
 } from '@/utils/travelStorage'
-import { canCancelBooking } from '@/utils/bookingRules'
+import { canUserCancelBooking } from '@/utils/bookingRules'
 
 /**
  * Ép dữ liệu bất kỳ về mảng để giảm xử lý null/undefined ở các bước sau.
@@ -105,6 +105,22 @@ const updateBookingStatusLabel = (booking, status) => ({
   statusLabel: BOOKING_STATUS_LABELS[status] || booking.statusLabel || status
 })
 
+/**
+ * Tinh line total uu tien snapshot trong bookingMeta, fallback gia service.
+ * @param {Object} item - Booking item can tinh.
+ * @returns {number} Tong tien dong item.
+ */
+const resolveItemLineTotal = (item = {}) => {
+  const quantity = Math.max(1, Number(item.quantity || 1) || 1)
+  const snapshotTotal = Number(item.bookingMeta?.totalPrice || 0)
+  if (snapshotTotal > 0) return snapshotTotal
+
+  const snapshotUnitPrice = Number(item.bookingMeta?.unitPrice || 0)
+  if (snapshotUnitPrice > 0) return snapshotUnitPrice * quantity
+
+  return (Number(item.service?.salePrice || 0) || 0) * quantity
+}
+
 export const useBookingStore = defineStore('travelBooking', {
   /**
    * Khởi tạo booking state theo user scope hiện tại và dữ liệu all bookings.
@@ -117,6 +133,7 @@ export const useBookingStore = defineStore('travelBooking', {
     return {
       bookings: readUserScopedBookings(currentUserId),
       allBookings: readAllBookings(),
+      guestLookupResults: [],
       loading: false,
       error: null
     }
@@ -179,7 +196,10 @@ export const useBookingStore = defineStore('travelBooking', {
 
       const currentUser = resolveCurrentUser(authStore)
       const currentUserId = this.syncUserScope()
-      const sanitizedItems = ensureArray(items)
+      const sanitizedItems = ensureArray(items).map((item) => ({
+        ...item,
+        lineTotal: resolveItemLineTotal(item)
+      }))
       const now = Date.now()
       const createdAt = new Date().toISOString()
       const customerPayload = {
@@ -235,33 +255,45 @@ export const useBookingStore = defineStore('travelBooking', {
     async fetchMyBookings() {
       this.loading = true
       this.error = null
-      const authStore = useAuthStore()
       const currentUserId = this.syncUserScope()
 
       try {
-        const apiBookings = await bookingsApi.getAll()
+        const apiBookings = await bookingsApi.getAll({ 'customer.userId': currentUserId })
         const normalizedApiBookings = ensureArray(apiBookings)
 
         if (normalizedApiBookings.length) {
-          this.allBookings = sortByCreatedAtDesc(normalizedApiBookings)
-          persistAllBookings(this.allBookings)
+          this.bookings = sortByCreatedAtDesc(normalizedApiBookings)
+          persistUserScopedBookings(currentUserId, this.bookings)
         } else {
-          this.allBookings = sortByCreatedAtDesc(readAllBookings())
+          this.bookings = sortByCreatedAtDesc(readUserScopedBookings(currentUserId))
         }
-
-        this.bookings = this.allBookings.filter((booking) => {
-          const ownerId = resolveBookingOwnerId(booking)
-          if (ownerId !== GUEST_SCOPE) return ownerId === currentUserId
-
-          const activeUserId = resolveCurrentUserId(authStore)
-          return activeUserId === GUEST_SCOPE
-        })
-
-        persistUserScopedBookings(currentUserId, this.bookings)
       } catch (error) {
         this.error = error?.message || 'Không thể tải lịch sử đặt chỗ.'
         this.bookings = readUserScopedBookings(currentUserId)
-        this.allBookings = readAllBookings()
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Tra cuu booking cho guest theo ma hoac so dien thoai tai API layer.
+     * @param {Object} payload - Dieu kien tra cuu.
+     * @param {string} payload.code - Ma booking.
+     * @param {string} payload.phone - So dien thoai.
+     * @returns {Promise<Array<Object>>} Ket qua booking da sap xep.
+     */
+    async lookupGuestBookings({ code = '', phone = '' } = {}) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const foundBookings = await bookingsApi.lookupGuest({ code, phone })
+        this.guestLookupResults = sortByCreatedAtDesc(ensureArray(foundBookings))
+        return this.guestLookupResults
+      } catch (error) {
+        this.error = error?.message || 'Không thể tra cứu booking.'
+        this.guestLookupResults = []
+        return []
       } finally {
         this.loading = false
       }
@@ -355,9 +387,11 @@ export const useBookingStore = defineStore('travelBooking', {
      * @returns {void}
      */
     cancelBooking(bookingId) {
+      const authStore = useAuthStore()
+      const currentUser = resolveCurrentUser(authStore)
       const booking = this.allBookings.find((entry) => entry.id === bookingId) || this.bookings.find((entry) => entry.id === bookingId)
 
-      if (!canCancelBooking(booking)) return false
+      if (!canUserCancelBooking(booking, currentUser)) return false
 
       this.updateBookingStatus(bookingId, 'cancelled')
       return true

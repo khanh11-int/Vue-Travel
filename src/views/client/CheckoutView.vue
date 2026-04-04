@@ -128,7 +128,6 @@
 <script setup>
 import { computed, reactive, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { promotionsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useBookingStore } from '@/stores/useBookingStore'
 import { useCartStore } from '@/stores/useCartStore'
@@ -285,14 +284,7 @@ const checkoutItems = computed(() => {
 const subtotal = computed(() =>
   checkoutItems.value.reduce((acc, item) => acc + (item.lineTotal || 0), 0)
 )
-const discount = computed(() => {
-  if (!appliedPromotion.value) return 0
-  const { type, value } = appliedPromotion.value
-  if (type === 'percentage' || type === 'percent') {
-    return Math.round((subtotal.value * value) / 100)
-  }
-  return Math.min(subtotal.value, value || 0)
-})
+const discount = computed(() => cartStore.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
 const getSlotValidationError = (item) => {
@@ -362,7 +354,7 @@ const errors = reactive({
 
 // Voucher/promotion state
 const availablePromotions = ref([])
-const appliedPromotion = ref(null)
+const appliedPromotion = computed(() => cartStore.appliedPromotion)
 const customVoucherCode = ref('')
 const voucherFeedback = ref('')
 const voucherSuccess = ref(false)
@@ -397,6 +389,12 @@ const handleCheckout = () => {
   }
   if (!validate()) return
 
+  const promotionValidation = cartStore.validateAppliedPromotion(subtotal.value)
+  if (!promotionValidation.valid) {
+    errors.cart = promotionValidation.message
+    return
+  }
+
   const booking = bookingStore.createBooking({
     customer: { ...form },
     items: checkoutItems.value,
@@ -417,27 +415,19 @@ const handleCheckout = () => {
   router.push({ name: 'booking-success', query: { code: booking.code } })
 }
 
-onMounted(() => {
-  
-  loadAvailablePromotions()
-})
-
 const loadAvailablePromotions = async () => {
   try {
-    let promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
-    
-    if (!promotions.length) {
-      promotions = await promotionsApi.getAll()
-      if (Array.isArray(promotions)) {
-        serviceStore.promotions = promotions
-      }
-    }
-    
-    // Lọc các promotion active và sắp xếp theo discount cao nhất, lấy top 5
+    const promotions = await cartStore.loadAvailablePromotions()
+    const now = Date.now()
     const active = Array.isArray(promotions)
-      ? promotions.filter((p) => p.status === 'active')
+      ? promotions.filter((promotion) => {
+        const startTime = promotion.startDate ? new Date(`${promotion.startDate}T00:00:00.000`).getTime() : null
+        const endTime = promotion.endDate ? new Date(`${promotion.endDate}T23:59:59.999`).getTime() : null
+        const isActiveByDate = (!startTime || now >= startTime) && (!endTime || now <= endTime)
+        return promotion.status === 'active' && isActiveByDate
+      })
       : []
-    
+
     availablePromotions.value = active
       .sort((a, b) => {
         const aDiscount = a.type === 'percentage' || a.type === 'percent' ? a.value : a.value / 100000
@@ -450,63 +440,40 @@ const loadAvailablePromotions = async () => {
   }
 }
 
-const selectPromotion = (promo) => {
-  appliedPromotion.value = promo
+const selectPromotion = async (promo) => {
+  const result = await cartStore.applyPromotionCode(promo.code, subtotal.value)
+  voucherSuccess.value = Boolean(result.success)
+  voucherFeedback.value = result.success
+    ? `Áp dụng thành công mã ${promo.code}`
+    : (result.message || 'Không thể áp dụng mã khuyến mãi.')
   customVoucherCode.value = ''
-  voucherFeedback.value = ''
 }
 
 const clearPromotion = () => {
-  appliedPromotion.value = null
+  cartStore.clearAppliedPromotion()
   customVoucherCode.value = ''
   voucherFeedback.value = ''
+  voucherSuccess.value = false
 }
 
 const handleApplyCustomVoucher = async () => {
   voucherFeedback.value = ''
   
   if (!customVoucherCode.value.trim()) {
-    appliedPromotion.value = null
+    cartStore.clearAppliedPromotion()
     return
   }
-  
-  try {
-    let promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
-    
-    if (!promotions.length) {
-      promotions = await promotionsApi.getAll()
-      if (Array.isArray(promotions)) {
-        serviceStore.promotions = promotions
-      }
-    }
-    
-    const found = Array.isArray(promotions)
-      ? promotions.find((p) => p.code.toUpperCase() === customVoucherCode.value.toUpperCase() && p.status === 'active')
-      : null
-    
-    if (!found) {
-      voucherSuccess.value = false
-      voucherFeedback.value = 'Mã khuyến mãi không hợp lệ hoặc đã hết hạn.'
-      appliedPromotion.value = null
-      return
-    }
-    
-    // Check điều kiện mã (ví dụ: giảm tối thiểu)
-    if (found.code === 'PHUQUOC500K' && subtotal.value < 5000000) {
-      voucherSuccess.value = false
-      voucherFeedback.value = 'Mã PHUQUOC500K chỉ áp dụng cho đơn từ 5.000.000 VND.'
-      appliedPromotion.value = null
-      return
-    }
-    
-    appliedPromotion.value = found
+
+  const result = await cartStore.applyPromotionCode(customVoucherCode.value, subtotal.value)
+  if (result.success) {
     customVoucherCode.value = ''
+    voucherFeedback.value = `Áp dụng thành công mã ${result.promotion?.code || ''}`
     voucherSuccess.value = true
-    voucherFeedback.value = `Áp dụng thành công mã ${found.code}`
-  } catch (error) {
-    voucherSuccess.value = false
-    voucherFeedback.value = 'Lỗi khi áp dụng mã khuyến mãi'
+    return
   }
+
+  voucherSuccess.value = false
+  voucherFeedback.value = result.message || 'Lỗi khi áp dụng mã khuyến mãi'
 }
 
 onMounted(() => {
@@ -517,7 +484,7 @@ onMounted(() => {
     form.phone = user.phone || ''
     form.address = user.address || ''
   }
-  
+
   loadAvailablePromotions()
 })
 </script>

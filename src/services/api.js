@@ -261,6 +261,41 @@ export const bookingsApi = {
   },
 
   /**
+   * Tra cuu booking cho guest theo ma dat cho hoac so dien thoai o API layer.
+   * Khong tai toan bo bookings ve client de loc.
+   * @param {Object} payload - Du lieu tra cuu.
+   * @param {string} payload.code - Ma booking.
+   * @param {string} payload.phone - So dien thoai.
+   * @returns {Promise<Array>} Danh sach booking khop dieu kien.
+   */
+  async lookupGuest({ code = '', phone = '' } = {}) {
+    const normalizedCode = String(code || '').trim().toUpperCase()
+    const normalizedPhone = String(phone || '').replace(/\D/g, '')
+    const requests = []
+
+    if (normalizedCode) {
+      requests.push(apiClient.get('/bookings', { params: { code: normalizedCode } }))
+    }
+
+    if (normalizedPhone) {
+      requests.push(apiClient.get('/bookings', { params: { 'customer.phone': normalizedPhone } }))
+    }
+
+    if (!requests.length) return []
+
+    const responses = await Promise.all(requests)
+    const merged = responses.flatMap((response) => (Array.isArray(response?.data) ? response.data : []))
+    const seen = new Set()
+
+    return merged.filter((booking) => {
+      const dedupeKey = String(booking?.id || booking?.code || '')
+      if (!dedupeKey || seen.has(dedupeKey)) return false
+      seen.add(dedupeKey)
+      return true
+    })
+  },
+
+  /**
    * Lay chi tiet booking theo id.
    * @param {string|number} id - Id booking.
    * @returns {Promise<Object|null>} Chi tiet booking.

@@ -76,6 +76,7 @@
           :service="service"
           :query-context="searchQueryContext"
           :is-wishlisted="isWishlisted(service.id)"
+          :show-discount-amount="true"
           @toggle-wishlist="handleToggleWishlist"
         />
       </div>

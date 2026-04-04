@@ -69,12 +69,12 @@
             <ul class="booking-detail-list">
               <li v-for="item in booking.items" :key="`${booking.id}-${item.serviceId}-${item.bookingType || item.service?.categoryId || ''}-${item.startDate || item.travelDate || ''}-${item.endDate || ''}`">
                 <strong>{{ item.service?.name }}</strong>
-                <span>{{ getBookingSummary(item) }} · {{ formatCurrencyVND(item.lineTotal) }}</span>
+                <span>{{ getBookingSummary(item) }} · {{ formatCurrencyVND(getBookingLineTotal(item)) }}</span>
               </li>
             </ul>
             <div class="booking-detail-actions">
               <button
-                v-if="canCancelBooking(booking)"
+                v-if="canCurrentUserCancelBooking(booking)"
                 class="secondary-button"
                 type="button"
                 @click="handleCancelBooking(booking)"
@@ -100,7 +100,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useBookingStore } from '@/stores/useBookingStore'
-import { canCancelBooking } from '@/utils/bookingRules'
+import { canUserCancelBooking } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateVN, formatDateRangeVN } from '@/utils/formatters'
 
 const store = useBookingStore()
@@ -110,6 +110,7 @@ const bookings = computed(() => store.bookingHistory)
 const expandedBookingId = ref(null)
 const hasSearched = ref(false)
 const lookupError = ref('')
+const guestLookupResults = ref([])
 const lookupForm = reactive({
   code: '',
   phone: ''
@@ -117,21 +118,6 @@ const lookupForm = reactive({
 
 const normalizeCode = (value) => String(value || '').trim().toUpperCase()
 const normalizePhone = (value) => String(value || '').replace(/\D/g, '')
-
-const guestLookupResults = computed(() => {
-  if (isLoggedIn.value || !hasSearched.value) return []
-
-  const normalizedCode = normalizeCode(lookupForm.code)
-  const normalizedPhone = normalizePhone(lookupForm.phone)
-
-  return store.adminBookingHistory.filter((booking) => {
-    const bookingCode = normalizeCode(booking.code)
-    const bookingPhone = normalizePhone(booking.customer?.phone)
-    const matchCode = normalizedCode ? bookingCode === normalizedCode : false
-    const matchPhone = normalizedPhone ? bookingPhone === normalizedPhone : false
-    return matchCode || matchPhone
-  })
-})
 
 const bookingsToRender = computed(() => {
   return isLoggedIn.value ? bookings.value : guestLookupResults.value
@@ -156,8 +142,8 @@ const emptyStateMessage = computed(() => {
 
 onMounted(() => {
   store.syncUserScope()
-  if (!isLoggedIn.value) {
-    store.fetchAllBookings()
+  if (isLoggedIn.value) {
+    store.fetchMyBookings()
   }
 })
 
@@ -166,9 +152,11 @@ watch(
   () => {
     store.syncUserScope()
     expandedBookingId.value = null
+    hasSearched.value = false
+    guestLookupResults.value = []
 
-    if (!isLoggedIn.value) {
-      store.fetchAllBookings()
+    if (isLoggedIn.value) {
+      store.fetchMyBookings()
     }
   }
 )
@@ -185,7 +173,10 @@ const handleLookupBookings = async () => {
     return
   }
 
-  await store.fetchAllBookings()
+  guestLookupResults.value = await store.lookupGuestBookings({
+    code: normalizedCode,
+    phone: normalizedPhone
+  })
   hasSearched.value = true
   expandedBookingId.value = null
 }
@@ -230,12 +221,25 @@ const toggleExpandedBooking = (bookingId) => {
 }
 
 const handleCancelBooking = (booking) => {
-  if (!canCancelBooking(booking)) return
+  if (!canCurrentUserCancelBooking(booking)) return
 
   const isConfirmed = window.confirm('Bạn có chắc muốn hủy booking này không?')
   if (!isConfirmed) return
 
   store.cancelBooking(booking.id)
+}
+
+const canCurrentUserCancelBooking = (booking) => canUserCancelBooking(booking, authStore.currentUser)
+
+const getBookingLineTotal = (item) => {
+  const quantity = Math.max(1, Number(item?.quantity || 1) || 1)
+  const snapshotTotal = Number(item?.bookingMeta?.totalPrice || 0)
+  if (snapshotTotal > 0) return snapshotTotal
+
+  const snapshotUnitPrice = Number(item?.bookingMeta?.unitPrice || 0)
+  if (snapshotUnitPrice > 0) return snapshotUnitPrice * quantity
+
+  return (Number(item?.service?.salePrice || 0) || 0) * quantity
 }
 
 const getBookingSummary = (item) => {

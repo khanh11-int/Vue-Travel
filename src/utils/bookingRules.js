@@ -6,6 +6,7 @@ const DATE_REQUIREMENTS_BY_CATEGORY = Object.freeze({
 
 const DEFAULT_DATE_REQUIREMENT = 'single'
 const BOOKING_CANCELLATION_WINDOW_MS = 3 * 24 * 60 * 60 * 1000
+const GUEST_OWNER_SCOPE = 'guest'
 
 /**
  * Chuẩn hóa đầu vào để luôn lấy được category id từ string hoặc object service.
@@ -92,4 +93,34 @@ export const canCancelBooking = (booking, referenceDate = new Date()) => {
   if (Number.isNaN(createdTime) || Number.isNaN(referenceTime)) return false
 
   return referenceTime - createdTime <= BOOKING_CANCELLATION_WINDOW_MS
+}
+
+/**
+ * Suy ra owner user id tu booking customer payload.
+ * @param {Object} booking - Booking can xac dinh owner.
+ * @returns {string} User id owner, fallback guest khi thieu thong tin.
+ */
+export const resolveBookingOwnerUserId = (booking) => {
+  const userId = booking?.customer?.userId ?? booking?.customer?.id
+  return userId ? String(userId) : GUEST_OWNER_SCOPE
+}
+
+/**
+ * Kiem tra user hien tai co du quyen huy booking hay khong.
+ * Dieu kien: la admin hoac chu booking, va booking phai dat canCancelBooking.
+ * @param {Object} booking - Booking can kiem tra.
+ * @param {Object|null} currentUser - User dang thao tac.
+ * @param {Date} [referenceDate=new Date()] - Moc thoi gian so sanh.
+ * @returns {boolean} True neu du quyen huy.
+ */
+export const canUserCancelBooking = (booking, currentUser, referenceDate = new Date()) => {
+  if (!currentUser) return false
+  if (!canCancelBooking(booking, referenceDate)) return false
+
+  if (currentUser.role === 'admin') return true
+
+  const ownerUserId = resolveBookingOwnerUserId(booking)
+  if (ownerUserId === GUEST_OWNER_SCOPE) return false
+
+  return String(currentUser.id || '') === ownerUserId
 }

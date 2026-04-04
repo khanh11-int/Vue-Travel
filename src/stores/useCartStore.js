@@ -22,12 +22,81 @@ const ensureArray = (value) => (Array.isArray(value) ? value : [])
  */
 const isSameServiceId = (left, right) => String(left) === String(right)
 
+const PROMOTION_MIN_SUBTOTAL_BY_CODE = Object.freeze({
+  PHUQUOC500K: 5000000
+})
+
 /**
  * Lấy user id đang đăng nhập, fallback guest khi chưa có session.
  * @param {Object} authStore - Auth store instance.
  * @returns {string} User id theo scope hiện tại.
  */
 const resolveUserId = (authStore) => (authStore.currentUser?.id ? String(authStore.currentUser.id) : GUEST_SCOPE)
+
+/**
+ * Chuyen doi date string ve timestamp de kiem tra hieu luc promotion.
+ * @param {string} value - Ngay dang yyyy-mm-dd.
+ * @param {'start'|'end'} boundary - Moc dau/ngay cuoi.
+ * @returns {number|null} Timestamp theo boundary hoac null khi khong hop le.
+ */
+const parsePromotionDate = (value, boundary) => {
+  if (!value) return null
+  const normalizedValue = boundary === 'end' ? `${value}T23:59:59.999` : `${value}T00:00:00.000`
+  const time = new Date(normalizedValue).getTime()
+  return Number.isNaN(time) ? null : time
+}
+
+/**
+ * Suy ra nguong toi thieu cua promotion tu field minSubtotal hoac rule theo code.
+ * @param {Object} promotion - Promotion can kiem tra.
+ * @returns {number} Nguong toi thieu.
+ */
+const resolvePromotionMinSubtotal = (promotion = {}) => {
+  const explicitMinSubtotal = Math.max(0, Number(promotion.minSubtotal || 0) || 0)
+  if (explicitMinSubtotal > 0) return explicitMinSubtotal
+
+  const code = String(promotion.code || '').trim().toUpperCase()
+  return PROMOTION_MIN_SUBTOTAL_BY_CODE[code] || 0
+}
+
+/**
+ * Validate promotion theo status, ngay hieu luc va min subtotal.
+ * @param {Object} promotion - Promotion can validate.
+ * @param {number} subtotal - Gia tri tam tinh don hang.
+ * @param {Date} [referenceDate=new Date()] - Thoi diem doi chieu.
+ * @returns {{valid: boolean, message: string}} Ket qua validate.
+ */
+const validatePromotionEligibility = (promotion, subtotal = 0, referenceDate = new Date()) => {
+  if (!promotion) {
+    return { valid: false, message: 'Mã khuyến mãi không hợp lệ' }
+  }
+
+  if (promotion.status !== 'active') {
+    return { valid: false, message: 'Mã khuyến mãi không hợp lệ hoặc đã hết hạn.' }
+  }
+
+  const referenceTime = referenceDate instanceof Date ? referenceDate.getTime() : new Date(referenceDate).getTime()
+  const startTime = parsePromotionDate(promotion.startDate, 'start')
+  const endTime = parsePromotionDate(promotion.endDate, 'end')
+
+  if (startTime && referenceTime < startTime) {
+    return { valid: false, message: 'Mã khuyến mãi chưa đến thời gian áp dụng.' }
+  }
+
+  if (endTime && referenceTime > endTime) {
+    return { valid: false, message: 'Mã khuyến mãi đã hết hạn.' }
+  }
+
+  const minSubtotal = resolvePromotionMinSubtotal(promotion)
+  if (minSubtotal > 0 && Number(subtotal || 0) < minSubtotal) {
+    return {
+      valid: false,
+      message: `Mã ${promotion.code} chỉ áp dụng cho đơn từ ${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(minSubtotal)} VND.`
+    }
+  }
+
+  return { valid: true, message: '' }
+}
 
 export const useCartStore = defineStore('cart', {
   /**
@@ -164,6 +233,24 @@ export const useCartStore = defineStore('cart', {
       } else {
         removeFromStorage(promotionKey)
       }
+    },
+
+    /**
+     * Dam bao danh sach promotions co san trong store de dung lai o checkout/cart.
+     * @returns {Promise<Array<Object>>} Danh sach promotions hien tai.
+     */
+    async loadAvailablePromotions() {
+      this._syncUserId()
+
+      let promotions = Array.isArray(useServiceStore().promotions) ? useServiceStore().promotions : []
+      if (!promotions.length) {
+        promotions = await promotionsApi.getAll()
+        if (Array.isArray(promotions)) {
+          useServiceStore().setPromotions(promotions)
+        }
+      }
+
+      return Array.isArray(promotions) ? promotions : []
     },
 
     /**
@@ -345,18 +432,10 @@ export const useCartStore = defineStore('cart', {
       this.error = null
 
       try {
-        const serviceStore = useServiceStore()
-        let promotions = Array.isArray(serviceStore.promotions) ? serviceStore.promotions : []
-
-        if (!promotions.length) {
-          promotions = await promotionsApi.getAll()
-          if (Array.isArray(promotions)) {
-            serviceStore.promotions = promotions
-          }
-        }
+        const promotions = await this.loadAvailablePromotions()
 
         const found = Array.isArray(promotions)
-          ? promotions.find((p) => p.code.toUpperCase() === code.toUpperCase() && p.status === 'active')
+          ? promotions.find((p) => String(p.code || '').toUpperCase() === code.toUpperCase())
           : null
 
         if (!found) {
@@ -364,8 +443,9 @@ export const useCartStore = defineStore('cart', {
           return { success: false, message: this.error }
         }
 
-        if (found.code === 'PHUQUOC500K' && subtotal < 5000000) {
-          this.error = 'Mã PHUQUOC500K chỉ áp dụng cho đơn từ 5.000.000 VND.'
+        const validation = validatePromotionEligibility(found, subtotal)
+        if (!validation.valid) {
+          this.error = validation.message
           return { success: false, message: this.error }
         }
 
@@ -397,11 +477,24 @@ export const useCartStore = defineStore('cart', {
      */
     calculatePromotionDiscount(subtotal = this.cartTotal) {
       if (!this.appliedPromotion) return 0
+      const validation = validatePromotionEligibility(this.appliedPromotion, subtotal)
+      if (!validation.valid) return 0
+
       const { type, value } = this.appliedPromotion
       if (type === 'percentage' || type === 'percent') {
         return Math.round((subtotal * value) / 100)
       }
       return Math.min(subtotal, value || 0)
+    },
+
+    /**
+     * Validate lai promotion dang ap dung tai thoi diem checkout.
+     * @param {number} subtotal - Tam tinh don hang.
+     * @returns {{valid: boolean, message: string}} Ket qua validate.
+     */
+    validateAppliedPromotion(subtotal = this.cartTotal) {
+      if (!this.appliedPromotion) return { valid: true, message: '' }
+      return validatePromotionEligibility(this.appliedPromotion, subtotal)
     },
 
     /**

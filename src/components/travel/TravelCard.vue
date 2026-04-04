@@ -28,7 +28,7 @@
         <div class="travel-card__price-main">
           <p v-if="hasDiscountedPrice" class="price-before">{{ formatCurrencyVND(effectiveOriginalPrice) }}</p>
           <div class="travel-card__price-current">
-            <small class="price-label">{{ hasDiscountedPrice ? 'Gia uu dai' : 'Gia tu' }}</small>
+            <small class="price-label">{{ hasDiscountedPrice ? 'Giá ưu đãi' : 'Giá từ' }}</small>
             <p class="price price--sale">{{ formatCurrencyVND(currentSalePrice) }}</p>
           </div>
         </div>
@@ -36,7 +36,7 @@
       </div>
 
       <p v-if="showDiscountAmount && discountAmount > 0" class="travel-card__discount-amount">
-        Tiet kiem {{ formatCurrencyVND(discountAmount) }}
+        Tiết kiệm {{ formatCurrencyVND(discountAmount) }}
       </p>
     </div>
   </article>
@@ -97,22 +97,12 @@ const detailRoute = computed(() => {
   }
 })
 
-const currentSalePrice = computed(() => Number(props.service.salePrice) || 0)
+const currentSalePrice = computed(() => Number(props.service.salePrice || props.service.price || 0) || 0)
 
 const effectiveOriginalPrice = computed(() => {
   const salePrice = currentSalePrice.value
-  const listedPrice = Number(props.service.originalPrice) || Number(props.service.price) || 0
-  const discountPercent = Number(props.service.discount) || 0
-
-  if (listedPrice > salePrice && salePrice > 0) {
-    return listedPrice
-  }
-
-  if (discountPercent > 0 && discountPercent < 100 && salePrice > 0) {
-    return Math.round(salePrice / (1 - discountPercent / 100))
-  }
-
-  return listedPrice > 0 ? listedPrice : salePrice
+  const listedPrice = Number(props.service.price || 0) || 0
+  return Math.max(listedPrice, salePrice)
 })
 
 const hasDiscountedPrice = computed(() => effectiveOriginalPrice.value > currentSalePrice.value)

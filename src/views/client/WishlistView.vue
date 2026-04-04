@@ -7,12 +7,13 @@
       </div>
     </div>
 
-    <div v-if="wishlistItems.length" class="travel-grid">
+    <div v-if="wishlistItems.length" class="travel-grid wishlist-grid">
       <TravelCard
         v-for="service in wishlistItems"
         :key="service.id"
         :service="service"
         :is-wishlisted="true"
+        :show-discount-amount="true"
         @toggle-wishlist="handleToggleWishlist"
       />
     </div>
@@ -55,3 +56,16 @@ const handleToggleWishlist = (serviceId) => {
   wishlistStore.toggleWishlist(serviceId)
 }
 </script>
+
+<style scoped>
+.wishlist-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 320px));
+  justify-content: center;
+}
+
+@media (max-width: 680px) {
+  .wishlist-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

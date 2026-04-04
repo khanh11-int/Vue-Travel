@@ -71,43 +71,72 @@
             <span class="service-form-badge">{{ currentCategoryLabel }}</span>
           </div>
 
-          <div class="admin-form-grid service-form-grid">
-            <div class="field-group">
-              <label>Tên dịch vụ</label>
-              <input v-model="serviceForm.name" type="text" placeholder="Ví dụ: Tour Hạ Long 3N2Đ" />
+          <div class="service-form-tip">
+            <strong>Gợi ý nhập nhanh:</strong>
+            <span>Tên và slug nên đồng nhất, giá gốc luôn lớn hơn hoặc bằng giá khuyến mãi, và số chỗ còn lại nên phản ánh tồn kho thực tế.</span>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>1) Định danh dịch vụ</h4>
+              <p class="muted small-text">Các trường này quyết định cách dịch vụ hiển thị và định tuyến.</p>
             </div>
-            <div class="field-group">
-              <label>Đường dẫn slug</label>
-              <input v-model="serviceForm.slug" type="text" placeholder="tour-ha-long-3n2d" />
+            <div class="admin-form-grid service-form-grid">
+              <div class="field-group">
+                <label>Tên dịch vụ</label>
+                <input v-model="serviceForm.name" type="text" placeholder="Ví dụ: Tour Hạ Long 3N2Đ" />
+              </div>
+              <div class="field-group">
+                <label>Đường dẫn slug</label>
+                <input v-model="serviceForm.slug" type="text" placeholder="tour-ha-long-3n2d" />
+              </div>
+              <div class="field-group">
+                <label>Danh mục</label>
+                <select v-model="serviceForm.categoryId" @change="handleCategoryChange">
+                  <option value="">Chọn danh mục</option>
+                  <option v-for="category in categories" :key="category.id" :value="category.id">
+                    {{ category.name }}
+                  </option>
+                </select>
+              </div>
             </div>
-            <div class="field-group">
-              <label>Danh mục</label>
-              <select v-model="serviceForm.categoryId" @change="handleCategoryChange">
-                <option value="">Chọn danh mục</option>
-                <option v-for="category in categories" :key="category.id" :value="category.id">
-                  {{ category.name }}
-                </option>
-              </select>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>2) Địa điểm</h4>
+              <p class="muted small-text">Dùng để lọc theo tỉnh/thành và gợi ý tìm kiếm cho khách.</p>
             </div>
-            <div class="field-group">
-              <label>Điểm đến</label>
-              <input v-model="serviceForm.destination" type="text" placeholder="Ví dụ: Hạ Long" />
+            <div class="admin-form-grid service-form-grid">
+              <div class="field-group">
+                <label>Điểm đến</label>
+                <input v-model="serviceForm.destination" type="text" placeholder="Ví dụ: Hạ Long" />
+              </div>
+              <div class="field-group">
+                <label>Tỉnh / thành</label>
+                <input v-model="serviceForm.province" type="text" placeholder="Ví dụ: Quảng Ninh" />
+              </div>
             </div>
-            <div class="field-group">
-              <label>Giá gốc</label>
-              <input v-model.number="serviceForm.price" type="number" min="0" placeholder="0" />
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>3) Giá và tồn chỗ</h4>
+              <p class="muted small-text">Quy tắc chuẩn: giá gốc (price) >= giá khuyến mãi (salePrice).</p>
             </div>
-            <div class="field-group">
-              <label>Giá khuyến mãi</label>
-              <input v-model.number="serviceForm.salePrice" type="number" min="0" placeholder="0" />
-            </div>
-            <div class="field-group">
-              <label>Số chỗ còn lại</label>
-              <input v-model.number="serviceForm.availableSlots" type="number" min="0" placeholder="10" />
-            </div>
-            <div class="field-group">
-              <label>Tỉnh / thành</label>
-              <input v-model="serviceForm.province" type="text" placeholder="Ví dụ: Quảng Ninh" />
+            <div class="admin-form-grid service-form-grid">
+              <div class="field-group">
+                <label>Giá gốc</label>
+                <input v-model.number="serviceForm.price" type="number" min="0" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label>Giá khuyến mãi</label>
+                <input v-model.number="serviceForm.salePrice" type="number" min="0" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label>Số chỗ còn lại</label>
+                <input v-model.number="serviceForm.availableSlots" type="number" min="0" placeholder="10" />
+              </div>
             </div>
           </div>
 
@@ -168,116 +197,173 @@
             <span class="service-form-hint">Cấu hình tour</span>
           </div>
 
-          <div class="admin-form-grid service-form-grid">
-            <div class="field-group">
-              <label>Kiểu lịch tour</label>
-              <select v-model="tourScheduleType">
-                <option value="fixed">Lịch cố định</option>
-                <option value="flexible">Lịch linh hoạt</option>
-                <option value="hybrid">Kết hợp cố định và linh hoạt</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Ngày bắt đầu nhận lịch linh hoạt</label>
-              <input v-model="tourFlexibleStart" type="date" />
-            </div>
-            <div class="field-group">
-              <label>Ngày kết thúc nhận lịch linh hoạt</label>
-              <input v-model="tourFlexibleEnd" type="date" />
-            </div>
-            <div class="field-group">
-              <label>Miễn phí cho trẻ dưới</label>
-              <input v-model.number="tourChildPolicy.freeUnderAge" type="number" min="0" />
-            </div>
-            <div class="field-group">
-              <label>Tỷ lệ giá trẻ em</label>
-              <input v-model.number="tourChildPolicy.childRate" type="number" min="0" max="1" step="0.05" />
-            </div>
-            <div class="field-group">
-              <label>Tuổi tính như người lớn</label>
-              <input v-model.number="tourChildPolicy.adultAgeThreshold" type="number" min="0" />
-            </div>
-            <div class="field-group admin-form-span-2">
-              <label>Bảng giá lịch cố định</label>
-              <div class="admin-form-grid service-form-grid">
-                <div class="field-group">
-                  <label>Nhãn lịch cố định</label>
-                  <input v-model="tourPricingTiers.fixed.label" type="text" />
-                </div>
-                <div class="field-group">
-                  <label>Giá người lớn</label>
-                  <input v-model.number="tourPricingTiers.fixed.adultPrice" type="number" min="0" />
-                </div>
-                <div class="field-group">
-                  <label>Giá trẻ em</label>
-                  <input v-model.number="tourPricingTiers.fixed.childPrice" type="number" min="0" />
-                </div>
-                <div class="field-group">
-                  <label>Ghi chú lịch cố định</label>
-                  <input v-model="tourPricingTiers.fixed.note" type="text" />
-                </div>
-              </div>
-            </div>
-            <div class="field-group admin-form-span-2">
-              <label>Bảng giá lịch linh hoạt</label>
-              <div class="admin-form-grid service-form-grid">
-                <div class="field-group">
-                  <label>Nhãn lịch linh hoạt</label>
-                  <input v-model="tourPricingTiers.flexible.label" type="text" />
-                </div>
-                <div class="field-group">
-                  <label>Giá người lớn</label>
-                  <input v-model.number="tourPricingTiers.flexible.adultPrice" type="number" min="0" />
-                </div>
-                <div class="field-group">
-                  <label>Giá trẻ em</label>
-                  <input v-model.number="tourPricingTiers.flexible.childPrice" type="number" min="0" />
-                </div>
-                <div class="field-group">
-                  <label>Ghi chú lịch linh hoạt</label>
-                  <input v-model="tourPricingTiers.flexible.note" type="text" />
-                </div>
-              </div>
-            </div>
-            <div class="field-group admin-form-span-2">
-              <label>Lịch khởi hành</label>
-              <div class="service-model-list">
-                <div v-for="(departure, index) in tourDepartures" :key="`${departure.departureId}-${index}`" class="service-model-item">
-                  <div class="service-model-item__header">
-                    <strong>Lịch {{ index + 1 }}</strong>
-                    <button class="ghost-button" type="button" :disabled="tourDepartures.length === 1" @click="removeTourDeparture(index)">Xóa</button>
-                  </div>
+          <div class="service-form-tip">
+            <strong>Gợi ý nhập tour:</strong>
+            <span>Đi theo thứ tự từ trái sang phải: kiểu lịch - chính sách trẻ em - bảng giá - lịch khởi hành để tránh thiếu thông tin.</span>
+          </div>
 
-                  <div class="admin-form-grid service-form-grid">
-                    <div class="field-group">
-                      <label>Mã lịch</label>
-                      <input v-model="departure.departureId" type="text" placeholder="T001-2026-07-20" />
-                    </div>
-                    <div class="field-group">
-                      <label>Ngày đi</label>
-                      <input v-model="departure.startDate" type="date" />
-                    </div>
-                    <div class="field-group">
-                      <label>Ngày về</label>
-                      <input v-model="departure.endDate" type="date" />
-                    </div>
-                    <div class="field-group">
-                      <label>Số ngày</label>
-                      <input v-model.number="departure.durationDays" type="number" min="1" />
-                    </div>
-                    <div class="field-group">
-                      <label>Số đêm</label>
-                      <input v-model.number="departure.durationNights" type="number" min="0" />
-                    </div>
-                    <div class="field-group">
-                      <label>Còn chỗ</label>
-                      <input v-model.number="departure.remainingSlots" type="number" min="0" />
-                    </div>
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>1) Kiểu lịch tour</h4>
+              <p class="muted small-text">Thiết lập cách mở lịch: cố định, linh hoạt hoặc kết hợp.</p>
+            </div>
+            <div class="admin-form-grid service-form-grid">
+              <div class="field-group">
+                <label>Kiểu lịch tour</label>
+                <select v-model="tourScheduleType">
+                  <option value="fixed">Lịch cố định</option>
+                  <option value="flexible">Lịch linh hoạt</option>
+                  <option value="hybrid">Kết hợp cố định và linh hoạt</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Ngày bắt đầu nhận lịch linh hoạt</label>
+                <input v-model="tourFlexibleStart" type="date" />
+              </div>
+              <div class="field-group">
+                <label>Ngày kết thúc nhận lịch linh hoạt</label>
+                <input v-model="tourFlexibleEnd" type="date" />
+              </div>
+            </div>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>2) Chính sách trẻ em</h4>
+              <p class="muted small-text">Dùng cho tính giá tự động tại trang chi tiết tour.</p>
+            </div>
+            <div class="admin-form-grid service-form-grid">
+              <div class="field-group">
+                <label>Miễn phí cho trẻ dưới</label>
+                <input v-model.number="tourChildPolicy.freeUnderAge" type="number" min="0" />
+              </div>
+              <div class="field-group">
+                <label>Tỷ lệ giá trẻ em/Phụ thu trẻ em</label>
+                <input v-model.number="tourChildPolicy.childRate" type="number" min="0" max="1" step="0.05" />
+              </div>
+              <div class="field-group">
+                <label>Tuổi tính như người lớn</label>
+                <input v-model.number="tourChildPolicy.adultAgeThreshold" type="number" min="0" />
+              </div>
+            </div>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>3) Bảng giá tour</h4>
+              <p class="muted small-text">Khai báo riêng cho lịch cố định và lịch linh hoạt.</p>
+            </div>
+
+            <div class="tour-pricing-grid">
+              <div class="tour-pricing-card">
+                <h5>Bảng giá lịch cố định</h5>
+                <div class="admin-form-grid service-form-grid">
+                  <div class="field-group">
+                    <label>Nhãn lịch cố định</label>
+                    <input v-model="tourPricingTiers.fixed.label" type="text" />
+                  </div>
+                  <div class="field-group">
+                    <label>Giá người lớn</label>
+                    <input v-model.number="tourPricingTiers.fixed.adultPrice" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
+                    <label>Giá trẻ em</label>
+                    <input v-model.number="tourPricingTiers.fixed.childPrice" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
+                    <label>Ghi chú lịch cố định</label>
+                    <input v-model="tourPricingTiers.fixed.note" type="text" />
                   </div>
                 </div>
               </div>
-              <button class="ghost-button" type="button" @click="addTourDeparture">+ Thêm lịch khởi hành</button>
+
+              <div class="tour-pricing-card">
+                <h5>Bảng giá lịch linh hoạt</h5>
+                <div class="admin-form-grid service-form-grid">
+                  <div class="field-group">
+                    <label>Nhãn lịch linh hoạt</label>
+                    <input v-model="tourPricingTiers.flexible.label" type="text" />
+                  </div>
+                  <div class="field-group">
+                    <label>Giá người lớn</label>
+                    <input v-model.number="tourPricingTiers.flexible.adultPrice" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
+                    <label>Giá trẻ em</label>
+                    <input v-model.number="tourPricingTiers.flexible.childPrice" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
+                    <label>Ghi chú lịch linh hoạt</label>
+                    <input v-model="tourPricingTiers.flexible.note" type="text" />
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>4) Lịch khởi hành</h4>
+              <p class="muted small-text">Mỗi lịch gồm mã lịch, ngày đi về và số chỗ còn lại.</p>
+            </div>
+
+            <div class="service-model-list">
+              <div v-for="(departure, index) in tourDepartures" :key="`${departure.departureId}-${index}`" class="service-model-item">
+                <div class="service-model-item__header">
+                  <strong>Lịch {{ index + 1 }}</strong>
+                  <button class="ghost-button" type="button" :disabled="tourDepartures.length === 1" @click="removeTourDeparture(index)">Xóa</button>
+                </div>
+
+                <div class="admin-form-grid service-form-grid">
+                  <div class="field-group">
+                    <label>Loại hành trình</label>
+                    <select v-model="departure.durationPreset" @change="handleDeparturePresetChange(departure)">
+                      <option v-for="option in tourDurationOptions" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label>Mã lịch</label>
+                    <input v-model="departure.departureId" type="text" placeholder="T001-2026-07-20" />
+                  </div>
+                  <div class="field-group">
+                    <label>Ngày đi</label>
+                    <input v-model="departure.startDate" type="date" @change="handleDepartureStartDateChange(departure)" />
+                  </div>
+                  <div class="field-group">
+                    <label>Ngày về</label>
+                    <input v-model="departure.endDate" type="date" readonly />
+                    <small class="muted small-text">Tự động tính theo ngày đi và loại hành trình.</small>
+                  </div>
+                  <div class="field-group">
+                    <label>Số ngày</label>
+                    <input
+                      v-model.number="departure.durationDays"
+                      type="number"
+                      min="1"
+                      :readonly="departure.durationPreset !== 'custom'"
+                      @input="handleDepartureDurationChange(departure)"
+                    />
+                  </div>
+                  <div class="field-group">
+                    <label>Số đêm</label>
+                    <input
+                      v-model.number="departure.durationNights"
+                      type="number"
+                      min="0"
+                      :readonly="departure.durationPreset !== 'custom'"
+                      @input="handleDepartureDurationChange(departure)"
+                    />
+                  </div>
+                  <div class="field-group">
+                    <label>Còn chỗ</label>
+                    <input v-model.number="departure.remainingSlots" type="number" min="0" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="ghost-button" type="button" @click="addTourDeparture">+ Thêm lịch khởi hành</button>
           </div>
         </section>
 
@@ -291,70 +377,95 @@
             <span class="service-form-hint">Cấu hình vé</span>
           </div>
 
-          <div class="admin-form-grid service-form-grid">
-            <div class="field-group">
-              <label>Loại dịch vụ vé</label>
-              <input v-model="ticketServiceType" type="text" placeholder="Ví dụ: Công viên giải trí" />
-            </div>
-            <div class="field-group">
-              <label>Miễn phí cho trẻ dưới</label>
-              <input v-model.number="ticketChildPolicy.freeUnderAge" type="number" min="0" />
-            </div>
-            <div class="field-group">
-              <label>Tuổi tính như người lớn</label>
-              <input v-model.number="ticketChildPolicy.adultAgeThreshold" type="number" min="0" />
-            </div>
-            <div class="field-group">
-              <label>Tuổi bắt đầu phụ thu</label>
-              <input v-model.number="ticketChildPolicy.surchargeAgeMin" type="number" min="0" />
-            </div>
-            <div class="field-group">
-              <label>Tuổi kết thúc phụ thu</label>
-              <input v-model.number="ticketChildPolicy.surchargeAgeMax" type="number" min="0" />
-            </div>
-            <div class="field-group admin-form-span-2">
-              <label>Mức phụ thu trẻ em</label>
-              <input v-model.number="ticketChildPolicy.surcharge" type="number" min="0" />
-            </div>
-            <div class="field-group admin-form-span-2">
-              <label>Gói vé</label>
-              <div class="service-model-list">
-                <div v-for="(ticketPackage, index) in ticketPackages" :key="`${ticketPackage.id}-${index}`" class="service-model-item">
-                  <div class="service-model-item__header">
-                    <strong>Gói {{ index + 1 }}</strong>
-                    <button class="ghost-button" type="button" :disabled="ticketPackages.length === 1" @click="removeTicketPackage(index)">Xóa</button>
-                  </div>
+          <div class="service-form-tip">
+            <strong>Gợi ý nhập vé:</strong>
+            <span>Đi theo 3 bước: chọn loại dịch vụ vé, khai báo chính sách trẻ em, rồi thiết lập các gói vé (giá gốc, giá bán, tiện ích).</span>
+          </div>
 
-                  <div class="admin-form-grid service-form-grid">
-                    <div class="field-group">
-                      <label>Mã gói</label>
-                      <input v-model="ticketPackage.id" type="text" placeholder="entry" />
-                    </div>
-                    <div class="field-group">
-                      <label>Tên gói</label>
-                      <input v-model="ticketPackage.name" type="text" placeholder="Gói vào cổng" />
-                    </div>
-                    <div class="field-group">
-                      <label>Giá khuyến mãi</label>
-                      <input v-model.number="ticketPackage.salePrice" type="number" min="0" />
-                    </div>
-                    <div class="field-group">
-                      <label>Giá gốc</label>
-                      <input v-model.number="ticketPackage.price" type="number" min="0" />
-                    </div>
-                    <div class="field-group">
-                      <label>Phụ thu trẻ em</label>
-                      <input v-model.number="ticketPackage.childSurcharge" type="number" min="0" />
-                    </div>
-                    <div class="field-group">
-                      <label>Tiện ích của gói, ngăn cách bằng dấu phẩy</label>
-                      <input v-model="ticketPackage.featuresText" type="text" placeholder="Vé vào cổng, Không gồm khu trò chơi mở rộng" />
-                    </div>
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>1) Loại dịch vụ vé</h4>
+              <p class="muted small-text">Tên loại vé sẽ hiển thị tại trang chi tiết và dùng để định vị ngữ cảnh sản phẩm.</p>
+            </div>
+            <div class="admin-form-grid service-form-grid">
+              <div class="field-group admin-form-span-2">
+                <label>Loại dịch vụ vé</label>
+                <input v-model="ticketServiceType" type="text" placeholder="Ví dụ: Công viên giải trí" />
+              </div>
+            </div>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>2) Chính sách trẻ em</h4>
+              <p class="muted small-text">Thiết lập độ tuổi miễn phí, phụ thu và tuổi tính như người lớn.</p>
+            </div>
+
+            <div class="admin-form-grid service-form-grid">
+              <div class="field-group">
+                <label>Miễn phí cho trẻ dưới</label>
+                <input v-model.number="ticketChildPolicy.freeUnderAge" type="number" min="0" />
+              </div>
+              <div class="field-group">
+                <label>Tuổi tính như người lớn</label>
+                <input v-model.number="ticketChildPolicy.adultAgeThreshold" type="number" min="0" />
+              </div>
+              <div class="field-group">
+                <label>Tuổi bắt đầu phụ thu</label>
+                <input v-model.number="ticketChildPolicy.surchargeAgeMin" type="number" min="0" />
+              </div>
+              <div class="field-group admin-form-span-2">
+                <label>Mức phụ thu trẻ em</label>
+                <input v-model.number="ticketChildPolicy.surcharge" type="number" min="0" />
+              </div>
+            </div>
+
+            <p class="service-form-inline-note">{{ ticketPolicySummary }}</p>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>3) Cấu hình gói vé</h4>
+              <p class="muted small-text">Mỗi gói có mã riêng, giá riêng và danh sách tiện ích đi kèm.</p>
+            </div>
+
+            <div class="service-model-list">
+              <div v-for="(ticketPackage, index) in ticketPackages" :key="`${ticketPackage.id}-${index}`" class="service-model-item ticket-package-card">
+                <div class="service-model-item__header">
+                  <strong>Gói {{ index + 1 }}</strong>
+                  <button class="ghost-button" type="button" :disabled="ticketPackages.length === 1" @click="removeTicketPackage(index)">Xóa</button>
+                </div>
+
+                <div class="admin-form-grid service-form-grid">
+                  <div class="field-group">
+                    <label>Mã gói</label>
+                    <input v-model="ticketPackage.id" type="text" placeholder="entry" />
+                  </div>
+                  <div class="field-group">
+                    <label>Tên gói</label>
+                    <input v-model="ticketPackage.name" type="text" placeholder="Gói vào cổng" />
+                  </div>
+                  <div class="field-group">
+                    <label>Giá khuyến mãi</label>
+                    <input v-model.number="ticketPackage.salePrice" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
+                    <label>Giá gốc</label>
+                    <input v-model.number="ticketPackage.price" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
+                    <label>Phụ thu trẻ em</label>
+                    <input v-model.number="ticketPackage.childSurcharge" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
+                    <label>Tiện ích gói vé (cách nhau bằng dấu phẩy)</label>
+                    <input v-model="ticketPackage.featuresText" type="text" placeholder="Vé vào cổng, Không gồm khu trò chơi mở rộng" />
                   </div>
                 </div>
               </div>
-              <button class="ghost-button" type="button" @click="addTicketPackage">+ Thêm gói vé</button>
             </div>
+
+            <button class="ghost-button" type="button" @click="addTicketPackage">+ Thêm gói vé</button>
           </div>
         </section>
 
@@ -531,7 +642,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useAdminStore } from '@/stores/useAdminStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
@@ -587,6 +698,7 @@ const createTourDeparture = (overrides = {}) => ({
   departureId: '',
   startDate: '',
   endDate: '',
+  durationPreset: '3n2d',
   durationDays: 3,
   durationNights: 2,
   remainingSlots: 10,
@@ -645,6 +757,21 @@ const ticketPackages = ref([
   createTicketPackage({ id: 'fun', name: 'Gói vui chơi', featuresText: 'Vé vào cổng, Bao gồm khu trò chơi chính' })
 ])
 
+const tourDurationOptions = [
+  { value: '2n1d', label: '2 ngày 1 đêm' },
+  { value: '3n2d', label: '3 ngày 2 đêm' },
+  { value: '4n3d', label: '4 ngày 3 đêm' },
+  { value: '5n4d', label: '5 ngày 4 đêm' },
+  { value: 'custom', label: 'Tùy chỉnh' }
+]
+
+const TOUR_DURATION_PRESET_MAP = Object.freeze({
+  '2n1d': { durationDays: 2, durationNights: 1 },
+  '3n2d': { durationDays: 3, durationNights: 2 },
+  '4n3d': { durationDays: 4, durationNights: 3 },
+  '5n4d': { durationDays: 5, durationNights: 4 }
+})
+
 const stepItems = [
   { step: 1, title: 'Chọn loại dịch vụ', description: 'Khách sạn, tour hoặc vé tham quan.' },
   { step: 2, title: 'Nhập thông tin', description: 'Thông tin chung và cấu hình theo loại dịch vụ.' },
@@ -671,6 +798,16 @@ const filteredServices = computed(() => {
     const matchesProvince = !filters.province || service.province === filters.province
     return matchesKeyword && matchesCategory && matchesProvince
   })
+})
+
+const ticketPolicySummary = computed(() => {
+  const freeUnderAge = Math.max(0, Number(ticketChildPolicy.value.freeUnderAge || 0) || 0)
+  const surchargeAgeMin = Math.max(0, Number(ticketChildPolicy.value.surchargeAgeMin || 0) || 0)
+  const surchargeAgeMax = Math.max(0, Number(ticketChildPolicy.value.surchargeAgeMax || 0) || 0)
+  const adultAgeThreshold = Math.max(0, Number(ticketChildPolicy.value.adultAgeThreshold || 0) || 0)
+  const surcharge = Math.max(0, Number(ticketChildPolicy.value.surcharge || 0) || 0)
+
+  return `Tóm tắt: miễn phí dưới ${freeUnderAge} tuổi, phụ thu từ ${surchargeAgeMin}-${surchargeAgeMax} tuổi (${formatCurrencyVND(surcharge)}), từ ${adultAgeThreshold} tuổi tính vé người lớn.`
 })
 
 const getCategoryLabel = (categoryId) =>
@@ -740,7 +877,65 @@ const removeRoomType = (index) => {
   roomTypes.value.splice(index, 1)
 }
 
-const addTourDeparture = () => tourDepartures.value.push(createTourDeparture({ departureId: `DEP-${tourDepartures.value.length + 1}` }))
+const resolveDepartureDurationPreset = (durationDays, durationNights) => {
+  const days = Math.max(1, Number(durationDays || 1) || 1)
+  const nights = Math.max(0, Number(durationNights || 0) || 0)
+
+  const matched = Object.entries(TOUR_DURATION_PRESET_MAP).find(([, value]) =>
+    value.durationDays === days && value.durationNights === nights
+  )
+
+  return matched?.[0] || 'custom'
+}
+
+const syncTourDepartureEndDate = (departure) => {
+  if (!departure?.startDate) {
+    departure.endDate = ''
+    return
+  }
+
+  const startDate = new Date(`${departure.startDate}T00:00:00`)
+  if (Number.isNaN(startDate.getTime())) {
+    departure.endDate = ''
+    return
+  }
+
+  const durationDays = Math.max(1, Number(departure.durationDays || 1) || 1)
+  const endDate = new Date(startDate)
+  endDate.setDate(startDate.getDate() + durationDays - 1)
+  departure.endDate = endDate.toISOString().slice(0, 10)
+}
+
+const handleDeparturePresetChange = (departure) => {
+  const preset = String(departure?.durationPreset || 'custom')
+  const mapped = TOUR_DURATION_PRESET_MAP[preset]
+
+  if (mapped) {
+    departure.durationDays = mapped.durationDays
+    departure.durationNights = mapped.durationNights
+  }
+
+  syncTourDepartureEndDate(departure)
+}
+
+const handleDepartureStartDateChange = (departure) => {
+  syncTourDepartureEndDate(departure)
+}
+
+const handleDepartureDurationChange = (departure) => {
+  if (!departure) return
+
+  departure.durationDays = Math.max(1, Number(departure.durationDays || 1) || 1)
+  departure.durationNights = Math.max(0, Number(departure.durationNights || 0) || 0)
+  departure.durationPreset = resolveDepartureDurationPreset(departure.durationDays, departure.durationNights)
+  syncTourDepartureEndDate(departure)
+}
+
+const addTourDeparture = () => {
+  const nextDeparture = createTourDeparture({ departureId: `DEP-${tourDepartures.value.length + 1}` })
+  handleDeparturePresetChange(nextDeparture)
+  tourDepartures.value.push(nextDeparture)
+}
 const removeTourDeparture = (index) => {
   if (tourDepartures.value.length === 1) return
   tourDepartures.value.splice(index, 1)
@@ -751,6 +946,30 @@ const removeTicketPackage = (index) => {
   if (ticketPackages.value.length === 1) return
   ticketPackages.value.splice(index, 1)
 }
+
+const syncTicketAgePolicy = () => {
+  const normalizedFreeUnderAge = Math.max(0, Number(ticketChildPolicy.value.freeUnderAge || 0) || 0)
+  const normalizedSurchargeMin = Math.max(normalizedFreeUnderAge, Number(ticketChildPolicy.value.surchargeAgeMin || 0) || 0)
+  const normalizedAdultAgeThreshold = Math.max(normalizedSurchargeMin + 1, Number(ticketChildPolicy.value.adultAgeThreshold || 0) || 0)
+  const normalizedSurchargeMax = Math.max(normalizedSurchargeMin, normalizedAdultAgeThreshold - 1)
+
+  ticketChildPolicy.value.freeUnderAge = normalizedFreeUnderAge
+  ticketChildPolicy.value.surchargeAgeMin = normalizedSurchargeMin
+  ticketChildPolicy.value.adultAgeThreshold = normalizedAdultAgeThreshold
+  ticketChildPolicy.value.surchargeAgeMax = normalizedSurchargeMax
+}
+
+watch(
+  () => [
+    ticketChildPolicy.value.freeUnderAge,
+    ticketChildPolicy.value.surchargeAgeMin,
+    ticketChildPolicy.value.adultAgeThreshold
+  ],
+  () => {
+    syncTicketAgePolicy()
+  },
+  { immediate: true }
+)
 
 const syncModelFieldsForCategory = (categoryId, sourceService = null) => {
   const normalizedCategoryId = String(categoryId || 'hotel')
@@ -791,6 +1010,7 @@ const syncModelFieldsForCategory = (categoryId, sourceService = null) => {
       departureId: String(departure.departureId || `DEP-${index + 1}`),
       startDate: String(departure.startDate || ''),
       endDate: String(departure.endDate || departure.startDate || ''),
+      durationPreset: resolveDepartureDurationPreset(departure.durationDays, departure.durationNights),
       durationDays: Number(departure.durationDays || 3) || 3,
       durationNights: Number(departure.durationNights || 2) || 2,
       remainingSlots: Number(departure.remainingSlots || 10) || 10,
@@ -801,6 +1021,7 @@ const syncModelFieldsForCategory = (categoryId, sourceService = null) => {
   if (normalizedCategoryId === 'ticket') {
     ticketServiceType.value = sourceService?.ticketServiceType || 'Công viên giải trí'
     ticketChildPolicy.value = createTicketChildPolicy({ ...(sourceService?.ticketChildPolicy || {}) })
+    syncTicketAgePolicy()
     ticketPackages.value = (Array.isArray(sourceService?.ticketPackages) && sourceService.ticketPackages.length > 0
       ? sourceService.ticketPackages
       : [
@@ -1017,3 +1238,90 @@ const confirmDeleteService = () => {
   deleteTargetServiceId.value = ''
 }
 </script>
+
+<style scoped>
+.service-form-tip {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 79, 193, 0.14);
+  background: rgba(15, 79, 193, 0.06);
+}
+
+.service-form-tip strong {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+}
+
+.service-form-tip span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.service-form-group-card {
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+}
+
+.service-form-group-card__header {
+  margin-bottom: 10px;
+}
+
+.service-form-group-card__header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.service-form-group-card__header p {
+  margin: 4px 0 0;
+}
+
+.tour-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tour-pricing-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(248, 250, 252, 0.7);
+}
+
+.tour-pricing-card h5 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.ticket-package-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.7);
+}
+
+.service-form-inline-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 768px) {
+  .service-form-group-card {
+    padding: 12px;
+  }
+
+  .tour-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

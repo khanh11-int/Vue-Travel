@@ -14,7 +14,7 @@
 <script setup>
 import { computed, defineProps } from 'vue'
 import { useRoute } from 'vue-router'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 
 const props = defineProps({
   activeId: {

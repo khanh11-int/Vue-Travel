@@ -39,7 +39,7 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import ServiceSearchNav from '@/components/travel/ServiceSearchNav.vue'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 
 const route = useRoute()
 const serviceStore = useServiceStore()

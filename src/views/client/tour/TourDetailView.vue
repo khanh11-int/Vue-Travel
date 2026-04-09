@@ -53,12 +53,6 @@
           <small class="muted" v-if="flexibleWindowText">{{ flexibleWindowText }}</small>
         </template>
 
-        <div class="tour-pricing-breakdown">
-          <div class="booking-summary-row">
-            <span>Loại lịch</span>
-            <strong>{{ effectiveScheduleMode === 'fixed' ? 'Cố định' : 'Linh hoạt' }}</strong>
-          </div>
-        </div>
       </div>
 
       <!-- Block 2: Traveler Selection -->
@@ -125,10 +119,10 @@ import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
 import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import { formatDateRangeVN, formatCurrencyVND } from '@/utils/formatters'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useCartStore } from '@/stores/useCartStore'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useCartStore } from '@/stores/cart/useCartStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 
 const tourDetailLogic = {
   scheduleLabel: 'Chọn lịch khởi hành',

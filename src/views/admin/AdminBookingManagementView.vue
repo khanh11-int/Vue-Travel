@@ -4,7 +4,7 @@
       <div class="section-heading compact admin-heading-stack">
         <div>
           <p class="eyebrow">Quản lý booking</p>
-          <h2>Điều phối đơn đặt chỗ mock</h2>
+          <h2>Điều phối đơn đặt chỗ</h2>
         </div>
       </div>
 
@@ -67,8 +67,8 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
-import { useBookingStore } from '@/stores/useBookingStore'
+import { computed, onMounted, reactive } from 'vue'
+import { useBookingStore } from '@/stores/booking/useBookingStore'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
 import { BOOKING_STATUS_LABELS } from '@/utils/travelBooking'
 
@@ -78,6 +78,10 @@ const filters = reactive({ keyword: '', status: '' })
 const statusOptions = computed(() =>
   Object.entries(BOOKING_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 )
+
+onMounted(() => {
+  store.fetchAllBookings()
+})
 
 const filteredBookings = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()

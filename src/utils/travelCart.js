@@ -72,12 +72,34 @@ export const resolveItemMaxSlots = (service, item) => {
   const bookingType = item.bookingType || service.categoryId || 'hotel'
   const bookingMeta = item.bookingMeta || {}
 
-  if (bookingType === 'tour') {
-    const departureId = bookingMeta.departureId
-    if (!departureId) return Number(service.availableSlots || 0)
-    const departure = (service.departures || []).find((entry) => entry.departureId === departureId)
-    return Number(departure?.remainingSlots || 0)
+  if (bookingType === 'hotel') {
+    const roomType = String(bookingMeta.roomType || '').trim().toLowerCase()
+    const roomTypes = Array.isArray(service.roomTypes) ? service.roomTypes : []
+    if (roomType && roomTypes.length) {
+      const matched = roomTypes.find((entry) => String(entry?.value || '').trim().toLowerCase() === roomType)
+      if (matched) return Math.max(0, Number(matched.availableSlots || 0))
+    }
+    return Math.max(0, Number(service.availableSlots || 0))
   }
 
-  return Number(service.availableSlots || 0)
+  if (bookingType === 'ticket') {
+    const packageId = String(bookingMeta.packageId || '').trim().toLowerCase()
+    const packages = Array.isArray(service.ticketPackages) ? service.ticketPackages : []
+    if (packageId && packages.length) {
+      const matched = packages.find((entry) => String(entry?.id || '').trim().toLowerCase() === packageId)
+      if (matched) return Math.max(0, Number(matched.availableSlots || 0))
+    }
+    return Math.max(0, Number(service.availableSlots || 0))
+  }
+
+  if (bookingType === 'tour') {
+    const scheduleMode = String(bookingMeta.scheduleMode || service.scheduleType || 'fixed').toLowerCase()
+    if (scheduleMode === 'flexible') return Number.MAX_SAFE_INTEGER
+    const departureId = bookingMeta.departureId
+    if (!departureId) return Math.max(0, Number(service.availableSlots || 0))
+    const departure = (service.departures || []).find((entry) => entry.departureId === departureId)
+    return Math.max(0, Number(departure?.remainingSlots || 0))
+  }
+
+  return Math.max(0, Number(service.availableSlots || 0))
 }

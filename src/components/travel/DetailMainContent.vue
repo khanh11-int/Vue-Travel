@@ -1,18 +1,53 @@
 <template>
   <div class="detail-main">
-    <div class="gallery-grid detail-gallery-grid">
-      <img :src="selectedImage || service.image" :alt="service.name" class="gallery-main detail-gallery-main" />
-      <div v-if="galleryImages.length > 1" class="gallery-thumbs detail-gallery-thumbs">
-        <button
-          v-for="(item, index) in galleryImages"
-          :key="`${item}-${index}`"
-          type="button"
-          :class="['detail-thumb-button', { active: selectedImage === item }]"
-          @click="$emit('update:selectedImage', item)"
-        >
-          <img :src="item" :alt="`${service.name} ${index + 1}`" class="gallery-thumb" />
-        </button>
+    <div class="detail-gallery-wrapper">
+      <div class="detail-gallery-stage">
+        <img :src="currentImage" :alt="service.name" class="gallery-main detail-gallery-main" />
+
+        <template v-if="normalizedGallery.length > 1">
+          <button class="detail-gallery-nav detail-gallery-nav--prev" type="button" @click="goToPreviousImage">
+            ←
+          </button>
+          <button class="detail-gallery-nav detail-gallery-nav--next" type="button" @click="goToNextImage">
+            →
+          </button>
+
+          <div class="detail-gallery-dots" role="tablist" aria-label="Chuyển ảnh dịch vụ">
+            <button
+              v-for="(item, index) in normalizedGallery"
+              :key="`${item}-${index}`"
+              :class="['detail-gallery-dot', { active: index === currentImageIndex }]"
+              type="button"
+              :aria-label="`Ảnh ${index + 1}`"
+              @click="goToImage(index)"
+            />
+          </div>
+        </template>
       </div>
+
+      <template v-if="normalizedGallery.length > 1">
+        <div class="detail-gallery-thumbnails">
+          <button
+            v-for="(item, index) in normalizedGallery.slice(0, 6)"
+            :key="`thumb-${item}-${index}`"
+            :class="['detail-gallery-thumbnail', { active: index === currentImageIndex }]"
+            type="button"
+            :aria-label="`Xem ảnh ${index + 1}`"
+            @click="goToImage(index)"
+          >
+            <img :src="item" :alt="`Ảnh ${index + 1}`" />
+          </button>
+          <button
+            v-if="normalizedGallery.length > 6"
+            type="button"
+            class="detail-gallery-thumbnail detail-gallery-thumbnail--more"
+            :aria-label="`Xem thêm ${normalizedGallery.length - 6} ảnh`"
+            @click="goToImage(6)"
+          >
+            +{{ normalizedGallery.length - 6 }}
+          </button>
+        </div>
+      </template>
     </div>
 
     <div class="detail-head">
@@ -100,12 +135,12 @@
 </template>
 
 <script setup>
-import { defineEmits, defineProps, reactive } from 'vue'
+import { computed, defineEmits, defineProps, reactive } from 'vue'
 import RatingStars from '@/components/common/RatingStars.vue'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 
-defineProps({
+const props = defineProps({
   service: {
     type: Object,
     required: true
@@ -129,6 +164,37 @@ defineProps({
 })
 
 const emit = defineEmits(['update:selectedImage', 'submit-comment'])
+
+const normalizedGallery = computed(() => {
+  const source = Array.isArray(props.galleryImages) ? props.galleryImages : []
+  const fallback = props.service?.image ? [props.service.image] : []
+  return [...new Set((source.length ? source : fallback).filter(Boolean))]
+})
+
+const currentImage = computed(() => props.selectedImage || normalizedGallery.value[0] || props.service.image)
+
+const currentImageIndex = computed(() => {
+  const index = normalizedGallery.value.findIndex((item) => item === currentImage.value)
+  return index >= 0 ? index : 0
+})
+
+const goToImage = (index) => {
+  if (!normalizedGallery.value.length) return
+  const safeIndex = Math.max(0, Math.min(index, normalizedGallery.value.length - 1))
+  emit('update:selectedImage', normalizedGallery.value[safeIndex])
+}
+
+const goToPreviousImage = () => {
+  if (!normalizedGallery.value.length) return
+  const nextIndex = (currentImageIndex.value - 1 + normalizedGallery.value.length) % normalizedGallery.value.length
+  goToImage(nextIndex)
+}
+
+const goToNextImage = () => {
+  if (!normalizedGallery.value.length) return
+  const nextIndex = (currentImageIndex.value + 1) % normalizedGallery.value.length
+  goToImage(nextIndex)
+}
 
 const commentForm = reactive({
   userName: '',

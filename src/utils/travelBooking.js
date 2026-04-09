@@ -18,19 +18,77 @@ export const applyServiceSlotDelta = (service, item, delta) => {
 
   const bookingType = item.bookingType || service.categoryId || 'hotel'
   const bookingMeta = item.bookingMeta || {}
-  const nextService = {
-    ...service,
-    availableSlots: Math.max(0, Number(service.availableSlots || 0) + delta)
+  const nextService = { ...service }
+
+  if (bookingType === 'hotel') {
+    const roomType = String(bookingMeta.roomType || '').trim().toLowerCase()
+    if (roomType && Array.isArray(service.roomTypes) && service.roomTypes.length) {
+      nextService.roomTypes = service.roomTypes.map((entry) => {
+        const value = String(entry?.value || '').trim().toLowerCase()
+        if (value !== roomType) return entry
+        return {
+          ...entry,
+          availableSlots: Math.max(0, Number(entry.availableSlots || 0) + delta)
+        }
+      })
+      nextService.availableSlots = nextService.roomTypes.reduce(
+        (sum, entry) => sum + Math.max(0, Number(entry?.availableSlots || 0)),
+        0
+      )
+      return nextService
+    }
+
+    nextService.availableSlots = Math.max(0, Number(service.availableSlots || 0) + delta)
+    return nextService
   }
 
-  if (bookingType === 'tour' && bookingMeta.departureId) {
-    nextService.departures = (service.departures || []).map((departure) =>
-      departure.departureId === bookingMeta.departureId
-        ? { ...departure, remainingSlots: Math.max(0, Number(departure.remainingSlots || 0) + delta) }
-        : departure
-    )
+  if (bookingType === 'ticket') {
+    const packageId = String(bookingMeta.packageId || '').trim().toLowerCase()
+    if (packageId && Array.isArray(service.ticketPackages) && service.ticketPackages.length) {
+      nextService.ticketPackages = service.ticketPackages.map((entry) => {
+        const id = String(entry?.id || '').trim().toLowerCase()
+        if (id !== packageId) return entry
+        return {
+          ...entry,
+          availableSlots: Math.max(0, Number(entry.availableSlots || 0) + delta)
+        }
+      })
+      nextService.availableSlots = nextService.ticketPackages.reduce(
+        (sum, entry) => sum + Math.max(0, Number(entry?.availableSlots || 0)),
+        0
+      )
+      return nextService
+    }
+
+    nextService.availableSlots = Math.max(0, Number(service.availableSlots || 0) + delta)
+    return nextService
   }
 
+  if (bookingType === 'tour') {
+    const scheduleMode = String(bookingMeta.scheduleMode || service.scheduleType || 'fixed').toLowerCase()
+    if (scheduleMode === 'flexible') {
+      // Flexible tours do not decrement a global slot counter.
+      return service
+    }
+
+    if (bookingMeta.departureId) {
+      nextService.departures = (service.departures || []).map((departure) =>
+        departure.departureId === bookingMeta.departureId
+          ? { ...departure, remainingSlots: Math.max(0, Number(departure.remainingSlots || 0) + delta) }
+          : departure
+      )
+      nextService.availableSlots = (nextService.departures || []).reduce(
+        (sum, departure) => sum + Math.max(0, Number(departure?.remainingSlots || 0)),
+        0
+      )
+      return nextService
+    }
+
+    nextService.availableSlots = Math.max(0, Number(service.availableSlots || 0) + delta)
+    return nextService
+  }
+
+  nextService.availableSlots = Math.max(0, Number(service.availableSlots || 0) + delta)
   return nextService
 }
 

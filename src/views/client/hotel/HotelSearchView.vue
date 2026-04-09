@@ -73,9 +73,9 @@ import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ServiceSearchNav from '@/components/travel/ServiceSearchNav.vue'
 import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
-import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useCategorySearchSchemaStore } from '@/stores/useCategorySearchSchemaStore'
+import { useHotelGuestRoomStore } from '@/stores/hotelGuestRoom/useHotelGuestRoomStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useCategorySearchSchemaStore } from '@/stores/categorySearchSchema/useCategorySearchSchemaStore'
 
 const DEFAULT_GUEST_QUERY_KEYS = {
   guests: 'guests',

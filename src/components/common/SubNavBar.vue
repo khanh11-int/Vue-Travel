@@ -16,7 +16,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 
 const route = useRoute()
 const serviceStore = useServiceStore()
@@ -43,7 +43,7 @@ const isActive = (path) => {
   background: transparent;
   border-bottom: 0;
   position: sticky;
-  top: 60px;
+  top: 78px;
   z-index: 50;
   box-shadow: none;
 }
@@ -55,6 +55,7 @@ const isActive = (path) => {
   justify-content: center;
   align-items: center;
   gap: 12px;
+  min-height: 56px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
@@ -64,7 +65,8 @@ const isActive = (path) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 22px;
+  min-height: 54px;
+  padding: 0 22px;
   color: var(--muted);
   font-weight: 600;
   font-size: 0.95rem;
@@ -84,21 +86,32 @@ const isActive = (path) => {
 }
 
 @media (max-width: 768px) {
+  .sub-nav-bar {
+    top: 86px;
+  }
+
   .sub-nav-container {
     justify-content: flex-start;
     overflow-x: auto;
     gap: 0;
+    min-height: 50px;
   }
 
   .sub-nav-link {
-    padding: 10px 16px;
+    min-height: 48px;
+    padding: 0 16px;
     font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
+  .sub-nav-bar {
+    top: 84px;
+  }
+
   .sub-nav-link {
-    padding: 10px 12px;
+    min-height: 46px;
+    padding: 0 12px;
     font-size: 0.85rem;
   }
 }

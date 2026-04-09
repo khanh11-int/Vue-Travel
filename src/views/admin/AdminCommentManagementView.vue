@@ -36,24 +36,52 @@
                   <button class="ghost-button" type="button" @click="store.toggleCommentVisibility(comment.id)">
                     {{ comment.visible === false ? 'Hiện lại' : 'Ẩn' }}
                   </button>
-                  <button class="secondary-button" type="button" @click="store.deleteComment(comment.id)">Xóa</button>
+                  <button class="secondary-button" type="button" @click="handleDeleteComment(comment.id)">Xóa</button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <div v-if="deleteTargetCommentId" class="admin-confirm-overlay" @click.self="closeDeleteCommentModal">
+        <div class="admin-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-comment-title">
+          <p class="eyebrow">Xác nhận thao tác</p>
+          <h3 id="delete-comment-title">Bạn có chắc muốn xóa bình luận này?</h3>
+          <p class="muted">Bình luận đã xóa sẽ không thể khôi phục trên trang dịch vụ.</p>
+          <div class="admin-confirm-actions">
+            <button class="secondary-button" type="button" @click="closeDeleteCommentModal">Hủy</button>
+            <button class="primary-button" type="button" @click="confirmDeleteComment">Đồng ý xóa</button>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { computed, ref } from 'vue'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 
 const store = useAdminStore()
 const serviceStore = useServiceStore()
 const comments = computed(() => serviceStore.comments)
+const deleteTargetCommentId = ref('')
+
 const getServiceName = (serviceId) => serviceStore.services.find((service) => service.id === serviceId)?.name || 'Dịch vụ nội địa'
+
+const handleDeleteComment = (commentId) => {
+  deleteTargetCommentId.value = String(commentId || '')
+}
+
+const closeDeleteCommentModal = () => {
+  deleteTargetCommentId.value = ''
+}
+
+const confirmDeleteComment = () => {
+  if (!deleteTargetCommentId.value) return
+  store.deleteComment(deleteTargetCommentId.value)
+  closeDeleteCommentModal()
+}
 </script>

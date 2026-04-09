@@ -44,7 +44,6 @@
         <select v-model="filters.availability">
           <option value="">Tất cả</option>
           <option value="available">Còn chỗ</option>
-          <option value="soldout">Hết chỗ</option>
         </select>
       </div>
       <div class="field-group">
@@ -92,8 +91,8 @@
 import { computed, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 import {
   resolveCategoryFromQuery,
   resolveSearchSummary
@@ -190,6 +189,7 @@ const filteredServices = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase()
 
   const result = serviceStore.services.filter((service) => {
+    const hasAvailableSlots = Number(service?.availableSlots || 0) > 0
     const matchesKeyword = !keyword || [service.name, service.destination, service.province]
       .join(' ')
       .toLowerCase()
@@ -200,11 +200,9 @@ const filteredServices = computed(() => {
     const matchesMinPrice = !filters.minPrice || service.salePrice >= filters.minPrice
     const matchesMaxPrice = !filters.maxPrice || service.salePrice <= filters.maxPrice
     const matchesRating = !filters.minRating || service.rating >= filters.minRating
-    const matchesAvailability = !filters.availability
-      || (filters.availability === 'available' && service.availableSlots > 0)
-      || (filters.availability === 'soldout' && service.availableSlots <= 0)
+    const matchesAvailability = hasAvailableSlots
 
-    return matchesKeyword && matchesCategory && matchesProvince && matchesMinPrice
+    return hasAvailableSlots && matchesKeyword && matchesCategory && matchesProvince && matchesMinPrice
       && matchesMaxPrice && matchesRating && matchesAvailability
   })
 

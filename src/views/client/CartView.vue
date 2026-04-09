@@ -90,9 +90,9 @@
 <script setup>
 import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCartStore } from '@/stores/useCartStore'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useCartStore } from '@/stores/cart/useCartStore'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'

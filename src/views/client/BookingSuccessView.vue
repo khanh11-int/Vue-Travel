@@ -36,6 +36,10 @@
         <div class="success-invoice-block">
           <h3>Thanh toán</h3>
           <div class="summary-row">
+            <span>Phương thức</span>
+            <strong>{{ booking?.customer?.paymentMethodLabel || 'Thanh toán khi xác nhận booking' }}</strong>
+          </div>
+          <div class="summary-row">
             <span>Tạm tính</span>
             <strong>{{ formatCurrencyVND(booking?.subtotal || 0) }}</strong>
           </div>
@@ -71,7 +75,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useBookingStore } from '@/stores/useBookingStore'
+import { useBookingStore } from '@/stores/booking/useBookingStore'
 import { formatCurrencyVND, formatDateRangeVN, formatDateVN } from '@/utils/formatters'
 
 const route = useRoute()

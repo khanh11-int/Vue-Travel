@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { bookingsApi, servicesApi } from '@/services/api'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { bookingDetailsApi, bookingsApi, servicesApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 import {
   BOOKING_STATUS_LABELS,
   applyServiceSlotDelta,
@@ -14,6 +14,7 @@ import {
   GUEST_SCOPE,
   getActiveUserId,
   getScopedKey,
+  getStoredAuthUsers,
   persistStorage,
   readStorage
 } from '@/utils/travelStorage'
@@ -26,11 +27,91 @@ import { canUserCancelBooking } from '@/utils/bookingRules'
  */
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
+const mergeBookings = (...collections) => {
+  const mergedByKey = new Map()
+
+  collections.flat().forEach((booking) => {
+    if (!booking) return
+    const dedupeKey = String(booking.id || booking.code || '')
+    if (!dedupeKey) return
+    mergedByKey.set(dedupeKey, booking)
+  })
+
+  return Array.from(mergedByKey.values())
+}
+
+const mergeBookingDetails = (...collections) => {
+  const mergedByKey = new Map()
+
+  collections.flat().forEach((detail) => {
+    if (!detail) return
+    const dedupeKey = String(detail.id || `${detail.bookingId || ''}-${detail.lineIndex || ''}-${detail.serviceId || ''}`)
+    if (!dedupeKey) return
+    mergedByKey.set(dedupeKey, detail)
+  })
+
+  return Array.from(mergedByKey.values())
+}
+
+const stripBookingItems = (booking = {}) => {
+  const { items, ...rest } = booking || {}
+
+  return {
+    ...rest,
+    itemCount: Number(booking?.itemCount || ensureArray(items).length || 0)
+  }
+}
+
+const groupBookingDetailsByBookingId = (bookingDetails = []) => {
+  const grouped = new Map()
+
+  ensureArray(bookingDetails).forEach((detail) => {
+    const bookingId = String(detail?.bookingId || '').trim()
+    if (!bookingId) return
+
+    const currentGroup = grouped.get(bookingId) || []
+    currentGroup.push(detail)
+    grouped.set(bookingId, currentGroup)
+  })
+
+  return grouped
+}
+
+const hydrateBookingItems = (booking, bookingDetailsMap) => {
+  const existingItems = ensureArray(booking?.items)
+  if (existingItems.length) return existingItems
+
+  const groupedDetails = bookingDetailsMap.get(String(booking?.id || '').trim()) || []
+
+  return groupedDetails
+    .slice()
+    .sort((left, right) => Number(left.lineIndex || 0) - Number(right.lineIndex || 0))
+    .map((detail) => {
+      return detail || {}
+    })
+}
+
+const hydrateBookingsWithDetails = (bookings = [], bookingDetails = []) => {
+  const bookingDetailsMap = groupBookingDetailsByBookingId(bookingDetails)
+
+  return ensureArray(bookings).map((booking) => {
+    const items = hydrateBookingItems(booking, bookingDetailsMap)
+
+    return {
+      ...booking,
+      itemCount: Number(booking?.itemCount || items.length || 0),
+      items
+    }
+  })
+}
+
 /**
  * Trả về key storage dùng lưu danh sách booking toàn hệ thống.
  * @returns {string} Storage key cho all bookings.
  */
 const resolveAllBookingsStorageKey = () => STORAGE_KEYS.bookings
+
+const resolveAllBookingDetailsStorageKey = () => STORAGE_KEYS.bookingDetails
 
 /**
  * Suy ra owner id của booking từ payload customer, fallback guest khi thiếu.
@@ -66,7 +147,10 @@ const resolveCurrentUserId = (authStore) => {
  * @returns {Array<Object>} Danh sách booking theo user.
  */
 const readUserScopedBookings = (userId) =>
-  ensureArray(readStorage(getScopedKey(STORAGE_KEYS.bookings, userId), []))
+  hydrateBookingsWithDetails(
+    ensureArray(readStorage(getScopedKey(STORAGE_KEYS.bookings, userId), [])),
+    readAllBookingDetails()
+  )
 
 /**
  * Persist lịch sử booking theo scoped user.
@@ -75,7 +159,7 @@ const readUserScopedBookings = (userId) =>
  * @returns {void}
  */
 const persistUserScopedBookings = (userId, bookings) => {
-  persistStorage(getScopedKey(STORAGE_KEYS.bookings, userId), ensureArray(bookings))
+  persistStorage(getScopedKey(STORAGE_KEYS.bookings, userId), ensureArray(bookings).map(stripBookingItems))
 }
 
 /**
@@ -84,13 +168,35 @@ const persistUserScopedBookings = (userId, bookings) => {
  */
 const readAllBookings = () => ensureArray(readStorage(resolveAllBookingsStorageKey(), []))
 
+const readAllBookingDetails = () => ensureArray(readStorage(resolveAllBookingDetailsStorageKey(), []))
+
+const getKnownBookingScopeIds = () => {
+  const storedUsers = ensureArray(getStoredAuthUsers([]))
+    .map((user) => String(user?.id || '').trim())
+    .filter(Boolean)
+
+  return Array.from(new Set([GUEST_SCOPE, getActiveUserId(), ...storedUsers]))
+}
+
+const readAllScopedBookings = () =>
+  mergeBookings(
+    ...getKnownBookingScopeIds().map((userId) => readStorage(getScopedKey(STORAGE_KEYS.bookings, userId), []))
+  )
+
+const readMergedAllBookings = () =>
+  hydrateBookingsWithDetails(mergeBookings(readAllBookings(), readAllScopedBookings()), readAllBookingDetails())
+
 /**
  * Persist danh sách booking toàn hệ thống.
  * @param {Array<Object>} bookings - Danh sách booking cần lưu.
  * @returns {void}
  */
 const persistAllBookings = (bookings) => {
-  persistStorage(resolveAllBookingsStorageKey(), ensureArray(bookings))
+  persistStorage(resolveAllBookingsStorageKey(), ensureArray(bookings).map(stripBookingItems))
+}
+
+const persistAllBookingDetails = (bookingDetails) => {
+  persistStorage(resolveAllBookingDetailsStorageKey(), ensureArray(bookingDetails))
 }
 
 /**
@@ -132,7 +238,8 @@ export const useBookingStore = defineStore('travelBooking', {
 
     return {
       bookings: readUserScopedBookings(currentUserId),
-      allBookings: readAllBookings(),
+      allBookings: readMergedAllBookings(),
+      bookingDetails: readAllBookingDetails(),
       guestLookupResults: [],
       loading: false,
       error: null
@@ -212,7 +319,6 @@ export const useBookingStore = defineStore('travelBooking', {
         id: now,
         code: `VV${now.toString().slice(-6)}`,
         customer: customerPayload,
-        items: sanitizedItems,
         subtotal,
         discount,
         serviceFee,
@@ -222,6 +328,18 @@ export const useBookingStore = defineStore('travelBooking', {
         statusLabel: 'Chờ xác nhận',
         createdAt,
         visible: true
+      }
+      const bookingDetails = sanitizedItems.map((item, index) => ({
+        id: `${now}-${index + 1}`,
+        bookingId: String(now),
+        bookingCode: booking.code,
+        lineIndex: index,
+        ...item
+      }))
+      const hydratedBooking = {
+        ...booking,
+        itemCount: sanitizedItems.length,
+        items: sanitizedItems
       }
 
       const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
@@ -235,17 +353,20 @@ export const useBookingStore = defineStore('travelBooking', {
         )
       })
 
-      this.bookings = upsertBooking(this.bookings, booking)
-      this.allBookings = upsertBooking(this.allBookings, booking)
+      this.bookingDetails = mergeBookingDetails(this.bookingDetails, bookingDetails)
+      this.bookings = upsertBooking(this.bookings, hydratedBooking)
+      this.allBookings = upsertBooking(this.allBookings, hydratedBooking)
 
       persistUserScopedBookings(currentUserId, this.bookings)
       persistAllBookings(this.allBookings)
+      persistAllBookingDetails(this.bookingDetails)
       serviceStore.setServices(nextServices)
 
-      fireAndForget(() => bookingsApi.create(booking))
+      fireAndForget(() => bookingsApi.create(stripBookingItems(hydratedBooking)))
+      fireAndForget(() => Promise.all(bookingDetails.map((detail) => bookingDetailsApi.create(detail))))
       fireAndForget(() => Promise.all(nextServices.map((service) => servicesApi.update(service.id, service))))
 
-      return booking
+      return hydratedBooking
     },
 
     /**
@@ -258,12 +379,17 @@ export const useBookingStore = defineStore('travelBooking', {
       const currentUserId = this.syncUserScope()
 
       try {
-        const apiBookings = await bookingsApi.getAll({ 'customer.userId': currentUserId })
-        const normalizedApiBookings = ensureArray(apiBookings)
+        const [apiBookings, apiBookingDetails] = await Promise.all([
+          bookingsApi.getAll({ 'customer.userId': currentUserId }),
+          bookingDetailsApi.getAll()
+        ])
+        const normalizedApiBookings = hydrateBookingsWithDetails(ensureArray(apiBookings), ensureArray(apiBookingDetails))
 
         if (normalizedApiBookings.length) {
           this.bookings = sortByCreatedAtDesc(normalizedApiBookings)
           persistUserScopedBookings(currentUserId, this.bookings)
+          this.bookingDetails = mergeBookingDetails(this.bookingDetails, ensureArray(apiBookingDetails))
+          persistAllBookingDetails(this.bookingDetails)
         } else {
           this.bookings = sortByCreatedAtDesc(readUserScopedBookings(currentUserId))
         }
@@ -287,8 +413,13 @@ export const useBookingStore = defineStore('travelBooking', {
       this.error = null
 
       try {
-        const foundBookings = await bookingsApi.lookupGuest({ code, phone })
-        this.guestLookupResults = sortByCreatedAtDesc(ensureArray(foundBookings))
+        const [foundBookings, apiBookingDetails] = await Promise.all([
+          bookingsApi.lookupGuest({ code, phone }),
+          bookingDetailsApi.getAll()
+        ])
+        this.guestLookupResults = sortByCreatedAtDesc(
+          hydrateBookingsWithDetails(ensureArray(foundBookings), ensureArray(apiBookingDetails))
+        )
         return this.guestLookupResults
       } catch (error) {
         this.error = error?.message || 'Không thể tra cứu booking.'
@@ -309,18 +440,23 @@ export const useBookingStore = defineStore('travelBooking', {
       this.syncUserScope()
 
       try {
-        const apiBookings = await bookingsApi.getAll()
-        const normalizedApiBookings = ensureArray(apiBookings)
+        const [apiBookings, apiBookingDetails, storedBookings, storedBookingDetails] = await Promise.all([
+          bookingsApi.getAll(),
+          bookingDetailsApi.getAll(),
+          Promise.resolve(readMergedAllBookings()),
+          Promise.resolve(readAllBookingDetails())
+        ])
 
-        if (normalizedApiBookings.length) {
-          this.allBookings = sortByCreatedAtDesc(normalizedApiBookings)
-          persistAllBookings(this.allBookings)
-        } else {
-          this.allBookings = sortByCreatedAtDesc(readAllBookings())
-        }
+        this.bookingDetails = mergeBookingDetails(apiBookingDetails, storedBookingDetails)
+        this.allBookings = sortByCreatedAtDesc(
+          hydrateBookingsWithDetails(mergeBookings(apiBookings, storedBookings), this.bookingDetails)
+        )
+        persistAllBookings(this.allBookings)
+        persistAllBookingDetails(this.bookingDetails)
       } catch (error) {
         this.error = error?.message || 'Không thể tải danh sách booking.'
-        this.allBookings = readAllBookings()
+        this.bookingDetails = readAllBookingDetails()
+        this.allBookings = sortByCreatedAtDesc(readMergedAllBookings())
       } finally {
         this.loading = false
       }
@@ -333,8 +469,15 @@ export const useBookingStore = defineStore('travelBooking', {
      * @param {string} status - Trạng thái mới.
      * @returns {void}
      */
-    updateBookingStatus(bookingId, status) {
+    updateBookingStatus(bookingId, status, options = {}) {
       const currentUserId = this.syncUserScope()
+      const normalizedReason = String(options?.reason || '').trim()
+      const statusMeta = status === 'cancelled'
+        ? {
+            cancelledAt: new Date().toISOString(),
+            cancellationReason: normalizedReason
+          }
+        : {}
 
       const existing =
         this.allBookings.find((booking) => booking.id === bookingId)
@@ -362,10 +505,10 @@ export const useBookingStore = defineStore('travelBooking', {
       }
 
       this.bookings = this.bookings.map((booking) =>
-        booking.id === bookingId ? updateBookingStatusLabel(booking, status) : booking
+        booking.id === bookingId ? { ...updateBookingStatusLabel(booking, status), ...statusMeta } : booking
       )
       this.allBookings = this.allBookings.map((booking) =>
-        booking.id === bookingId ? updateBookingStatusLabel(booking, status) : booking
+        booking.id === bookingId ? { ...updateBookingStatusLabel(booking, status), ...statusMeta } : booking
       )
 
       const ownerId = resolveBookingOwnerId(existing)
@@ -377,7 +520,7 @@ export const useBookingStore = defineStore('travelBooking', {
 
       const updatedBooking = this.allBookings.find((booking) => booking.id === bookingId)
       if (updatedBooking) {
-        fireAndForget(() => bookingsApi.update(bookingId, updatedBooking))
+        fireAndForget(() => bookingsApi.update(bookingId, stripBookingItems(updatedBooking)))
       }
     },
 
@@ -386,14 +529,14 @@ export const useBookingStore = defineStore('travelBooking', {
      * @param {number|string} bookingId - Id booking cần hủy.
      * @returns {void}
      */
-    cancelBooking(bookingId) {
+    cancelBooking(bookingId, options = {}) {
       const authStore = useAuthStore()
       const currentUser = resolveCurrentUser(authStore)
       const booking = this.allBookings.find((entry) => entry.id === bookingId) || this.bookings.find((entry) => entry.id === bookingId)
 
       if (!canUserCancelBooking(booking, currentUser)) return false
 
-      this.updateBookingStatus(bookingId, 'cancelled')
+      this.updateBookingStatus(bookingId, 'cancelled', options)
       return true
     }
   }

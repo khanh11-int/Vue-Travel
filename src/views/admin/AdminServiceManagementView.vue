@@ -4,13 +4,14 @@
       <div class="section-heading compact admin-heading-stack">
         <div>
           <p class="eyebrow">Quản lý dịch vụ</p>
-          <h2>Dịch vụ du lịch nội địa Việt Nam</h2>
-          <p class="muted small-text">Chọn loại dịch vụ trước, sau đó điền thông tin và ảnh đại diện theo từng khối để dễ kiểm tra.</p>
+          <h2>{{ isCreatePage ? 'Thêm dịch vụ du lịch nội địa Việt Nam' : 'Dịch vụ du lịch nội địa Việt Nam' }}</h2>
+          <p class="muted small-text">{{ isCreatePage ? 'Điền thông tin dịch vụ theo từng bước rồi xác nhận lưu.' : 'Chọn loại dịch vụ trước, sau đó điền thông tin và ảnh đại diện theo từng khối để dễ kiểm tra.' }}</p>
         </div>
-        <button class="primary-button" type="button" @click="startCreateService">+ Thêm dịch vụ</button>
+        <button v-if="!isCreatePage" class="primary-button" type="button" @click="startCreateService">+ Thêm dịch vụ</button>
+        <button v-else class="secondary-button" type="button" @click="goToServicesList">Quay lại danh sách</button>
       </div>
 
-      <div class="admin-toolbar">
+      <div v-if="!isCreatePage" class="admin-toolbar">
         <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên dịch vụ hoặc điểm đến" />
         <select v-model="filters.categoryId">
           <option value="">Tất cả danh mục</option>
@@ -26,7 +27,7 @@
         </select>
       </div>
 
-      <div class="service-form-steps">
+      <div v-if="isCreatePage || isEditing" class="service-form-steps">
         <div
           v-for="item in stepItems"
           :key="item.step"
@@ -40,7 +41,7 @@
         </div>
       </div>
 
-      <div v-if="wizardStep === 1" class="service-form-legend">
+      <div v-if="(isCreatePage || isEditing) && wizardStep === 1" class="service-form-legend">
         <div>
           <p class="eyebrow">Loại dịch vụ</p>
           <h3>Chọn nhóm phù hợp cho dữ liệu đang nhập</h3>
@@ -60,7 +61,7 @@
         </div>
       </div>
 
-      <div class="admin-form-grid">
+      <div v-if="isCreatePage || isEditing" class="admin-form-grid">
         <section v-if="wizardStep === 2" class="service-form-section admin-form-span-2">
           <div class="service-form-section__header">
             <div>
@@ -89,15 +90,6 @@
               <div class="field-group">
                 <label>Đường dẫn slug</label>
                 <input v-model="serviceForm.slug" type="text" placeholder="tour-ha-long-3n2d" />
-              </div>
-              <div class="field-group">
-                <label>Danh mục</label>
-                <select v-model="serviceForm.categoryId" @change="handleCategoryChange">
-                  <option value="">Chọn danh mục</option>
-                  <option v-for="category in categories" :key="category.id" :value="category.id">
-                    {{ category.name }}
-                  </option>
-                </select>
               </div>
             </div>
           </div>
@@ -132,10 +124,6 @@
               <div class="field-group">
                 <label>Giá khuyến mãi</label>
                 <input v-model.number="serviceForm.salePrice" type="number" min="0" placeholder="0" />
-              </div>
-              <div class="field-group">
-                <label>Số chỗ còn lại</label>
-                <input v-model.number="serviceForm.availableSlots" type="number" min="0" placeholder="10" />
               </div>
             </div>
           </div>
@@ -180,6 +168,10 @@
                   <label>Phụ thu trẻ em / đêm</label>
                   <input v-model.number="roomType.childSurcharge" type="number" min="0" step="1000" />
                 </div>
+                <div class="field-group">
+                  <label>Số chỗ loại phòng</label>
+                  <input v-model.number="roomType.availableSlots" type="number" min="0" />
+                </div>
               </div>
             </div>
           </div>
@@ -208,7 +200,7 @@
               <p class="muted small-text">Thiết lập cách mở lịch: cố định, linh hoạt hoặc kết hợp.</p>
             </div>
             <div class="admin-form-grid service-form-grid">
-              <div class="field-group">
+              <div class="field-group admin-form-span-2">
                 <label>Kiểu lịch tour</label>
                 <select v-model="tourScheduleType">
                   <option value="fixed">Lịch cố định</option>
@@ -337,26 +329,6 @@
                     <small class="muted small-text">Tự động tính theo ngày đi và loại hành trình.</small>
                   </div>
                   <div class="field-group">
-                    <label>Số ngày</label>
-                    <input
-                      v-model.number="departure.durationDays"
-                      type="number"
-                      min="1"
-                      :readonly="departure.durationPreset !== 'custom'"
-                      @input="handleDepartureDurationChange(departure)"
-                    />
-                  </div>
-                  <div class="field-group">
-                    <label>Số đêm</label>
-                    <input
-                      v-model.number="departure.durationNights"
-                      type="number"
-                      min="0"
-                      :readonly="departure.durationPreset !== 'custom'"
-                      @input="handleDepartureDurationChange(departure)"
-                    />
-                  </div>
-                  <div class="field-group">
                     <label>Còn chỗ</label>
                     <input v-model.number="departure.remainingSlots" type="number" min="0" />
                   </div>
@@ -458,6 +430,10 @@
                     <input v-model.number="ticketPackage.childSurcharge" type="number" min="0" />
                   </div>
                   <div class="field-group">
+                    <label>Số chỗ gói vé</label>
+                    <input v-model.number="ticketPackage.availableSlots" type="number" min="0" />
+                  </div>
+                  <div class="field-group">
                     <label>Tiện ích gói vé (cách nhau bằng dấu phẩy)</label>
                     <input v-model="ticketPackage.featuresText" type="text" placeholder="Vé vào cổng, Không gồm khu trò chơi mở rộng" />
                   </div>
@@ -557,7 +533,7 @@
             </div>
             <div class="service-review-item">
               <span>Số chỗ còn lại</span>
-              <strong>{{ serviceForm.availableSlots || 0 }}</strong>
+              <strong>{{ derivedAvailableSlotsText }}</strong>
             </div>
             <div class="service-review-item">
               <span>Loại dịch vụ</span>
@@ -584,7 +560,7 @@
         <small v-if="formError" class="error-text admin-form-span-2">{{ formError }}</small>
       </div>
 
-      <div class="admin-table-wrapper">
+      <div v-if="!isCreatePage" class="admin-table-wrapper">
         <table class="admin-table">
           <thead>
             <tr>
@@ -626,7 +602,7 @@
         </table>
       </div>
 
-      <div v-if="deleteTargetServiceId" class="admin-confirm-overlay" @click.self="cancelDeleteService">
+      <div v-if="!isCreatePage && deleteTargetServiceId" class="admin-confirm-overlay" @click.self="cancelDeleteService">
         <div class="admin-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-service-title">
           <p class="eyebrow">Xác nhận thao tác</p>
           <h3 id="delete-service-title">Bạn có chắc muốn xóa dịch vụ này?</h3>
@@ -643,10 +619,13 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useRoute, useRouter } from 'vue-router'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
+const route = useRoute()
+const router = useRouter()
 const store = useAdminStore()
 const serviceStore = useServiceStore()
 const categories = computed(() => serviceStore.categories)
@@ -666,7 +645,7 @@ const defaultForm = () => ({
   price: 0,
   salePrice: 0,
   rating: 4.5,
-  availableSlots: 10,
+  availableSlots: 0,
   status: 'active',
   image: '',
   gallery: [],
@@ -685,12 +664,14 @@ const formError = ref('')
 const selectedImageName = ref('')
 const wizardStep = ref(1)
 const deleteTargetServiceId = ref('')
+const isCreatePage = computed(() => route.name === 'admin-services-create')
 
 const createRoomType = (overrides = {}) => ({
   value: 'standard',
   label: 'Phòng tiêu chuẩn',
   priceMultiplier: 1,
   childSurcharge: 320000,
+  availableSlots: 10,
   ...overrides
 })
 
@@ -736,6 +717,7 @@ const createTicketPackage = (overrides = {}) => ({
   salePrice: 0,
   price: 0,
   childSurcharge: 0,
+  availableSlots: 10,
   featuresText: 'Vé vào cổng',
   ...overrides
 })
@@ -810,6 +792,34 @@ const ticketPolicySummary = computed(() => {
   return `Tóm tắt: miễn phí dưới ${freeUnderAge} tuổi, phụ thu từ ${surchargeAgeMin}-${surchargeAgeMax} tuổi (${formatCurrencyVND(surcharge)}), từ ${adultAgeThreshold} tuổi tính vé người lớn.`
 })
 
+const totalHotelSlots = computed(() =>
+  roomTypes.value.reduce((sum, roomType) => sum + Math.max(0, Number(roomType?.availableSlots || 0) || 0), 0)
+)
+
+const totalTicketSlots = computed(() =>
+  ticketPackages.value.reduce((sum, ticketPackage) => sum + Math.max(0, Number(ticketPackage?.availableSlots || 0) || 0), 0)
+)
+
+const totalFixedTourSlots = computed(() =>
+  tourDepartures.value.reduce((sum, departure) => sum + Math.max(0, Number(departure?.remainingSlots || 0) || 0), 0)
+)
+
+const derivedAvailableSlots = computed(() => {
+  if (serviceForm.categoryId === 'hotel') return totalHotelSlots.value
+  if (serviceForm.categoryId === 'ticket') return totalTicketSlots.value
+  if (serviceForm.categoryId === 'tour') {
+    return tourScheduleType.value === 'fixed' ? totalFixedTourSlots.value : Number.MAX_SAFE_INTEGER
+  }
+  return Math.max(0, Number(serviceForm.availableSlots || 0) || 0)
+})
+
+const derivedAvailableSlotsText = computed(() => {
+  if (serviceForm.categoryId === 'tour' && tourScheduleType.value !== 'fixed') {
+    return 'Linh hoạt theo ngày đi (không giới hạn theo tổng chỗ)'
+  }
+  return String(derivedAvailableSlots.value)
+})
+
 const getCategoryLabel = (categoryId) =>
   categories.value.find((category) => category.id === categoryId)?.name || 'Dịch vụ'
 
@@ -825,8 +835,8 @@ const validateCommonFields = () => {
     return false
   }
 
-  if (Number(serviceForm.price) < 0 || Number(serviceForm.salePrice) < 0 || Number(serviceForm.availableSlots) < 0) {
-    formError.value = 'Giá và số chỗ không được nhỏ hơn 0.'
+  if (Number(serviceForm.price) < 0 || Number(serviceForm.salePrice) < 0) {
+    formError.value = 'Giá không được nhỏ hơn 0.'
     return false
   }
 
@@ -922,15 +932,6 @@ const handleDepartureStartDateChange = (departure) => {
   syncTourDepartureEndDate(departure)
 }
 
-const handleDepartureDurationChange = (departure) => {
-  if (!departure) return
-
-  departure.durationDays = Math.max(1, Number(departure.durationDays || 1) || 1)
-  departure.durationNights = Math.max(0, Number(departure.durationNights || 0) || 0)
-  departure.durationPreset = resolveDepartureDurationPreset(departure.durationDays, departure.durationNights)
-  syncTourDepartureEndDate(departure)
-}
-
 const addTourDeparture = () => {
   const nextDeparture = createTourDeparture({ departureId: `DEP-${tourDepartures.value.length + 1}` })
   handleDeparturePresetChange(nextDeparture)
@@ -986,7 +987,8 @@ const syncModelFieldsForCategory = (categoryId, sourceService = null) => {
       value: String(roomType.value || roomType.id || `room-type-${index + 1}`),
       label: String(roomType.label || roomType.name || `Loại phòng ${index + 1}`),
       priceMultiplier: Number(roomType.priceMultiplier || 1) || 1,
-      childSurcharge: Number(roomType.childSurcharge || 320000) || 320000
+      childSurcharge: Number(roomType.childSurcharge || 320000) || 320000,
+      availableSlots: Math.max(0, Number(roomType.availableSlots || 0) || 0)
     }))
   }
 
@@ -1034,6 +1036,7 @@ const syncModelFieldsForCategory = (categoryId, sourceService = null) => {
       salePrice: Number(ticketPackage.salePrice || 0) || 0,
       price: Number(ticketPackage.price || 0) || 0,
       childSurcharge: Number(ticketPackage.childSurcharge || 0) || 0,
+      availableSlots: Math.max(0, Number(ticketPackage.availableSlots || 0) || 0),
       featuresText: Array.isArray(ticketPackage.features) ? ticketPackage.features.join(', ') : String(ticketPackage.featuresText || '')
     }))
   }
@@ -1051,6 +1054,13 @@ const resetServiceForm = () => {
 const startCreateService = () => {
   resetServiceForm()
   syncModelFieldsForCategory(serviceForm.categoryId)
+  if (!isCreatePage.value) {
+    router.push({ name: 'admin-services-create' })
+  }
+}
+
+const goToServicesList = () => {
+  router.push({ name: 'admin-services' })
 }
 
 const startEditService = (service) => {
@@ -1073,10 +1083,6 @@ const selectServiceCategory = (categoryId) => {
   syncModelFieldsForCategory(serviceForm.categoryId)
   formError.value = ''
   wizardStep.value = 2
-}
-
-const handleCategoryChange = () => {
-  syncModelFieldsForCategory(serviceForm.categoryId)
 }
 
 const readFileAsDataUrl = (file) =>
@@ -1105,7 +1111,8 @@ const normalizeRoomTypesForSave = () => roomTypes.value.map((roomType, index) =>
   value: String(roomType.value || `room-type-${index + 1}`).trim() || `room-type-${index + 1}`,
   label: String(roomType.label || `Loại phòng ${index + 1}`).trim() || `Loại phòng ${index + 1}`,
   priceMultiplier: Math.max(0.8, Number(roomType.priceMultiplier || 1) || 1),
-  childSurcharge: Math.max(0, Number(roomType.childSurcharge || 0) || 0)
+  childSurcharge: Math.max(0, Number(roomType.childSurcharge || 0) || 0),
+  availableSlots: Math.max(0, Number(roomType.availableSlots || 0) || 0)
 }))
 
 const normalizeTourDeparturesForSave = () => tourDepartures.value
@@ -1126,6 +1133,7 @@ const normalizeTicketPackagesForSave = () => ticketPackages.value.map((ticketPac
   salePrice: Math.max(0, Number(ticketPackage.salePrice || 0) || 0),
   price: Math.max(0, Number(ticketPackage.price || 0) || 0),
   childSurcharge: Math.max(0, Number(ticketPackage.childSurcharge || 0) || 0),
+  availableSlots: Math.max(0, Number(ticketPackage.availableSlots || 0) || 0),
   features: String(ticketPackage.featuresText || '')
     .split(',')
     .map((item) => item.trim())
@@ -1161,7 +1169,7 @@ const normalizeTicketChildPolicyForSave = () => ({
   surcharge: Math.max(0, Number(ticketChildPolicy.value.surcharge || 0) || 0)
 })
 
-const handleSubmitService = () => {
+const handleSubmitService = async () => {
   formError.value = ''
   if (wizardStep.value !== 4) return
   if (!validateCommonFields()) return
@@ -1171,6 +1179,9 @@ const handleSubmitService = () => {
 
   const basePayload = {
     ...serviceForm,
+    availableSlots: Number.isFinite(derivedAvailableSlots.value)
+      ? Math.max(0, Number(derivedAvailableSlots.value) || 0)
+      : 0,
     image: resolvedImage,
     gallery: serviceForm.gallery.length ? serviceForm.gallery : [resolvedImage],
     amenities: serviceForm.amenities.length ? serviceForm.amenities : ['Hỗ trợ khách Việt', 'Xác nhận nhanh'],
@@ -1180,16 +1191,17 @@ const handleSubmitService = () => {
 
   try {
     if (serviceForm.categoryId === 'hotel') {
-      store.saveService({
+      await store.saveService({
         ...basePayload,
         roomTypes: normalizeRoomTypesForSave()
       })
       resetServiceForm()
+      if (isCreatePage.value) goToServicesList()
       return
     }
 
     if (serviceForm.categoryId === 'tour') {
-      store.saveService({
+      await store.saveService({
         ...basePayload,
         scheduleType: tourScheduleType.value,
         flexibleWindow: {
@@ -1201,12 +1213,13 @@ const handleSubmitService = () => {
         departures: normalizeTourDeparturesForSave()
       })
       resetServiceForm()
+      if (isCreatePage.value) goToServicesList()
       return
     }
 
     if (serviceForm.categoryId === 'ticket') {
       const normalizedTicketChildPolicy = normalizeTicketChildPolicyForSave()
-      store.saveService({
+      await store.saveService({
         ...basePayload,
         ticketServiceType: ticketServiceType.value || 'Vé tham quan',
         ticketChildPolicy: normalizedTicketChildPolicy,
@@ -1214,13 +1227,15 @@ const handleSubmitService = () => {
         childSurcharge: Number(normalizedTicketChildPolicy.surcharge || 0)
       })
       resetServiceForm()
+      if (isCreatePage.value) goToServicesList()
       return
     }
 
-    store.saveService(basePayload)
+    await store.saveService(basePayload)
     resetServiceForm()
+    if (isCreatePage.value) goToServicesList()
   } catch (error) {
-    formError.value = error.message
+    formError.value = error?.message || 'Không thể lưu dịch vụ vào cơ sở dữ liệu.'
   }
 }
 

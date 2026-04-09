@@ -51,6 +51,37 @@
         </div>
 
         <div class="field-group">
+          <label>Phương thức thanh toán</label>
+          <div class="payment-methods">
+            <label class="payment-option">
+              <input v-model="form.paymentMethod" type="radio" value="cash" />
+              <span>Thanh toán khi xác nhận booking</span>
+            </label>
+            <label class="payment-option">
+              <input v-model="form.paymentMethod" type="radio" value="momo-bank" />
+              <span>Chuyển khoản MoMo</span>
+            </label>
+          </div>
+
+          <div v-if="form.paymentMethod === 'momo-bank'" class="bank-transfer-box">
+            <p class="muted" style="margin: 0 0 8px;">Quét QR hoặc chuyển khoản theo thông tin bên dưới:</p>
+            <p><strong>Ngân hàng/Ví:</strong> MoMo</p>
+            <p><strong>Số tài khoản:</strong> {{ momoAccountNumber }}</p>
+            <p><strong>Chủ tài khoản:</strong> {{ momoAccountHolder }}</p>
+            <p><strong>Nội dung:</strong> {{ momoTransferContent }}</p>
+            <div class="payment-copy-actions">
+              <button class="secondary-button" type="button" @click="copyPaymentField(momoAccountNumber)">Copy STK</button>
+              <button class="secondary-button" type="button" @click="copyPaymentField(momoTransferContent)">Copy nội dung CK</button>
+            </div>
+
+            <div class="momo-qr-box">
+              <img :src="momoQrImage" alt="QR MoMo thanh toán" />
+            </div>
+            <small v-if="paymentFeedback" class="success-text">{{ paymentFeedback }}</small>
+          </div>
+        </div>
+
+        <div class="field-group">
           <label>Mã khuyến mãi</label>
           <p class="muted" style="font-size: 0.9rem; margin-bottom: 14px; margin-top: -8px;">Chọn hoặc nhập mã khuyến mãi để tiết kiệm</p>
           
@@ -128,11 +159,12 @@
 <script setup>
 import { computed, reactive, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useBookingStore } from '@/stores/useBookingStore'
-import { useCartStore } from '@/stores/useCartStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
+import { useBookingStore } from '@/stores/booking/useBookingStore'
+import { useCartStore } from '@/stores/cart/useCartStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
+import { resolveItemMaxSlots } from '@/utils/travelCart'
 import { formatCurrencyVND, formatDateRangeVN } from '@/utils/formatters'
 
 const route = useRoute()
@@ -158,9 +190,9 @@ const directCheckoutItem = computed(() => {
   const serviceId = service.id
 
   const bookingType = service.categoryId
-  const quantity = bookingType === 'ticket'
-    ? Math.max(1, Math.min(Number(route.query.totalGuests || route.query.quantity || route.query.ticketQuantity) || 1, service.availableSlots || 1))
-    : Math.max(1, Math.min(Number(route.query.totalGuests || route.query.travelers || route.query.guests || route.query.quantity) || 1, service.availableSlots || 1))
+  const requestedQuantity = bookingType === 'ticket'
+    ? Math.max(1, Number(route.query.totalGuests || route.query.quantity || route.query.ticketQuantity) || 1)
+    : Math.max(1, Number(route.query.totalGuests || route.query.travelers || route.query.guests || route.query.quantity) || 1)
 
   const startDate = bookingType === 'hotel'
     ? String(route.query.checkInDate || route.query.startDate || '')
@@ -177,8 +209,8 @@ const directCheckoutItem = computed(() => {
     ? {
       checkInDate: startDate,
       checkOutDate: endDate,
-      guests: quantity,
-      adults: Math.max(1, Number(route.query.adults || Math.max(1, quantity - Number(route.query.children || 0))) || 1),
+      guests: requestedQuantity,
+      adults: Math.max(1, Number(route.query.adults || Math.max(1, requestedQuantity - Number(route.query.children || 0))) || 1),
       children: Math.max(0, Number(route.query.children || 0) || 0),
       childrenAges: String(route.query.childrenAges || '')
         .split(',')
@@ -201,15 +233,15 @@ const directCheckoutItem = computed(() => {
     : bookingType === 'ticket'
       ? {
         useDate: startDate,
-        adults: Math.max(1, Number(route.query.adults || route.query.ticketQuantity || quantity) || 1),
+        adults: Math.max(1, Number(route.query.adults || route.query.ticketQuantity || requestedQuantity) || 1),
         children: Math.max(0, Number(route.query.children || 0) || 0),
         childrenAges: String(route.query.childrenAges || '')
           .split(',')
           .map((item) => item.trim())
           .filter(Boolean)
           .map((item) => Math.min(17, Math.max(1, Number(item) || 8))),
-        totalGuests: Math.max(1, Number(route.query.totalGuests || quantity) || 1),
-        ticketQuantity: Math.max(1, Number(route.query.ticketQuantity || route.query.chargeableAdults || quantity) || 1),
+        totalGuests: Math.max(1, Number(route.query.totalGuests || requestedQuantity) || 1),
+        ticketQuantity: Math.max(1, Number(route.query.ticketQuantity || route.query.chargeableAdults || requestedQuantity) || 1),
         freeChildren: Math.max(0, Number(route.query.freeChildren || 0) || 0),
         childSurchargeCount: Math.max(0, Number(route.query.childSurchargeCount || 0) || 0),
         childSurchargeUnit: Math.max(0, Number(route.query.childSurchargeUnit || 0) || 0),
@@ -224,15 +256,15 @@ const directCheckoutItem = computed(() => {
           departureId: String(route.query.departureId || ''),
           endDate: String(route.query.endDate || ''),
           scheduleMode: String(route.query.scheduleMode || 'fixed'),
-          adults: Math.max(1, Number(route.query.adults || quantity) || 1),
+          adults: Math.max(1, Number(route.query.adults || requestedQuantity) || 1),
           children: Math.max(0, Number(route.query.children || 0) || 0),
           childrenAges: String(route.query.childrenAges || '')
             .split(',')
             .map((item) => item.trim())
             .filter(Boolean)
             .map((item) => Math.min(17, Math.max(1, Number(item) || 8))),
-          totalGuests: Math.max(1, Number(route.query.totalGuests || quantity) || 1),
-          travelers: Math.max(1, Number(route.query.totalGuests || route.query.travelers || quantity) || 1),
+          totalGuests: Math.max(1, Number(route.query.totalGuests || requestedQuantity) || 1),
+          travelers: Math.max(1, Number(route.query.totalGuests || route.query.travelers || requestedQuantity) || 1),
           freeChildren: Math.max(0, Number(route.query.freeChildren || 0) || 0),
           childDiscountRate: Math.max(0, Math.min(1, Number(route.query.childDiscountRate || 0.75) || 0.75)),
           childChargedAsAdultCount: Math.max(0, Number(route.query.childChargedAsAdultCount || 0) || 0),
@@ -244,10 +276,29 @@ const directCheckoutItem = computed(() => {
           applyDate: startDate,
           packageId: String(route.query.packageId || ''),
           departureId: String(route.query.departureId || ''),
-          travelers: quantity,
+          travelers: requestedQuantity,
           durationLabel: String(route.query.durationLabel || ''),
           unitPrice: Number(route.query.unitPrice || service.salePrice || 0)
         }
+
+  const effectiveMaxSlots = resolveItemMaxSlots(service, {
+    serviceId,
+    bookingType,
+    bookingMeta
+  })
+  const quantity = Math.max(1, Math.min(requestedQuantity, Math.max(1, Number(effectiveMaxSlots || 1))))
+
+  if (bookingType === 'hotel') {
+    bookingMeta.guests = quantity
+  }
+  if (bookingType === 'ticket') {
+    bookingMeta.totalGuests = quantity
+    bookingMeta.ticketQuantity = Math.min(bookingMeta.ticketQuantity || quantity, quantity)
+  }
+  if (bookingType === 'tour') {
+    bookingMeta.totalGuests = quantity
+    bookingMeta.travelers = quantity
+  }
 
   const durationSuffix = bookingMeta.durationLabel ? ` · ${bookingMeta.durationLabel}` : ''
 
@@ -290,6 +341,14 @@ const total = computed(() => Math.max(0, subtotal.value - discount.value + servi
 const getSlotValidationError = (item) => {
   const bookingType = item.bookingType || item.service?.categoryId || ''
   const bookingMeta = item.bookingMeta || {}
+
+  if (bookingType !== 'tour') {
+    const maxSlots = resolveItemMaxSlots(item.service, item)
+    if (Number(maxSlots || 0) < item.quantity) {
+      return `Dịch vụ chỉ còn ${Math.max(0, Number(maxSlots || 0))} chỗ, không đủ cho ${item.quantity} khách.`
+    }
+    return ''
+  }
 
   if (bookingType === 'tour') {
     const scheduleMode = String(bookingMeta.scheduleMode || 'fixed')
@@ -341,7 +400,8 @@ const form = reactive({
   phone: '',
   city: '',
   address: '',
-  note: ''
+  note: '',
+  paymentMethod: 'cash'
 })
 
 const errors = reactive({
@@ -358,6 +418,28 @@ const appliedPromotion = computed(() => cartStore.appliedPromotion)
 const customVoucherCode = ref('')
 const voucherFeedback = ref('')
 const voucherSuccess = ref(false)
+const paymentFeedback = ref('')
+
+const momoAccountNumber = '0817367121'
+const momoAccountHolder = 'Nguyen Quoc Khanh'
+
+const momoTransferContent = computed(() => {
+  const customerEmail = String(form.email || 'guest').trim().toLowerCase() || 'guest'
+  return `Thanh toan VTravel ${customerEmail} ${Math.round(total.value)}`
+})
+
+const momoQrImage = computed(() => {
+  const qrPayload = [
+    'VTRAVEL',
+    'MOMO',
+    momoAccountNumber,
+    momoAccountHolder,
+    String(Math.round(total.value)),
+    momoTransferContent.value
+  ].join('|')
+
+  return `https://quickchart.io/qr?size=240&text=${encodeURIComponent(qrPayload)}`
+})
 
 const validate = () => {
   if (isDirectCheckout.value && !directCheckoutItem.value) {
@@ -396,7 +478,11 @@ const handleCheckout = () => {
   }
 
   const booking = bookingStore.createBooking({
-    customer: { ...form },
+    customer: {
+      ...form,
+      paymentMethod: form.paymentMethod,
+      paymentMethodLabel: form.paymentMethod === 'momo-bank' ? 'Chuyển khoản MoMo' : 'Thanh toán khi xác nhận booking'
+    },
     items: checkoutItems.value,
     subtotal: subtotal.value,
     discount: discount.value,
@@ -413,6 +499,18 @@ const handleCheckout = () => {
   }
 
   router.push({ name: 'booking-success', query: { code: booking.code } })
+}
+
+const copyPaymentField = async (value) => {
+  try {
+    await navigator.clipboard.writeText(String(value || ''))
+    paymentFeedback.value = 'Đã sao chép thông tin thanh toán.'
+    window.setTimeout(() => {
+      paymentFeedback.value = ''
+    }, 2000)
+  } catch (error) {
+    paymentFeedback.value = 'Không thể sao chép tự động, vui lòng sao chép thủ công.'
+  }
 }
 
 const loadAvailablePromotions = async () => {
@@ -488,3 +586,72 @@ onMounted(() => {
   loadAvailablePromotions()
 })
 </script>
+
+<style scoped>
+.payment-methods {
+  display: grid;
+  gap: 10px;
+}
+
+.payment-option {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(24, 45, 75, 0.14);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.payment-option input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  accent-color: #0a66c2;
+  border: none;
+  box-shadow: none;
+}
+
+.payment-option span {
+  display: inline-block;
+  line-height: 1.35;
+}
+
+.bank-transfer-box {
+  margin-top: 12px;
+  border: 1px solid rgba(24, 45, 75, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.bank-transfer-box p {
+  margin: 0 0 6px;
+}
+
+.payment-copy-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.momo-qr-box {
+  margin-top: 10px;
+}
+
+.momo-qr-box img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid rgba(24, 45, 75, 0.15);
+  background: #fff;
+  padding: 8px;
+}
+</style>

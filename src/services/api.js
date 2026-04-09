@@ -343,6 +343,55 @@ export const bookingsApi = {
   }
 }
 
+// booking details
+export const bookingDetailsApi = {
+  /**
+   * Lay danh sach chi tiet hoa don tu API.
+   * @param {Object} params - Query params dung de loc phia server.
+   * @returns {Promise<Array>} Danh sach booking detail.
+   */
+  getAll(params = {}) {
+    return apiClient.get('/bookingDetails', { params }).then((res) => res.data)
+  },
+
+  /**
+   * Lay chi tiet hoa don theo id.
+   * @param {string|number} id - Id booking detail.
+   * @returns {Promise<Object|null>} Chi tiet booking detail.
+   */
+  getById(id) {
+    return apiClient.get(`/bookingDetails/${id}`).then((res) => res.data)
+  },
+
+  /**
+   * Tao moi mot booking detail.
+   * @param {Object} payload - Du lieu chi tiet hoa don.
+   * @returns {Promise<Object>} Booking detail sau khi tao.
+   */
+  create(payload) {
+    return apiClient.post('/bookingDetails', payload).then((res) => res.data)
+  },
+
+  /**
+   * Cap nhat booking detail.
+   * @param {string|number} id - Id booking detail.
+   * @param {Object} payload - Du lieu cap nhat.
+   * @returns {Promise<Object>} Booking detail sau khi cap nhat.
+   */
+  update(id, payload) {
+    return apiClient.put(`/bookingDetails/${id}`, payload).then((res) => res.data)
+  },
+
+  /**
+   * Xoa booking detail.
+   * @param {string|number} id - Id booking detail.
+   * @returns {Promise<Object>} Phan hoi API sau khi xoa.
+   */
+  remove(id) {
+    return apiClient.delete(`/bookingDetails/${id}`).then((res) => res.data)
+  }
+}
+
 // comments
 export const commentsApi = {
   /**

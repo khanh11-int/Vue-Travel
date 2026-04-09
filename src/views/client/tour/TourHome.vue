@@ -122,8 +122,8 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 
 const router = useRouter()
 const route = useRoute()
@@ -164,6 +164,7 @@ const currentCategoryId = computed(() => String(currentCategory.value?.id || rou
 const allTours = computed(() => {
   const source = Array.isArray(serviceStore.services) ? serviceStore.services : []
   return source
+    .filter((service) => Number(service?.availableSlots || 0) > 0)
     .filter((service) => !currentCategoryId.value || service.categoryId === currentCategoryId.value)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })

@@ -66,20 +66,33 @@
           </tbody>
         </table>
       </div>
+
+      <div v-if="deleteTargetCategoryId" class="admin-confirm-overlay" @click.self="closeDeleteCategoryModal">
+        <div class="admin-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-category-title">
+          <p class="eyebrow">Xác nhận thao tác</p>
+          <h3 id="delete-category-title">Bạn có chắc muốn xóa danh mục này?</h3>
+          <p class="muted">Danh mục đã xóa sẽ không còn hiển thị trong bộ lọc và biểu mẫu dịch vụ.</p>
+          <div class="admin-confirm-actions">
+            <button class="secondary-button" type="button" @click="closeDeleteCategoryModal">Hủy</button>
+            <button class="primary-button" type="button" @click="confirmDeleteCategory">Đồng ý xóa</button>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 
 const adminStore = useAdminStore()
 const serviceStore = useServiceStore()
 const submitting = ref(false)
 const formError = ref('')
 const isEditing = ref(false)
+const deleteTargetCategoryId = ref('')
 
 const defaultForm = () => ({
   id: '',
@@ -153,10 +166,21 @@ const handleSubmitCategory = async () => {
   }
 }
 
-const handleDeleteCategory = async (categoryId) => {
+const handleDeleteCategory = (categoryId) => {
+  deleteTargetCategoryId.value = String(categoryId || '')
+}
+
+const closeDeleteCategoryModal = () => {
+  deleteTargetCategoryId.value = ''
+}
+
+const confirmDeleteCategory = async () => {
+  if (!deleteTargetCategoryId.value) return
+
   formError.value = ''
   try {
-    await adminStore.deleteCategory(categoryId)
+    await adminStore.deleteCategory(deleteTargetCategoryId.value)
+    closeDeleteCategoryModal()
   } catch (error) {
     formError.value = error?.message || 'Không thể xóa danh mục.'
   }

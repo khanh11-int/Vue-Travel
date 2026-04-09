@@ -147,11 +147,11 @@ import { useRoute } from 'vue-router'
 import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
 import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
 import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
-import { useHotelGuestRoomStore } from '@/stores/useHotelGuestRoomStore'
-import { useCategorySearchSchemaStore } from '@/stores/useCategorySearchSchemaStore'
+import { useHotelGuestRoomStore } from '@/stores/hotelGuestRoom/useHotelGuestRoomStore'
+import { useCategorySearchSchemaStore } from '@/stores/categorySearchSchema/useCategorySearchSchemaStore'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 
 const DEFAULT_GUEST_QUERY_KEYS = {
   guests: 'guests',
@@ -424,7 +424,10 @@ const searchTarget = computed(() => {
   return `${basePath}?${query.toString()}`
 })
 
-const featuredServices = computed(() => (Array.isArray(serviceStore.featuredServices) ? serviceStore.featuredServices : []))
+const featuredServices = computed(() => {
+  const source = Array.isArray(serviceStore.featuredServices) ? serviceStore.featuredServices : []
+  return source.filter((service) => Number(service?.availableSlots || 0) > 0)
+})
 const activePromotions = computed(() => (Array.isArray(serviceStore.activePromotions) ? serviceStore.activePromotions : []).slice(0, 3))
 const featuredDestinations = computed(() => (Array.isArray(serviceStore.destinations) ? serviceStore.destinations : []).slice(0, 6))
 

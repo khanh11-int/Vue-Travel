@@ -10,7 +10,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 
 const serviceStore = useServiceStore()
 const isBootstrapping = ref(true)

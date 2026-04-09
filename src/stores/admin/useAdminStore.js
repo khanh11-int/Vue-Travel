@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { bookingsApi, categoriesApi, commentsApi, promotionsApi, servicesApi, usersApi } from '@/services/api'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 import { fireAndForget } from '@/utils/travelBooking'
+import { getStoredAuthUsers, saveStoredAuthUsers } from '@/utils/travelStorage'
 
 /**
  * Chuyển giá trị bất kỳ về số hữu hạn, fallback khi dữ liệu nhập không hợp lệ.
@@ -24,7 +25,35 @@ const positiveOrFallback = (value, fallback = 0) => {
 
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
+const normalizeUserRecord = (user = {}, fallbackRole = 'customer') => ({
+  ...user,
+  id: user?.id ?? String(Date.now()),
+  email: String(user?.email || '').trim().toLowerCase(),
+  fullName: String(user?.fullName || '').trim(),
+  phone: String(user?.phone || '').trim(),
+  address: String(user?.address || '').trim(),
+  role: user?.role || fallbackRole,
+  password: String(user?.password || '')
+})
+
+const mergeUsers = (...collections) => {
+  const mergedByKey = new Map()
+
+  collections.flat().forEach((user) => {
+    if (!user) return
+    const normalized = normalizeUserRecord(user)
+    const dedupeKey = String(normalized.id || normalized.email || '')
+    if (!dedupeKey) return
+    mergedByKey.set(dedupeKey, normalized)
+  })
+
+  return Array.from(mergedByKey.values())
+}
+
 const normalizeText = (value, fallback = '') => String(value ?? fallback).trim()
+const FLEXIBLE_TOUR_SENTINEL_SLOTS = Number.MAX_SAFE_INTEGER
+const sumSlots = (items = [], key = 'availableSlots') =>
+  ensureArray(items).reduce((sum, item) => sum + Math.max(0, Number(item?.[key] || 0) || 0), 0)
 
 const buildDefaultHotelRoomTypes = (serviceInput = {}) => {
   const basePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
@@ -37,19 +66,22 @@ const buildDefaultHotelRoomTypes = (serviceInput = {}) => {
       value: 'standard',
       label: 'Phòng tiêu chuẩn',
       priceMultiplier: 1,
-      childSurcharge: standardSurcharge
+      childSurcharge: standardSurcharge,
+      availableSlots: 10
     },
     {
       value: 'deluxe',
       label: 'Phòng deluxe',
       priceMultiplier: 1.15,
-      childSurcharge: deluxeSurcharge
+      childSurcharge: deluxeSurcharge,
+      availableSlots: 10
     },
     {
       value: 'family',
       label: 'Phòng gia đình',
       priceMultiplier: 1.3,
-      childSurcharge: familySurcharge
+      childSurcharge: familySurcharge,
+      availableSlots: 10
     }
   ]
 }
@@ -104,6 +136,7 @@ const buildDefaultTicketPackages = (serviceInput = {}) => {
       salePrice: Math.round(salePrice * 0.9),
       price: Math.round(price * 0.9),
       childSurcharge: Math.round(childSurcharge * 0.9),
+      availableSlots: 25,
       features: ['Vé vào cổng', 'Không gồm khu trò chơi mở rộng']
     },
     {
@@ -112,6 +145,7 @@ const buildDefaultTicketPackages = (serviceInput = {}) => {
       salePrice,
       price,
       childSurcharge,
+      availableSlots: 25,
       features: ['Vé vào cổng', 'Bao gồm khu trò chơi chính']
     },
     {
@@ -120,6 +154,7 @@ const buildDefaultTicketPackages = (serviceInput = {}) => {
       salePrice: Math.round(salePrice * 1.1),
       price: Math.round(price * 1.1),
       childSurcharge: Math.round(childSurcharge * 1.15),
+      availableSlots: 25,
       features: ['Vé vào cổng', 'Khu trải nghiệm mở rộng', 'Ưu tiên check-in']
     }
   ]
@@ -132,7 +167,8 @@ const normalizeRoomTypes = (value, serviceInput = {}) => {
     value: normalizeText(roomType?.value || roomType?.id || `room-type-${index + 1}`, `room-type-${index + 1}`),
     label: normalizeText(roomType?.label || roomType?.name || `Loại phòng ${index + 1}`, `Loại phòng ${index + 1}`),
     priceMultiplier: Math.max(0.8, Number(roomType?.priceMultiplier || 1) || 1),
-    childSurcharge: Math.max(0, toPositiveNumber(roomType?.childSurcharge, 0))
+    childSurcharge: Math.max(0, toPositiveNumber(roomType?.childSurcharge, 0)),
+    availableSlots: Math.max(0, toPositiveNumber(roomType?.availableSlots, 0))
   }))
 
   if (!normalized.length) return fallback
@@ -199,6 +235,7 @@ const normalizeTicketPackages = (value, serviceInput = {}) => {
       salePrice: positiveOrFallback(pkg?.salePrice, 0),
       price: positiveOrFallback(pkg?.price, 0),
       childSurcharge: positiveOrFallback(pkg?.childSurcharge, 0),
+      availableSlots: Math.max(0, toPositiveNumber(pkg?.availableSlots, 0)),
       features: ensureArray(pkg?.features).filter(Boolean)
     }))
     .filter((pkg) => pkg.salePrice > 0 || pkg.price > 0)
@@ -210,6 +247,7 @@ const normalizeTicketPackages = (value, serviceInput = {}) => {
     salePrice: pkg.salePrice > 0 ? pkg.salePrice : fallback[index % fallback.length].salePrice,
     price: pkg.price > 0 ? pkg.price : fallback[index % fallback.length].price,
     childSurcharge: pkg.childSurcharge > 0 ? pkg.childSurcharge : fallback[index % fallback.length].childSurcharge,
+    availableSlots: Math.max(0, toPositiveNumber(pkg.availableSlots, fallback[index % fallback.length].availableSlots || 0)),
     features: pkg.features.length ? pkg.features : fallback[index % fallback.length].features
   }))
 }
@@ -273,6 +311,7 @@ const normalizeServiceModelPayload = (serviceInput = {}) => {
   if (categoryId === 'hotel') {
     const roomTypes = parseJsonLike(serviceInput.roomTypes, null)
     nextService.roomTypes = normalizeRoomTypes(roomTypes, nextService)
+    nextService.availableSlots = sumSlots(nextService.roomTypes, 'availableSlots')
   }
 
   if (categoryId === 'tour') {
@@ -290,6 +329,10 @@ const normalizeServiceModelPayload = (serviceInput = {}) => {
     nextService.tourChildPolicy = normalizeTourChildPolicy(childPolicy)
     nextService.pricingTiers = normalizeTourPricingTiers(pricingTiers, nextService)
     nextService.departures = normalizeDepartures(departures)
+    const fixedDepartureSlots = sumSlots(nextService.departures, 'remainingSlots')
+    nextService.availableSlots = nextService.scheduleType === 'fixed'
+      ? fixedDepartureSlots
+      : FLEXIBLE_TOUR_SENTINEL_SLOTS
   }
 
   if (categoryId === 'ticket') {
@@ -300,6 +343,7 @@ const normalizeServiceModelPayload = (serviceInput = {}) => {
     nextService.ticketChildPolicy = normalizeTicketChildPolicy(ticketChildPolicy, nextService)
     nextService.childSurcharge = nextService.ticketChildPolicy.surcharge
     nextService.ticketPackages = normalizeTicketPackages(ticketPackages, nextService)
+    nextService.availableSlots = sumSlots(nextService.ticketPackages, 'availableSlots')
   }
 
   return nextService
@@ -332,8 +376,14 @@ export const useAdminStore = defineStore('travelAdmin', {
      * @returns {Promise<Array<Object>>} Danh sách user.
      */
     async fetchUsers() {
-      const data = await usersApi.getAll()
-      this.users = Array.isArray(data) ? data : []
+      const [apiUsers, storedUsers] = await Promise.all([
+        usersApi.getAll(),
+        Promise.resolve(getStoredAuthUsers([]))
+      ])
+
+      const nextUsers = mergeUsers(apiUsers, storedUsers)
+      this.users = nextUsers
+      saveStoredAuthUsers(nextUsers)
       return this.users
     },
 
@@ -343,16 +393,14 @@ export const useAdminStore = defineStore('travelAdmin', {
      * @returns {Promise<Object>} User sau khi lưu.
      */
     async saveUser(userInput) {
-      const payload = {
-        ...userInput,
-        email: String(userInput.email || '').trim().toLowerCase(),
-        fullName: String(userInput.fullName || '').trim(),
-        role: userInput.role || 'customer'
-      }
+      const payload = normalizeUserRecord(userInput)
+      const storedUsers = getStoredAuthUsers([])
+      const currentUsers = Array.isArray(this.users) ? this.users : []
 
       if (payload.id) {
         const updated = await usersApi.update(payload.id, payload)
         this.users = this.users.map((user) => (String(user.id) === String(payload.id) ? updated : user))
+        saveStoredAuthUsers(mergeUsers(storedUsers, currentUsers, [updated]))
         return updated
       }
 
@@ -361,6 +409,7 @@ export const useAdminStore = defineStore('travelAdmin', {
         id: String(Date.now())
       })
       this.users = [created, ...this.users]
+      saveStoredAuthUsers(mergeUsers(storedUsers, currentUsers, [created]))
       return created
     },
 
@@ -372,6 +421,7 @@ export const useAdminStore = defineStore('travelAdmin', {
     async deleteUser(userId) {
       await usersApi.remove(userId)
       this.users = this.users.filter((user) => String(user.id) !== String(userId))
+      saveStoredAuthUsers(this.users)
     },
 
     /**
@@ -509,25 +559,27 @@ export const useAdminStore = defineStore('travelAdmin', {
      * @param {Object} serviceInput - Dữ liệu dịch vụ từ form admin.
      * @returns {void}
      */
-    saveService(serviceInput) {
+    async saveService(serviceInput) {
       const serviceStore = useServiceStore()
       const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
       const payload = normalizeServiceModelPayload(serviceInput)
 
       if (payload.id) {
+        const updated = await servicesApi.update(payload.id, payload)
         const nextServices = services.map((service) =>
-          String(service.id) === String(payload.id) ? { ...service, ...payload } : service
+          String(service.id) === String(payload.id) ? { ...service, ...updated } : service
         )
         serviceStore.setServices(nextServices)
-        fireAndForget(() => servicesApi.update(payload.id, payload))
+        return updated
       } else {
-        const newService = {
+        const newServicePayload = {
           ...payload,
           id: String(Date.now()),
           createdAt: new Date().toISOString()
         }
-        serviceStore.setServices([newService, ...services])
-        fireAndForget(() => servicesApi.create(newService))
+        const created = await servicesApi.create(newServicePayload)
+        serviceStore.setServices([created, ...services])
+        return created
       }
     },
 

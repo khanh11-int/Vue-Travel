@@ -22,9 +22,8 @@
           <p class="eyebrow">Bảng điều khiển</p>
           <h1>Quản trị vận hành du lịch nội địa</h1>
         </div>
-        <div class="table-actions">
+        <div class="admin-topbar-actions">
           <router-link class="ghost-button" to="/">Xem trang khách</router-link>
-          <button class="ghost-button" type="button">{{ currentUserLabel }}</button>
         </div>
       </header>
       <router-view />
@@ -33,10 +32,4 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useAuthStore } from '@/stores/useAuthStore'
-
-const authStore = useAuthStore()
-
-const currentUserLabel = computed(() => authStore.currentUser?.fullName || 'Admin Vtravel')
 </script>

@@ -65,8 +65,8 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
 const store = useAdminStore()

@@ -5,6 +5,7 @@ import HomeView from '@/views/client/HomeView.vue'
 import HotelHome from '@/views/client/hotel/HotelHome.vue'
 import HotelSearchView from '@/views/client/hotel/HotelSearchView.vue'
 import HotelDetailView from '@/views/client/hotel/HotelDetailView.vue'
+import HotelBookingFormView from '@/views/client/hotel/HotelBookingFormView.vue'
 import TicketHome from '@/views/client/ticket/TicketHome.vue'
 import TicketDetailView from '@/views/client/ticket/TicketDetailView.vue'
 import TourHome from '@/views/client/tour/TourHome.vue'
@@ -15,6 +16,7 @@ import CartView from '@/views/client/CartView.vue'
 import CheckoutView from '@/views/client/CheckoutView.vue'
 import BookingSuccessView from '@/views/client/BookingSuccessView.vue'
 import BookingHistoryView from '@/views/client/BookingHistoryView.vue'
+import BookingDetailView from '@/views/client/BookingDetailView.vue'
 import LoginView from '@/views/client/LoginView.vue'
 import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
 import AdminServiceManagementView from '@/views/admin/AdminServiceManagementView.vue'
@@ -23,7 +25,7 @@ import AdminCommentManagementView from '@/views/admin/AdminCommentManagementView
 import AdminPromotionManagementView from '@/views/admin/AdminPromotionManagementView.vue'
 import AdminCategoryManagementView from '@/views/admin/AdminCategoryManagementView.vue'
 import AdminCustomerManagementView from '@/views/admin/AdminCustomerManagementView.vue'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
 
 const routes = [
   {
@@ -60,6 +62,13 @@ const routes = [
         component: HotelDetailView,
         props: true,
         meta: { title: 'Chi tiết khách sạn' }
+      },
+      {
+        path: 'khach-san/:slug/booking',
+        name: 'hotel-booking',
+        component: HotelBookingFormView,
+        props: true,
+        meta: { title: 'Đặt phòng' }
       },
       {
         path: 've-tham-quan',
@@ -118,6 +127,13 @@ const routes = [
         meta: { title: 'Lịch sử đặt chỗ' }
       },
       {
+        path: 'lich-su-dat-cho/:id',
+        name: 'booking-detail',
+        component: BookingDetailView,
+        props: true,
+        meta: { title: 'Chi tiết đơn đặt chỗ' }
+      },
+      {
         path: 'dang-nhap',
         name: 'login',
         component: LoginView,
@@ -141,6 +157,12 @@ const routes = [
         name: 'admin-services',
         component: AdminServiceManagementView,
         meta: { requiresAdmin: true, title: 'Quản lý dịch vụ' }
+      },
+      {
+        path: 'services/create',
+        name: 'admin-services-create',
+        component: AdminServiceManagementView,
+        meta: { requiresAdmin: true, title: 'Thêm dịch vụ' }
       },
       {
         path: 'bookings',

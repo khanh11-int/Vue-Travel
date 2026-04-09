@@ -22,7 +22,7 @@
         <label>Gói dịch vụ tại địa điểm</label>
         <select v-model="bookingForm.packageId" class="ticket-package-select">
           <option v-for="pkg in ticketPackages" :key="pkg.id" :value="pkg.id">
-            {{ pkg.name }} - {{ formatCurrencyVND(pkg.salePrice) }}
+            {{ pkg.name }} - {{ formatCurrencyVND(pkg.salePrice) }} · Còn {{ pkg.availableSlots || 0 }} chỗ
           </option>
         </select>
 
@@ -104,10 +104,10 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
 import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useCartStore } from '@/stores/useCartStore'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useCartStore } from '@/stores/cart/useCartStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
 
@@ -209,6 +209,7 @@ const ticketPackages = computed(() => {
       salePrice: Math.max(0, Number(pkg.salePrice || pkg.price || service.value?.salePrice || 0)),
       price: Math.max(0, Number(pkg.price || pkg.salePrice || service.value?.price || 0)),
       childSurcharge: Number(pkg.childSurcharge || service.value?.childSurcharge || service.value?.ticketChildPolicy?.surcharge || 120000),
+      availableSlots: Math.max(0, Number(pkg.availableSlots || 0)),
       features: Array.isArray(pkg.features) ? pkg.features : []
     }))
   }
@@ -219,6 +220,7 @@ const ticketPackages = computed(() => {
     salePrice: Math.max(0, Number(service.value?.salePrice || 0)),
     price: Math.max(0, Number(service.value?.price || service.value?.salePrice || 0)),
     childSurcharge: Number(service.value?.childSurcharge || service.value?.ticketChildPolicy?.surcharge || 120000),
+    availableSlots: Math.max(0, Number(service.value?.availableSlots || 0)),
     features: []
   }]
 })
@@ -237,7 +239,12 @@ const childSurchargeUnit = computed(() => {
   )
   return Math.max(50000, Math.min(200000, configured || 120000))
 })
-const maxSelectableSlots = computed(() => Math.max(0, Number(service.value?.availableSlots || 0)))
+const maxSelectableSlots = computed(() => {
+  if (selectedTicketPackage.value && Number.isFinite(Number(selectedTicketPackage.value.availableSlots))) {
+    return Math.max(0, Number(selectedTicketPackage.value.availableSlots || 0))
+  }
+  return Math.max(0, Number(service.value?.availableSlots || 0))
+})
 const isEditingFromCart = computed(() => route.query.edit === '1')
 const originalCartItem = computed(() => ({
   serviceId: route.query.originServiceId ?? service.value?.id,
@@ -344,7 +351,7 @@ const validateBookingInput = () => {
   bookingSuccess.value = ''
 
   if (!service.value) return false
-  if (service.value.availableSlots <= 0) {
+  if (maxSelectableSlots.value <= 0) {
     bookingFeedback.value = 'Dịch vụ hiện đã hết chỗ.'
     return false
   }

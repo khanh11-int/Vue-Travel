@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { STORAGE_KEYS, getScopedKey, GUEST_SCOPE, persistStorage, readStorage } from '@/utils/travelStorage'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
 
 export const useWishlistStore = defineStore('wishlist', {
   /**

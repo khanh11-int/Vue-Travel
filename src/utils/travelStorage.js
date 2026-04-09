@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   cart: 'vtravel_cart',
   comments: 'vtravel_comments',
   bookings: 'vtravel_bookings',
+  bookingDetails: 'vtravel_booking_details',
   services: 'vtravel_services',
   promotions: 'vtravel_promotions',
   categories: 'vtravel_categories',

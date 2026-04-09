@@ -77,14 +77,26 @@
           </tbody>
         </table>
       </div>
+
+      <div v-if="deleteTargetUserId" class="admin-confirm-overlay" @click.self="closeDeleteUserModal">
+        <div class="admin-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-user-title">
+          <p class="eyebrow">Xác nhận thao tác</p>
+          <h3 id="delete-user-title">Bạn có chắc muốn xóa tài khoản này?</h3>
+          <p class="muted">Tài khoản đã xóa sẽ không thể đăng nhập và không còn xuất hiện trong danh sách khách hàng.</p>
+          <div class="admin-confirm-actions">
+            <button class="secondary-button" type="button" @click="closeDeleteUserModal">Hủy</button>
+            <button class="primary-button" type="button" @click="confirmDeleteUser">Đồng ý xóa</button>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
 
 const adminStore = useAdminStore()
 const authStore = useAuthStore()
@@ -92,6 +104,7 @@ const submitting = ref(false)
 const formError = ref('')
 const isEditing = ref(false)
 const editingUserId = ref('')
+const deleteTargetUserId = ref('')
 
 const filters = reactive({
   keyword: '',
@@ -186,15 +199,28 @@ const handleSubmitUser = async () => {
   }
 }
 
-const handleDeleteUser = async (userId) => {
+const handleDeleteUser = (userId) => {
+  deleteTargetUserId.value = String(userId || '')
+}
+
+const closeDeleteUserModal = () => {
+  deleteTargetUserId.value = ''
+}
+
+const confirmDeleteUser = async () => {
+  if (!deleteTargetUserId.value) return
+
+  const userId = deleteTargetUserId.value
   const currentUserId = String(authStore.currentUser?.id || '')
   if (String(userId) === currentUserId) {
     formError.value = 'Không thể xóa tài khoản admin đang đăng nhập.'
+    closeDeleteUserModal()
     return
   }
 
   try {
     await adminStore.deleteUser(userId)
+    closeDeleteUserModal()
   } catch (error) {
     formError.value = error?.message || 'Không thể xóa khách hàng.'
   }

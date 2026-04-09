@@ -23,7 +23,7 @@
 
       <div class="travel-card__price-row">
         <span :class="['availability', service.availableSlots > 0 ? 'available' : 'sold-out']">
-          {{ service.availableSlots > 0 ? `Còn ${service.availableSlots} chỗ` : 'Hết chỗ' }}
+          {{ service.availableSlots > 0 ? 'Còn chỗ' : 'Hết chỗ' }}
         </span>
         <div class="travel-card__price-main">
           <p v-if="hasDiscountedPrice" class="price-before">{{ formatCurrencyVND(effectiveOriginalPrice) }}</p>
@@ -48,7 +48,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRouter } from 'vue-router'
 import RatingStars from '@/components/common/RatingStars.vue'
-import { useServiceStore } from '@/stores/useServiceStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 import { getDetailRouteLocation } from '@/utils/serviceRouting'
 

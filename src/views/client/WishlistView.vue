@@ -28,9 +28,9 @@
 <script setup>
 import { computed, onMounted, watch } from 'vue'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 
 const authStore = useAuthStore()
 const serviceStore = useServiceStore()

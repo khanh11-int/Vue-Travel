@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { categoriesApi, commentsApi, destinationsApi, promotionsApi, servicesApi } from '@/services/api'
-import { STORAGE_KEYS, saveToStorage } from '@/utils/travelStorage'
+import { STORAGE_KEYS, readStorage, saveToStorage } from '@/utils/travelStorage'
 import { normalizeServicesFromStorage } from '@/utils/travelNormalize'
 
 /**
@@ -9,11 +9,103 @@ import { normalizeServicesFromStorage } from '@/utils/travelNormalize'
  * @returns {Array} Mảng hợp lệ.
  */
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
+const toSafeSlots = (value) => Math.max(0, Number(value || 0) || 0)
+
+const distributeMissingSlots = (items, totalSlots, key) => {
+  const normalizedItems = ensureArray(items)
+  const missingIndexes = []
+  let knownSlots = 0
+
+  normalizedItems.forEach((item, index) => {
+    if (item?.[key] == null) {
+      missingIndexes.push(index)
+      return
+    }
+    knownSlots += toSafeSlots(item[key])
+  })
+
+  if (!missingIndexes.length) {
+    return normalizedItems.map((item) => ({ ...item, [key]: toSafeSlots(item?.[key]) }))
+  }
+
+  const targetTotal = Math.max(knownSlots, toSafeSlots(totalSlots))
+  const remainingSlots = Math.max(0, targetTotal - knownSlots)
+  const baseSlots = Math.floor(remainingSlots / missingIndexes.length)
+  let remainderSlots = remainingSlots % missingIndexes.length
+
+  return normalizedItems.map((item, index) => {
+    if (!missingIndexes.includes(index)) {
+      return { ...item, [key]: toSafeSlots(item?.[key]) }
+    }
+
+    const bonus = remainderSlots > 0 ? 1 : 0
+    remainderSlots = Math.max(0, remainderSlots - bonus)
+    return {
+      ...item,
+      [key]: baseSlots + bonus
+    }
+  })
+}
+
+const normalizeServiceSlots = (service) => {
+  if (!service || typeof service !== 'object') return service
+
+  if (service.categoryId === 'hotel') {
+    const roomTypes = ensureArray(service.roomTypes)
+    if (!roomTypes.length) return { ...service, availableSlots: toSafeSlots(service.availableSlots) }
+
+    const normalizedRoomTypes = distributeMissingSlots(roomTypes, service.availableSlots, 'availableSlots')
+    const totalSlots = normalizedRoomTypes.reduce((sum, roomType) => sum + toSafeSlots(roomType.availableSlots), 0)
+
+    return {
+      ...service,
+      roomTypes: normalizedRoomTypes,
+      availableSlots: totalSlots
+    }
+  }
+
+  if (service.categoryId === 'ticket') {
+    const ticketPackages = ensureArray(service.ticketPackages)
+    if (!ticketPackages.length) return { ...service, availableSlots: toSafeSlots(service.availableSlots) }
+
+    const normalizedTicketPackages = distributeMissingSlots(ticketPackages, service.availableSlots, 'availableSlots')
+    const totalSlots = normalizedTicketPackages.reduce((sum, ticketPackage) => sum + toSafeSlots(ticketPackage.availableSlots), 0)
+
+    return {
+      ...service,
+      ticketPackages: normalizedTicketPackages,
+      availableSlots: totalSlots
+    }
+  }
+
+  if (service.categoryId === 'tour') {
+    const scheduleType = String(service.scheduleType || 'hybrid').toLowerCase()
+    if (scheduleType === 'fixed') {
+      const departures = ensureArray(service.departures)
+      const totalSlots = departures.reduce((sum, departure) => sum + toSafeSlots(departure?.remainingSlots), 0)
+      return {
+        ...service,
+        availableSlots: totalSlots
+      }
+    }
+
+    return {
+      ...service,
+      availableSlots: Number.MAX_SAFE_INTEGER
+    }
+  }
+
+  return {
+    ...service,
+    availableSlots: toSafeSlots(service.availableSlots)
+  }
+}
 
 const sanitizeCategories = (categories) => ensureArray(categories)
 
 const sanitizeServices = (services) =>
   normalizeServicesFromStorage(ensureArray(services))
+    .map((service) => normalizeServiceSlots(service))
     .filter((service, index, list) => {
       const normalizedId = String(service?.id ?? '')
       const normalizedSlug = String(service?.slug ?? '')
@@ -27,17 +119,19 @@ const sanitizeServices = (services) =>
       })
     })
 
+const getCachedCollection = (key) => ensureArray(readStorage(key, []))
+
 export const useServiceStore = defineStore('services', {
   /**
    * Khởi tạo state dịch vụ từ storage để có dữ liệu cache khi mở app.
    * @returns {Object} Service state mặc định.
    */
   state: () => ({
-    services: [],
-    categories: [],
-    destinations: [],
-    comments: [],
-    promotions: [],
+    services: sanitizeServices(getCachedCollection(STORAGE_KEYS.services)),
+    categories: sanitizeCategories(getCachedCollection(STORAGE_KEYS.categories)),
+    destinations: getCachedCollection(STORAGE_KEYS.destinations),
+    comments: getCachedCollection(STORAGE_KEYS.comments),
+    promotions: getCachedCollection(STORAGE_KEYS.promotions),
     serviceDetail: null,
     loading: false,
     error: null
@@ -150,7 +244,10 @@ export const useServiceStore = defineStore('services', {
 
         if (Array.isArray(categories)) this.setCategories(categories)
         if (Array.isArray(destinations)) this.setDestinations(destinations)
-        if (Array.isArray(services)) this.setServices(services)
+        if (Array.isArray(services)) {
+          // API data must come first to avoid stale local cache overriding fresh slot fields.
+          this.setServices([...services, ...(Array.isArray(this.services) ? this.services : [])])
+        }
         if (Array.isArray(comments)) this.setComments(comments)
         if (Array.isArray(promotions)) this.setPromotions(promotions)
       } catch (error) {
@@ -171,7 +268,7 @@ export const useServiceStore = defineStore('services', {
       try {
         const data = await servicesApi.getAll()
         if (Array.isArray(data)) {
-          this.setServices(data)
+          this.setServices([...data, ...(Array.isArray(this.services) ? this.services : [])])
         }
       } catch (error) {
         this.error = error?.message || 'Lỗi tải danh sách dịch vụ'

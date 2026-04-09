@@ -96,7 +96,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useAdminStore } from '@/stores/useAdminStore'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
 import { formatCurrencyVND } from '@/utils/formatters'
 
 const adminStore = useAdminStore()

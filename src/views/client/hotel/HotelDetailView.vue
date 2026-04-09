@@ -36,7 +36,7 @@
             :key="option.value"
             :value="option.value"
           >
-            {{ option.label }}
+            {{ option.label }} · Còn {{ option.availableSlots || 0 }} chỗ
           </option>
         </select>
 
@@ -118,10 +118,10 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
-import { useAdminStore } from '@/stores/useAdminStore'
-import { useCartStore } from '@/stores/useCartStore'
-import { useServiceStore } from '@/stores/useServiceStore'
-import { useWishlistStore } from '@/stores/useWishlistStore'
+import { useAdminStore } from '@/stores/admin/useAdminStore'
+import { useCartStore } from '@/stores/cart/useCartStore'
+import { useServiceStore } from '@/stores/service/useServiceStore'
+import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
 import {
@@ -254,7 +254,13 @@ const galleryImages = computed(() => {
 })
 
 const displaySalePrice = computed(() => Number(service.value?.salePrice || 0))
-const maxSelectableSlots = computed(() => Math.max(0, Number(service.value?.availableSlots || 0)))
+const maxSelectableSlots = computed(() => {
+  const selected = selectedRoomType.value
+  if (selected && Number.isFinite(Number(selected.availableSlots))) {
+    return Math.max(0, Number(selected.availableSlots || 0))
+  }
+  return Math.max(0, Number(service.value?.availableSlots || 0))
+})
 const isEditingFromCart = computed(() => route.query.edit === '1')
 const originalCartItem = computed(() => ({
   serviceId: route.query.originServiceId ?? service.value?.id,
@@ -290,7 +296,8 @@ const roomTypeOptions = computed(() => {
         value: 'standard',
         label: 'Phòng tiêu chuẩn',
         priceMultiplier: 1,
-        childSurcharge: 300000
+        childSurcharge: 300000,
+        availableSlots: Math.max(0, Number(service.value?.availableSlots || 0))
       }
     ]
   }
@@ -299,7 +306,8 @@ const roomTypeOptions = computed(() => {
     value: String(item.value || item.id || `room-type-${index + 1}`),
     label: String(item.label || item.name || `Loại phòng ${index + 1}`),
     priceMultiplier: Math.max(0.8, Number(item.priceMultiplier || 1) || 1),
-    childSurcharge: Math.max(300000, Math.min(600000, Number(item.childSurcharge || 300000) || 300000))
+    childSurcharge: Math.max(300000, Math.min(600000, Number(item.childSurcharge || 300000) || 300000)),
+    availableSlots: Math.max(0, Number(item.availableSlots || 0))
   }))
 })
 const selectedRoomType = computed(() =>
@@ -411,7 +419,7 @@ const validateBookingInput = () => {
   bookingSuccess.value = ''
 
   if (!service.value) return false
-  if (service.value.availableSlots <= 0) {
+  if (maxSelectableSlots.value <= 0) {
     bookingFeedback.value = 'Dịch vụ hiện đã hết chỗ.'
     return false
   }

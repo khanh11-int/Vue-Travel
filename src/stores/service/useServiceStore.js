@@ -365,9 +365,10 @@ export const useServiceStore = defineStore('services', {
      */
     getCommentsByService(serviceId) {
       const comments = Array.isArray(this.comments) ? this.comments : []
+      const normalizedServiceId = String(serviceId ?? '')
       return comments
         .filter((comment) => comment.visible !== false)
-        .filter((comment) => comment.serviceId === serviceId)
+        .filter((comment) => String(comment.serviceId ?? '') === normalizedServiceId)
         .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
     },
 

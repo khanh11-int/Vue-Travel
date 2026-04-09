@@ -177,7 +177,7 @@ const commit = () => {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
-  width: min(360px, calc(100vw - 48px));
+  width: min(520px, calc(100vw - 24px));
   z-index: 30;
   background: #ffffff;
   border: 1px solid #d7e2f2;
@@ -236,8 +236,8 @@ const commit = () => {
 
 .selector__ages {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   border-top: 1px solid #d7e2f2;
   padding-top: 10px;
 }
@@ -282,11 +282,7 @@ const commit = () => {
   .selector__popup {
     left: 0;
     right: auto;
-    width: min(340px, calc(100vw - 32px));
-  }
-
-  .selector__ages {
-    grid-template-columns: 1fr;
+    width: min(520px, calc(100vw - 16px));
   }
 }
 </style>

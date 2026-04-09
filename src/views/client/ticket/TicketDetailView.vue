@@ -4,93 +4,94 @@
       :service="service"
       :selected-image="selectedImage"
       :gallery-images="galleryImages"
-      :service-comments="serviceComments"
-      :related-services="relatedServices"
       @update:selected-image="selectedImage = $event"
-      @submit-comment="submitComment"
     />
 
-    <aside class="booking-panel sticky-card detail-booking-panel">
-      <p class="eyebrow">Đặt chỗ</p>
-      <h3 class="detail-price">{{ formatCurrencyVND(effectiveUnitPrice) }}</h3>
-      <p class="muted">Giá áp dụng cho thị trường Việt Nam, chưa bao gồm phí dịch vụ.</p>
+    <div class="detail-side-column">
+      <aside class="booking-panel ticket-booking-panel">
+        <p class="eyebrow">Đặt chỗ</p>
+        <h3 class="detail-price">{{ formatCurrencyVND(effectiveUnitPrice) }}</h3>
+        <p class="muted ticket-booking-note">Giá áp dụng cho thị trường Việt Nam, chưa bao gồm phí dịch vụ.</p>
 
-      <div class="booking-block">
-        <label>{{ primaryDateLabel }}</label>
-        <input v-model="bookingForm.startDate" :min="todayISO" type="date" />
+        <div class="booking-block">
+          <div class="ticket-booking-field-grid">
+            <div class="ticket-booking-field">
+              <label>{{ primaryDateLabel }}</label>
+              <input v-model="bookingForm.startDate" :min="todayISO" type="date" />
+            </div>
 
-        <label>Gói dịch vụ tại địa điểm</label>
-        <select v-model="bookingForm.packageId" class="ticket-package-select">
-          <option v-for="pkg in ticketPackages" :key="pkg.id" :value="pkg.id">
-            {{ pkg.name }} - {{ formatCurrencyVND(pkg.salePrice) }} · Còn {{ pkg.availableSlots || 0 }} chỗ
-          </option>
-        </select>
-
-        <ul v-if="selectedTicketPackage && selectedTicketPackage.features?.length" class="ticket-package-features">
-          <li v-for="feature in selectedTicketPackage.features" :key="feature">{{ feature }}</li>
-        </ul>
-
-        <div class="ticket-pricing-breakdown">
-          <div class="booking-summary-row">
-            <span>Loại dịch vụ vé</span>
-            <strong>{{ ticketServiceTypeLabel }}</strong>
+            <div class="ticket-booking-field">
+              <label>Gói dịch vụ tại địa điểm</label>
+              <select v-model="bookingForm.packageId" class="ticket-package-select">
+                <option v-for="pkg in ticketPackages" :key="pkg.id" :value="pkg.id">
+                  {{ pkg.name }} - {{ formatCurrencyVND(pkg.salePrice) }} · Còn {{ pkg.availableSlots || 0 }} chỗ
+                </option>
+              </select>
+            </div>
           </div>
-          <div class="booking-summary-row">
-            <span>Gói đã chọn</span>
-            <strong>{{ selectedTicketPackage?.name || 'Gói cơ bản' }}</strong>
+
+          <ul v-if="selectedTicketPackage && selectedTicketPackage.features?.length" class="ticket-package-features">
+            <li v-for="feature in selectedTicketPackage.features" :key="feature">{{ feature }}</li>
+          </ul>
+
+        </div>
+
+        <div class="booking-block">
+          <label>Số vé và trẻ em</label>
+          <TicketGuestSelector v-model="ticketGuestSelection" />
+
+          <div class="ticket-pricing-breakdown">
+            <div class="booking-summary-row">
+              <span>Khách tổng</span>
+              <strong>{{ totalGuests }} khách</strong>
+            </div>
+            <div class="booking-summary-row">
+              <span>Vé tính giá người lớn</span>
+              <strong>{{ chargeableAdultCount }} vé</strong>
+            </div>
+            <div class="booking-summary-row" v-if="childSurchargeCount > 0">
+              <span>Phụ thu trẻ em (8-14 tuổi)</span>
+              <strong>{{ formatCurrencyVND(childSurchargeTotal) }}</strong>
+            </div>
+            <p class="muted" v-if="freeChildrenCount > 0">Trẻ dưới 8 tuổi miễn phí: {{ freeChildrenCount }} trẻ</p>
           </div>
         </div>
-      </div>
 
-      <div class="booking-block">
-        <label>Số vé và trẻ em</label>
-        <TicketGuestSelector v-model="ticketGuestSelection" />
-
-        <div class="ticket-pricing-breakdown">
-          <div class="booking-summary-row">
-            <span>Khách tổng</span>
-            <strong>{{ totalGuests }} khách</strong>
-          </div>
-          <div class="booking-summary-row">
-            <span>Vé tính giá người lớn</span>
-            <strong>{{ chargeableAdultCount }} vé</strong>
-          </div>
-          <div class="booking-summary-row" v-if="childSurchargeCount > 0">
-            <span>Phụ thu trẻ em (8-14 tuổi)</span>
-            <strong>{{ formatCurrencyVND(childSurchargeTotal) }}</strong>
-          </div>
-          <p class="muted" v-if="freeChildrenCount > 0">Trẻ dưới 8 tuổi miễn phí: {{ freeChildrenCount }} trẻ</p>
+        <div class="booking-summary-row">
+          <span>Tạm tính</span>
+          <strong>{{ formatCurrencyVND(totalPrice) }}</strong>
         </div>
-      </div>
 
-      <div class="booking-summary-row">
-        <span>Tạm tính</span>
-        <strong>{{ formatCurrencyVND(totalPrice) }}</strong>
-      </div>
+        <small v-if="bookingFeedback" class="error-text">{{ bookingFeedback }}</small>
+        <small v-else-if="bookingSuccess" class="success-text">{{ bookingSuccess }}</small>
 
-      <small v-if="bookingFeedback" class="error-text">{{ bookingFeedback }}</small>
-      <small v-else-if="bookingSuccess" class="success-text">{{ bookingSuccess }}</small>
+        <div class="ticket-booking-actions">
+          <button
+            class="primary-button full-width"
+            type="button"
+            :disabled="maxSelectableSlots <= 0"
+            @click="handleBookNow"
+          >
+            {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
+          </button>
+          <button
+            class="secondary-button full-width"
+            type="button"
+            :disabled="maxSelectableSlots <= 0"
+            @click="handleAddToCart"
+          >
+            {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
+          </button>
+        </div>
+      </aside>
 
-      <button
-        class="primary-button full-width"
-        type="button"
-        :disabled="maxSelectableSlots <= 0"
-        @click="handleBookNow"
-      >
-        {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
-      </button>
-      <button
-        class="secondary-button full-width"
-        type="button"
-        :disabled="maxSelectableSlots <= 0"
-        @click="handleAddToCart"
-      >
-        {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
-      </button>
-      <button class="ghost-button full-width" type="button" @click="toggleWishlist(service.id)">
-        {{ isWishlisted ? 'Đã lưu wishlist' : 'Thêm vào wishlist' }}
-      </button>
-    </aside>
+      <DetailCommentSection
+        class="detail-side-comment"
+        :service-comments="serviceComments"
+      />
+    </div>
+
+    <DetailRelatedServices :related-services="relatedServices" />
   </section>
 
   <section v-else class="page-section empty-state">
@@ -103,11 +104,11 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
+import DetailCommentSection from '@/components/travel/DetailCommentSection.vue'
+import DetailRelatedServices from '@/components/travel/DetailRelatedServices.vue'
 import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
-import { useAdminStore } from '@/stores/admin/useAdminStore'
 import { useCartStore } from '@/stores/cart/useCartStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
-import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
 
@@ -169,8 +170,6 @@ const route = useRoute()
 const router = useRouter()
 const serviceStore = useServiceStore()
 const cartStore = useCartStore()
-const adminStore = useAdminStore()
-const wishlistStore = useWishlistStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -183,7 +182,6 @@ const service = computed(() => {
   return found
 })
 const serviceComments = computed(() => (service.value ? serviceStore.getCommentsByService(service.value.id) : []))
-const isWishlisted = computed(() => wishlistStore.isInWishlist(service.value?.id))
 const primaryDateLabel = computed(() => getPrimaryDateLabel(service.value))
 const relatedServices = computed(() => {
   if (!service.value) return []
@@ -229,7 +227,6 @@ const selectedTicketPackage = computed(() => {
   return ticketPackages.value.find((pkg) => pkg.id === currentId) || ticketPackages.value[0] || null
 })
 const effectiveUnitPrice = computed(() => Number(selectedTicketPackage.value?.salePrice || service.value?.salePrice || 0))
-const ticketServiceTypeLabel = computed(() => String(service.value?.ticketServiceType || 'Vé tham quan'))
 const childSurchargeUnit = computed(() => {
   const configured = Number(
     selectedTicketPackage.value?.childSurcharge
@@ -400,11 +397,6 @@ const addToCartWithCurrentSelection = () => {
   cartStore.addToCart(nextItem)
 }
 
-const toggleWishlist = () => {
-  if (!service.value?.id) return
-  wishlistStore.toggleWishlist(service.value.id)
-}
-
 const handleAddToCart = () => {
   if (!validateBookingInput()) return
   addToCartWithCurrentSelection()
@@ -435,34 +427,117 @@ const handleBookNow = () => {
   })
 }
 
-const submitComment = (payload) => {
-  if (!service.value) return
-  adminStore.addComment({
-    serviceId: service.value.id,
-    userName: payload.userName,
-    rating: payload.rating,
-    content: payload.content
-  })
-}
 </script>
 
 <style scoped>
-.detail-booking-panel {
+.detail-layout {
+  grid-template-areas:
+    'main side'
+    'related related';
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 1fr);
+  align-items: start;
+}
+
+:deep(.detail-main-column) {
+  grid-area: main;
+}
+
+:deep(.detail-related-section) {
+  grid-area: related;
+}
+
+.detail-side-column {
+  grid-area: side;
   display: grid;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-content: start;
+  align-self: start;
+}
+
+.detail-side-comment {
+  grid-column: 1;
+  grid-row: auto;
+  position: static;
+  top: auto;
+}
+
+.ticket-booking-panel {
+  display: grid;
+  grid-column: 1;
+  grid-row: auto;
+  align-content: start;
+  align-self: start;
+  justify-self: stretch;
+  position: static;
+  top: auto;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  overflow: visible;
+  gap: 12px;
+  border-radius: 18px;
+  border: 1px solid #d9e3f2;
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  box-shadow: 0 14px 28px rgba(20, 45, 84, 0.1);
+  max-height: none;
 }
 
 .booking-block {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  margin-bottom: 0;
+  padding: 12px;
+  border: 1px solid #d4e0f0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #eff5ff 0%, #eaf2ff 100%);
+}
+
+.ticket-booking-note {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a7d99;
+}
+
+.ticket-booking-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ticket-booking-field {
+  display: grid;
+  gap: 7px;
+}
+
+.ticket-booking-field input,
+.ticket-booking-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
+  border-radius: 10px;
+  background: #f5f8ff;
+  color: #1d3555;
+  font-size: 0.92rem;
+}
+
+.ticket-booking-field input:focus,
+.ticket-booking-field select:focus {
+  outline: none;
+  border-color: #7ea8de;
+  box-shadow: 0 0 0 3px rgba(36, 110, 199, 0.12);
 }
 
 .ticket-package-select {
   width: 100%;
-  padding: 11px 12px;
-  border: 1px solid #d2deee;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
   border-radius: 10px;
-  background: #fbfdff;
+  background: #f5f8ff;
 }
 
 .ticket-package-features {
@@ -470,22 +545,23 @@ const submitComment = (payload) => {
   padding-left: 18px;
   display: grid;
   gap: 4px;
-  color: #3d5674;
-  font-size: 0.9rem;
+  color: #4d6484;
+  font-size: 0.86rem;
 }
 
-.detail-booking-panel > input {
-  width: 100%;
-  padding: 11px 12px;
-  border: 1px solid #d2deee;
+.ticket-booking-panel :deep(.selector__trigger) {
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
   border-radius: 10px;
-  background: #fbfdff;
+  background: #f5f8ff;
+  color: #1d3555;
+  font-size: 0.92rem;
 }
 
-.detail-booking-panel > input:focus {
-  outline: none;
-  border-color: #77a8e8;
-  box-shadow: 0 0 0 3px rgba(65, 131, 217, 0.18);
+.ticket-booking-panel :deep(.selector__popup) {
+  border-radius: 10px;
+  z-index: 120;
 }
 
 .ticket-child-age-grid {
@@ -511,10 +587,10 @@ const submitComment = (payload) => {
 
 .ticket-pricing-breakdown {
   margin-top: 6px;
-  padding: 12px;
+  padding: 11px;
   border-radius: 12px;
-  border: 1px solid #dbe6f5;
-  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  border: 1px solid #d4e0f0;
+  background: linear-gradient(180deg, #eff5ff 0%, #eaf2ff 100%);
 }
 
 .ticket-pricing-breakdown .booking-summary-row {
@@ -525,7 +601,45 @@ const submitComment = (payload) => {
   margin-top: 6px;
 }
 
+.ticket-booking-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.ticket-booking-actions .primary-button,
+.ticket-booking-actions .secondary-button {
+  min-height: 40px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .detail-layout {
+    grid-template-areas:
+      'main'
+      'side'
+      'related';
+    grid-template-columns: 1fr;
+  }
+
+  .detail-side-column {
+    grid-area: side;
+  }
+
+  .ticket-booking-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .ticket-booking-field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
+  .ticket-booking-field-grid,
   .ticket-child-age-grid {
     grid-template-columns: 1fr;
   }

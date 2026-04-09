@@ -1062,9 +1062,9 @@ p {
 }
 
 .detail-layout {
-  grid-template-columns: minmax(0, 1.55fr) 380px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(370px, 1fr);
   align-items: start;
-  gap: 20px;
+  gap: 24px;
 }
 
 .detail-layout-fullwidth {
@@ -1087,12 +1087,27 @@ p {
 
 .detail-main {
   display: grid;
-  gap: 16px;
+  gap: 14px;
+}
+
+.detail-main-column {
+  grid-column: 1;
+  align-self: start;
+}
+
+.detail-comment-column {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+}
+
+.detail-related-section {
+  grid-column: 1 / -1;
 }
 
 .detail-head {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .detail-head h1 {
@@ -1130,21 +1145,23 @@ p {
 
 .detail-gallery-stage {
   position: relative;
-  border-radius: 24px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(16, 42, 78, 0.1);
-  background: #f3f8ff;
-  aspect-ratio: 16 / 10;
+  border: 1px solid #d2dbe8;
+  background: #eef3fb;
+  width: 100%;
+  height: clamp(280px, 34vw, 420px);
+  min-height: 280px;
+  max-height: 420px;
 }
 
 .detail-gallery-main {
   width: 100%;
   height: 100%;
   min-height: 0;
-  width: 100%;
   display: block;
-  object-fit: contain;
-  background: linear-gradient(180deg, #f7fbff 0%, #edf4ff 100%);
+  object-fit: cover;
+  background: #edf2fa;
 }
 
 .detail-gallery-nav {
@@ -1204,20 +1221,31 @@ p {
 
 .detail-gallery-wrapper {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+}
+
+.detail-gallery-panel {
+  --detail-thumb-size: 86px;
+  padding: 10px;
+  border: 1px solid #d2dbe8;
+  border-radius: 10px;
+  background: #f3f6fb;
 }
 
 .detail-gallery-thumbnails {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, var(--detail-thumb-size));
+  gap: 12px;
+  justify-content: start;
 }
 
 .detail-gallery-thumbnail {
   position: relative;
-  aspect-ratio: 1;
-  border: 2px solid transparent;
-  border-radius: 16px;
+  width: var(--detail-thumb-size);
+  height: var(--detail-thumb-size);
+  min-height: 0;
+  border: 2px solid #1b2433;
+  border-radius: 0;
   overflow: hidden;
   background: transparent;
   cursor: pointer;
@@ -1238,24 +1266,24 @@ p {
 }
 
 .detail-gallery-thumbnail.active {
-  border-color: var(--primary);
-  background: rgba(10, 109, 217, 0.06);
+  border-color: #0a6dd9;
 }
 
 .detail-gallery-thumbnail--more {
-  background: rgba(10, 109, 217, 0.12);
-  border: 2px solid rgba(10, 109, 217, 0.3);
-  color: var(--primary);
-  font-size: 0.95rem;
+  background: #ffffff;
+  border: 2px solid #1b2433;
+  color: #1b2433;
+  font-size: 0.86rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 6px;
 }
 
 .detail-gallery-thumbnail--more:hover {
-  background: rgba(10, 109, 217, 0.18);
-  border-color: var(--primary);
+  border-color: #0a6dd9;
+  color: #0a6dd9;
 }
 
 .detail-thumb-button {
@@ -1437,19 +1465,26 @@ p {
   display: grid;
   gap: 12px;
   align-content: start;
-  border-radius: 20px;
-  padding: 22px;
+  grid-column: 2;
+  grid-row: 1;
+  border-radius: 10px;
+  padding: 14px;
   max-height: calc(100vh - 96px);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  box-shadow: 0 10px 24px rgba(18, 35, 66, 0.07);
 }
 
 .detail-booking-panel .booking-block {
-  padding: 14px;
-  border: 1px solid rgba(16, 42, 78, 0.08);
-  border-radius: 14px;
-  background: #fbfdff;
+  padding: 10px;
+  border: 1px solid #dde5f2;
+  border-radius: 10px;
+  background: #f7faff;
+}
+
+.detail-comment-card {
+  border-radius: 20px;
 }
 
 .detail-booking-actions {
@@ -1503,7 +1538,7 @@ p {
 
 .detail-price {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: #0a5fbd;
 }
 
@@ -1568,8 +1603,8 @@ p {
 
 .comment-form {
   display: grid;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .comment-item + .comment-item {
@@ -1881,6 +1916,14 @@ p {
 
   .admin-content {
     padding: 0 16px 32px;
+  }
+
+  .detail-main-column,
+  .detail-booking-panel,
+  .detail-comment-column,
+  .detail-related-section {
+    grid-column: 1;
+    grid-row: auto;
   }
 }
 
@@ -2456,11 +2499,17 @@ p {
   }
 
   .detail-gallery-stage {
-    aspect-ratio: 4 / 3;
+    height: clamp(220px, 52vw, 320px);
+    min-height: 220px;
+    max-height: 320px;
   }
 
-  .detail-gallery-thumbs {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .detail-gallery-panel {
+    --detail-thumb-size: 72px;
+  }
+
+  .detail-gallery-thumbnails {
+    grid-template-columns: repeat(3, var(--detail-thumb-size));
   }
 
   .detail-gallery-nav--prev {

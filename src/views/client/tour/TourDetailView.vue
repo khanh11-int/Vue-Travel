@@ -4,107 +4,118 @@
       :service="service"
       :selected-image="selectedImage"
       :gallery-images="galleryImages"
-      :service-comments="serviceComments"
-      :related-services="relatedServices"
       @update:selected-image="selectedImage = $event"
-      @submit-comment="submitComment"
     />
 
-    <aside class="booking-panel sticky-card detail-booking-panel">
-      <p class="eyebrow">Đặt chỗ</p>
-      <h3 class="detail-price">{{ formatCurrencyVND(effectiveUnitPrice) }}</h3>
-      <p class="muted">{{ effectiveScheduleMode === 'fixed' ? pricingTiers.fixed?.note || 'Lịch cố định áp dụng ưu đãi.' : pricingTiers.flexible?.note || 'Lịch linh hoạt áp dụng giá gốc, không ưu đãi.' }}</p>
+    <div class="detail-side-column">
+      <aside class="booking-panel tour-booking-panel">
+        <p class="eyebrow">Đặt chỗ</p>
+        <h3 class="detail-price">{{ formatCurrencyVND(effectiveUnitPrice) }}</h3>
+        <p class="muted tour-booking-note">{{ effectiveScheduleMode === 'fixed' ? pricingTiers.fixed?.note || 'Lịch cố định áp dụng ưu đãi.' : pricingTiers.flexible?.note || 'Lịch linh hoạt áp dụng giá gốc, không ưu đãi.' }}</p>
 
-      <!-- Block 1: Schedule Selection -->
-      <div class="booking-block">
-        <div v-if="isHybridSchedule" class="tour-pricing-select">
-          <label>Chọn loại lịch</label>
-          <select v-model="bookingForm.scheduleMode" class="tour-pricing-dropdown">
-            <option value="fixed">{{ pricingTiers.fixed?.label || 'Lịch cố định (ưu đãi)' }}</option>
-            <option value="flexible">{{ pricingTiers.flexible?.label || 'Lịch linh hoạt' }}</option>
-          </select>
+        <!-- Block 1: Schedule Selection -->
+        <div class="booking-block">
+          <div v-if="isHybridSchedule" class="tour-pricing-select">
+            <label>Chọn loại lịch</label>
+            <select v-model="bookingForm.scheduleMode" class="tour-pricing-dropdown">
+              <option value="fixed">{{ pricingTiers.fixed?.label || 'Lịch cố định (ưu đãi)' }}</option>
+              <option value="flexible">{{ pricingTiers.flexible?.label || 'Lịch linh hoạt' }}</option>
+            </select>
+          </div>
+
+          <template v-if="effectiveScheduleMode === 'fixed'">
+            <label v-if="scheduleOptions.length > 0" class="tour-schedule-label">{{ scheduleLabel }}</label>
+            <div v-if="scheduleOptions.length > 0" class="schedule-option-grid">
+              <button
+                v-for="option in scheduleOptions"
+                :key="option.id"
+                type="button"
+                class="schedule-option-card"
+                :class="{ active: bookingForm.selectedScheduleId === option.id, disabled: option.remainingSlots <= 0 }"
+                :disabled="option.remainingSlots <= 0"
+                @click="selectScheduleOption(option.id)"
+              >
+                <span class="schedule-option-card__date">{{ formatDateRangeVN(option.startDate, option.endDate) }}</span>
+                <span class="schedule-option-card__meta">{{ option.durationLabel }} · Còn {{ option.remainingSlots }} chỗ</span>
+              </button>
+            </div>
+            <small v-if="selectedSchedule" class="muted">{{ selectedScheduleMeta }}</small>
+          </template>
+
+          <template v-else>
+            <div class="tour-flexible-date-row">
+              <div class="tour-flexible-date-field">
+                <label>Ngày khởi hành</label>
+                <input v-model="bookingForm.startDate" :min="flexibleStartMin" :max="flexibleStartMax" type="date" />
+              </div>
+
+              <div class="tour-flexible-date-field">
+                <label>Ngày kết thúc <span class="muted">(tự động)</span></label>
+                <input v-model="bookingForm.endDate" :min="bookingForm.startDate || flexibleStartMin" :max="flexibleEndMax" type="date" disabled />
+              </div>
+            </div>
+            <small class="muted" v-if="flexibleWindowText">{{ flexibleWindowText }}</small>
+          </template>
+
         </div>
 
-        <template v-if="effectiveScheduleMode === 'fixed'">
-          <label v-if="scheduleOptions.length > 0" class="tour-schedule-label">{{ scheduleLabel }}</label>
-          <div v-if="scheduleOptions.length > 0" class="schedule-option-grid">
-            <button
-              v-for="option in scheduleOptions"
-              :key="option.id"
-              type="button"
-              class="schedule-option-card"
-              :class="{ active: bookingForm.selectedScheduleId === option.id, disabled: option.remainingSlots <= 0 }"
-              :disabled="option.remainingSlots <= 0"
-              @click="selectScheduleOption(option.id)"
-            >
-              <span class="schedule-option-card__date">{{ formatDateRangeVN(option.startDate, option.endDate) }}</span>
-              <span class="schedule-option-card__meta">{{ option.durationLabel }} · Còn {{ option.remainingSlots }} chỗ</span>
-            </button>
+        <!-- Block 2: Traveler Selection -->
+        <div class="booking-block">
+          <label>Người lớn và trẻ em</label>
+          <TourTravelerSelector v-model="travelerSelection" />
+
+          <div class="tour-pricing-breakdown">
+            <div class="booking-summary-row">
+              <span>Tổng khách</span>
+              <strong>{{ totalGuests }} khách</strong>
+            </div>
+            <div class="booking-summary-row">
+              <span>Người lớn (100%)</span>
+              <strong>{{ chargeableAdultCount }} khách</strong>
+            </div>
+            <div class="booking-summary-row" v-if="childHalfCount > 0">
+              <span>Trẻ 5-9 tuổi ({{ Math.round(childPriceRatio * 100) }}%)</span>
+              <strong>{{ childHalfCount }} trẻ</strong>
+            </div>
+            <p class="muted" v-if="freeChildrenCount > 0">Trẻ dưới 5 tuổi miễn phí: {{ freeChildrenCount }} trẻ</p>
           </div>
-          <small v-if="selectedSchedule" class="muted">{{ selectedScheduleMeta }}</small>
-        </template>
 
-        <template v-else>
-          <label>Ngày khởi hành</label>
-          <input v-model="bookingForm.startDate" :min="flexibleStartMin" :max="flexibleStartMax" type="date" />
-
-          <label>Ngày kết thúc <span class="muted">(tự động)</span></label>
-          <input v-model="bookingForm.endDate" :min="bookingForm.startDate || flexibleStartMin" :max="flexibleEndMax" type="date" disabled />
-          <small class="muted" v-if="flexibleWindowText">{{ flexibleWindowText }}</small>
-        </template>
-
-      </div>
-
-      <!-- Block 2: Traveler Selection -->
-      <div class="booking-block">
-        <label>Người lớn và trẻ em</label>
-        <TourTravelerSelector v-model="travelerSelection" />
-
-        <div class="tour-pricing-breakdown">
-          <div class="booking-summary-row">
-            <span>Tổng khách</span>
-            <strong>{{ totalGuests }} khách</strong>
+          <div class="booking-summary-row tour-pricing-total">
+            <span>Tạm tính</span>
+            <strong>{{ formatCurrencyVND(totalPrice) }}</strong>
           </div>
-          <div class="booking-summary-row">
-            <span>Người lớn (100%)</span>
-            <strong>{{ chargeableAdultCount }} khách</strong>
-          </div>
-          <div class="booking-summary-row" v-if="childHalfCount > 0">
-            <span>Trẻ 5-9 tuổi ({{ Math.round(childPriceRatio * 100) }}%)</span>
-            <strong>{{ childHalfCount }} trẻ</strong>
-          </div>
-          <p class="muted" v-if="freeChildrenCount > 0">Trẻ dưới 5 tuổi miễn phí: {{ freeChildrenCount }} trẻ</p>
         </div>
 
-        <div class="booking-summary-row tour-pricing-total">
-          <span>Tạm tính</span>
-          <strong>{{ formatCurrencyVND(totalPrice) }}</strong>
+        <small v-if="bookingFeedback" class="error-text">{{ bookingFeedback }}</small>
+        <small v-else-if="bookingSuccess" class="success-text">{{ bookingSuccess }}</small>
+
+        <div class="tour-booking-actions">
+          <button
+            class="primary-button full-width"
+            type="button"
+            :disabled="maxSelectableSlots <= 0"
+            @click="handleBookNow"
+          >
+            {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
+          </button>
+          <button
+            class="secondary-button full-width"
+            type="button"
+            :disabled="maxSelectableSlots <= 0"
+            @click="handleAddToCart"
+          >
+            {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
+          </button>
         </div>
-      </div>
+      </aside>
 
-      <small v-if="bookingFeedback" class="error-text">{{ bookingFeedback }}</small>
-      <small v-else-if="bookingSuccess" class="success-text">{{ bookingSuccess }}</small>
+      <DetailCommentSection
+        class="detail-side-comment"
+        :service-comments="serviceComments"
+      />
+    </div>
 
-      <button
-        class="primary-button full-width"
-        type="button"
-        :disabled="maxSelectableSlots <= 0"
-        @click="handleBookNow"
-      >
-        {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
-      </button>
-      <button
-        class="secondary-button full-width"
-        type="button"
-        :disabled="maxSelectableSlots <= 0"
-        @click="handleAddToCart"
-      >
-        {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
-      </button>
-      <button class="ghost-button full-width" type="button" @click="toggleWishlist(service.id)">
-        {{ isWishlisted ? 'Đã lưu wishlist' : 'Thêm vào wishlist' }}
-      </button>
-    </aside>
+    <DetailRelatedServices :related-services="relatedServices" />
   </section>
 
   <section v-else class="page-section empty-state">
@@ -117,12 +128,12 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
+import DetailCommentSection from '@/components/travel/DetailCommentSection.vue'
+import DetailRelatedServices from '@/components/travel/DetailRelatedServices.vue'
 import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import { formatDateRangeVN, formatCurrencyVND } from '@/utils/formatters'
-import { useAdminStore } from '@/stores/admin/useAdminStore'
 import { useCartStore } from '@/stores/cart/useCartStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
-import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 
 const tourDetailLogic = {
   scheduleLabel: 'Chọn lịch khởi hành',
@@ -202,9 +213,6 @@ const route = useRoute()
 const router = useRouter()
 const serviceStore = useServiceStore()
 const cartStore = useCartStore()
-const adminStore = useAdminStore()
-const wishlistStore = useWishlistStore()
-
 const service = computed(() => {
   const found = serviceStore.getServiceBySlug(route.params.slug)
   if (!found || found.categoryId !== 'tour') return null
@@ -212,7 +220,6 @@ const service = computed(() => {
 })
 
 const serviceComments = computed(() => (service.value ? serviceStore.getCommentsByService(service.value.id) : []))
-const isWishlisted = computed(() => wishlistStore.isInWishlist(service.value?.id))
 const scheduleLabel = computed(() => tourDetailLogic.scheduleLabel)
 const relatedServices = computed(() => {
   if (!service.value) return []
@@ -593,11 +600,6 @@ const selectScheduleOption = (scheduleId) => {
   bookingForm.selectedScheduleId = String(scheduleId || '')
 }
 
-const toggleWishlist = () => {
-  if (!service.value?.id) return
-  wishlistStore.toggleWishlist(service.value.id)
-}
-
 const handleAddToCart = () => {
   if (!validateBookingInput()) return
   addToCartWithCurrentSelection()
@@ -628,39 +630,86 @@ const handleBookNow = async () => {
   })
 }
 
-
-const submitComment = (payload) => {
-  if (!service.value) return
-  adminStore.addComment({
-    serviceId: service.value.id,
-    userName: payload.userName,
-    rating: payload.rating,
-    content: payload.content
-  })
-}
 </script>
 
 <style scoped>
-.detail-booking-panel {
+.detail-layout {
+  grid-template-areas:
+    'main side'
+    'related related';
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 1fr);
+  align-items: start;
+}
+
+:deep(.detail-main-column) {
+  grid-area: main;
+}
+
+:deep(.detail-related-section) {
+  grid-area: related;
+}
+
+.detail-side-column {
+  grid-area: side;
   display: grid;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-content: start;
+  align-self: start;
 }
 
-.detail-booking-panel > input {
+.detail-side-comment {
+  grid-column: 1;
+  grid-row: auto;
+  position: static;
+  top: auto;
+}
+
+.tour-booking-panel {
+  display: grid;
+  grid-column: 1;
+  grid-row: auto;
+  align-content: start;
+  align-self: start;
+  justify-self: stretch;
+  position: static;
+  top: auto;
   width: 100%;
-  padding: 11px 12px;
-  border: 1px solid #d2deee;
+  max-width: none;
+  height: auto;
+  overflow: visible;
+  gap: 12px;
+  border-radius: 18px;
+  border: 1px solid #d9e3f2;
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  box-shadow: 0 14px 28px rgba(20, 45, 84, 0.1);
+  max-height: none;
+}
+
+.tour-booking-note {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a7d99;
+}
+
+.tour-booking-panel > input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
   border-radius: 10px;
-  background: #fbfdff;
+  background: #f5f8ff;
 }
 
-.detail-booking-panel > input:focus {
+.tour-booking-panel > input:focus {
   outline: none;
-  border-color: #77a8e8;
-  box-shadow: 0 0 0 3px rgba(65, 131, 217, 0.18);
+  border-color: #7ea8de;
+  box-shadow: 0 0 0 3px rgba(36, 110, 199, 0.12);
 }
 
-.detail-booking-panel > input:disabled {
+.tour-booking-panel > input:disabled {
   background: #f0f5fb;
   color: #8a9aaf;
   cursor: not-allowed;
@@ -691,6 +740,21 @@ const submitComment = (payload) => {
   font-weight: normal;
 }
 
+.tour-booking-panel :deep(.selector__trigger) {
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
+  border-radius: 10px;
+  background: #f5f8ff;
+  color: #1d3555;
+  font-size: 0.92rem;
+}
+
+.tour-booking-panel :deep(.selector__popup) {
+  border-radius: 10px;
+  z-index: 120;
+}
+
 .tour-child-age-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -714,10 +778,10 @@ const submitComment = (payload) => {
 
 .tour-pricing-breakdown {
   margin-top: 6px;
-  padding: 12px;
+  padding: 11px;
   border-radius: 12px;
-  border: 1px solid #dbe6f5;
-  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  border: 1px solid #d4e0f0;
+  background: linear-gradient(180deg, #eff5ff 0%, #eaf2ff 100%);
 }
 
 .tour-pricing-breakdown .booking-summary-row {
@@ -728,8 +792,23 @@ const submitComment = (payload) => {
   margin-top: 6px;
 }
 
+.tour-flexible-date-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tour-flexible-date-field {
+  display: grid;
+  gap: 8px;
+}
+
 @media (max-width: 640px) {
   .tour-child-age-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tour-flexible-date-row {
     grid-template-columns: 1fr;
   }
 }
@@ -737,11 +816,11 @@ const submitComment = (payload) => {
 .booking-block {
   display: grid;
   gap: 12px;
-  margin-bottom: 16px;
-  padding: 16px;
-  border: 1px solid #dbe6f5;
+  margin-bottom: 0;
+  padding: 12px;
+  border: 1px solid #d4e0f0;
   border-radius: 12px;
-  background: #f8fbff;
+  background: linear-gradient(180deg, #eff5ff 0%, #eaf2ff 100%);
 }
 
 .booking-block:last-of-type {
@@ -755,11 +834,12 @@ const submitComment = (payload) => {
 
 .tour-pricing-dropdown {
   width: 100%;
-  padding: 11px 12px;
-  border: 1px solid #d2deee;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
   border-radius: 10px;
-  background: #ffffff;
-  font-size: 0.95rem;
+  background: #f5f8ff;
+  font-size: 0.92rem;
   color: #1d2d45;
   font-weight: 500;
   cursor: pointer;
@@ -767,8 +847,8 @@ const submitComment = (payload) => {
 
 .tour-pricing-dropdown:focus {
   outline: none;
-  border-color: #77a8e8;
-  box-shadow: 0 0 0 3px rgba(65, 131, 217, 0.18);
+  border-color: #7ea8de;
+  box-shadow: 0 0 0 3px rgba(36, 110, 199, 0.12);
 }
 
 .tour-schedule-label {
@@ -787,5 +867,38 @@ const submitComment = (payload) => {
 
 .tour-pricing-total span {
   font-weight: 600;
+}
+
+.tour-booking-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tour-booking-actions .primary-button,
+.tour-booking-actions .secondary-button {
+  min-height: 40px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .detail-layout {
+    grid-template-areas:
+      'main'
+      'side'
+      'related';
+    grid-template-columns: 1fr;
+  }
+
+  .detail-side-column {
+    grid-area: side;
+  }
+
+  .tour-booking-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
 }
 </style>

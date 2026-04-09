@@ -22,9 +22,7 @@
       <p class="travel-card__description">{{ service.shortDescription }}</p>
 
       <div class="travel-card__price-row">
-        <span :class="['availability', service.availableSlots > 0 ? 'available' : 'sold-out']">
-          {{ service.availableSlots > 0 ? 'Còn chỗ' : 'Hết chỗ' }}
-        </span>
+        
         <div class="travel-card__price-main">
           <p v-if="hasDiscountedPrice" class="price-before">{{ formatCurrencyVND(effectiveOriginalPrice) }}</p>
           <div class="travel-card__price-current">

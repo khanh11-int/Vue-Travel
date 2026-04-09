@@ -4,107 +4,121 @@
       :service="service"
       :selected-image="selectedImage"
       :gallery-images="galleryImages"
-      :service-comments="serviceComments"
-      :related-services="relatedServices"
       @update:selected-image="selectedImage = $event"
-      @submit-comment="submitComment"
     />
 
-    <aside class="booking-panel sticky-card detail-booking-panel">
-      <p class="eyebrow">Đặt chỗ</p>
-      <h3 class="detail-price">{{ formatCurrencyVND(displaySalePrice) }}</h3>
-      <p class="muted">Giá áp dụng cho thị trường Việt Nam, chưa bao gồm phí dịch vụ.</p>
+    <div class="detail-side-column">
+      <aside class="booking-panel hotel-booking-panel">
+        <p class="eyebrow">Đặt chỗ</p>
+        <h3 class="detail-price">{{ formatCurrencyVND(displaySalePrice) }}</h3>
+        <p class="muted hotel-booking-note">Giá áp dụng cho thị trường Việt Nam, chưa bao gồm phí dịch vụ.</p>
 
-      <label>{{ primaryDateLabel }}</label>
-      <input v-model="bookingForm.startDate" :min="todayISO" type="date" />
-
-      <label>Ngày trả phòng</label>
-      <input v-model="bookingForm.endDate" :min="bookingForm.startDate || todayISO" type="date" />
-
-      <label>Khách và phòng</label>
-      <GuestRoomSelector v-model="bookingForm.guestRoomSelection" />
-
-      <label>Loại phòng</label>
-      <div class="room-type-wrapper">
-        <select
-          v-model="bookingForm.roomType"
-          class="room-type-select"
-          :disabled="!roomTypeOptions.length"
-        >
-          <option
-            v-for="option in roomTypeOptions"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ option.label }} · Còn {{ option.availableSlots || 0 }} chỗ
-          </option>
-        </select>
-
-        <div v-if="selectedRoomType" class="room-type-details">
-          <div class="room-type-detail-item">
-            <span>Giá người lớn/đêm</span>
-            <strong>{{ formatCurrencyVND(adultUnitPricePerNight) }}</strong>
+        <div class="hotel-booking-field-grid">
+          <div class="hotel-booking-field">
+            <label>{{ primaryDateLabel }}</label>
+            <input v-model="bookingForm.startDate" :min="todayISO" type="date" />
           </div>
-          <div class="room-type-detail-item">
-            <span>Phụ thu trẻ 4-14 tuổi/đêm</span>
-            <strong>{{ formatCurrencyVND(effectiveChildSurchargePerNight) }}</strong>
+
+          <div class="hotel-booking-field">
+            <label>Ngày trả phòng</label>
+            <input v-model="bookingForm.endDate" :min="bookingForm.startDate || todayISO" type="date" />
+          </div>
+
+          <div class="hotel-booking-field">
+            <label>Khách và phòng</label>
+            <GuestRoomSelector v-model="bookingForm.guestRoomSelection" />
+          </div>
+
+          <div class="hotel-booking-field">
+            <label>Loại phòng</label>
+            <div class="room-type-wrapper">
+              <select
+                v-model="bookingForm.roomType"
+                class="room-type-select"
+                :disabled="!roomTypeOptions.length"
+              >
+                <option
+                  v-for="option in roomTypeOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }} · Còn {{ option.availableSlots || 0 }} chỗ
+                </option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="hotel-pricing-breakdown">
-        <div class="hotel-pricing-breakdown__row">
-          <span>Tổng số khách</span>
-          <strong>{{ bookingQuantity }} khách · {{ stayNights }} đêm</strong>
+        <div class="hotel-booking-insight-grid">
+          <div class="hotel-pricing-breakdown">
+            <div class="hotel-pricing-breakdown__row">
+              <span>Tổng số khách</span>
+              <strong>{{ bookingQuantity }} khách · {{ stayNights }} đêm</strong>
+            </div>
+            <div class="hotel-pricing-breakdown__row">
+              <span>Người lớn tính phí</span>
+              <strong>{{ chargeableAdultCount }}</strong>
+            </div>
+            <div class="hotel-pricing-breakdown__row">
+              <span>Trẻ 4-14 tuổi</span>
+              <strong>{{ childrenChargeRange.count }}</strong>
+            </div>
+          </div>
+
+          <div v-if="selectedRoomType" class="hotel-room-rate-box">
+            <div class="room-type-detail-item">
+              <span>Giá người lớn/đêm</span>
+              <strong>{{ formatCurrencyVND(adultUnitPricePerNight) }}</strong>
+            </div>
+            <div class="room-type-detail-item">
+              <span>Phụ thu trẻ 4-14 tuổi/đêm</span>
+              <strong>{{ formatCurrencyVND(effectiveChildSurchargePerNight) }}</strong>
+            </div>
+          </div>
         </div>
-        <div class="hotel-pricing-breakdown__row">
-          <span>Người lớn tính phí</span>
-          <strong>{{ chargeableAdultCount }}</strong>
-        </div>
-        <div class="hotel-pricing-breakdown__row">
-          <span>Trẻ 4-14 tuổi</span>
-          <strong>{{ childrenChargeRange.count }}</strong>
-        </div>
-        <div v-if="childrenChargeRange.count > 0" class="hotel-pricing-breakdown__row">
-          <span>Phụ thu trẻ em</span>
-          <strong>{{ childSurchargeDisplay }}</strong>
-        </div>
+
         <p v-if="childrenChargeRange.count > 0" class="hotel-pricing-breakdown__note muted">
-          Tổng phụ thu: {{ childrenChargeRange.count }} trẻ × {{ formatCurrencyVND(childrenChargeRange.pricePerChild) }}/đêm
+          Phụ thu trẻ em: {{ childSurchargeDisplay }}
         </p>
         <p class="hotel-pricing-breakdown__note muted" v-if="childrenUnderFourCount > 0">
           Trẻ dưới 4 tuổi: miễn phí ({{ childrenUnderFourCount }} trẻ)
         </p>
-      </div>
 
-      <div class="booking-summary-row hotel-pricing-total">
-        <span>Tạm tính</span>
-        <strong>{{ formatCurrencyVND(totalPrice) }}</strong>
-      </div>
+        <div class="booking-summary-row hotel-pricing-total">
+          <span>Tạm tính</span>
+          <strong>{{ formatCurrencyVND(totalPrice) }}</strong>
+        </div>
 
-      <small v-if="bookingFeedback" class="error-text">{{ bookingFeedback }}</small>
-      <small v-else-if="bookingSuccess" class="success-text">{{ bookingSuccess }}</small>
+        <small v-if="bookingFeedback" class="error-text">{{ bookingFeedback }}</small>
+        <small v-else-if="bookingSuccess" class="success-text">{{ bookingSuccess }}</small>
 
-      <button
-        class="primary-button full-width"
-        type="button"
-        :disabled="maxSelectableSlots <= 0"
-        @click="handleBookNow"
-      >
-        {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
-      </button>
-      <button
-        class="secondary-button full-width"
-        type="button"
-        :disabled="maxSelectableSlots <= 0"
-        @click="handleAddToCart"
-      >
-        {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
-      </button>
-      <button class="ghost-button full-width" type="button" @click="toggleWishlist(service.id)">
-        {{ isWishlisted ? 'Đã lưu wishlist' : 'Thêm vào wishlist' }}
-      </button>
-    </aside>
+        <div class="hotel-booking-actions">
+          <button
+            class="primary-button full-width"
+            type="button"
+            :disabled="maxSelectableSlots <= 0"
+            @click="handleBookNow"
+          >
+            {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
+          </button>
+          <button
+            class="secondary-button full-width"
+            type="button"
+            :disabled="maxSelectableSlots <= 0"
+            @click="handleAddToCart"
+          >
+            {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
+          </button>
+        </div>
+      </aside>
+
+      <DetailCommentSection
+        class="detail-side-comment"
+        :service-comments="serviceComments"
+      />
+    </div>
+
+    <DetailRelatedServices :related-services="relatedServices" />
   </section>
 
   <section v-else class="page-section empty-state">
@@ -118,10 +132,10 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
 import DetailMainContent from '@/components/travel/DetailMainContent.vue'
-import { useAdminStore } from '@/stores/admin/useAdminStore'
+import DetailCommentSection from '@/components/travel/DetailCommentSection.vue'
+import DetailRelatedServices from '@/components/travel/DetailRelatedServices.vue'
 import { useCartStore } from '@/stores/cart/useCartStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
-import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
 import {
@@ -222,8 +236,6 @@ const route = useRoute()
 const router = useRouter()
 const serviceStore = useServiceStore()
 const cartStore = useCartStore()
-const adminStore = useAdminStore()
-const wishlistStore = useWishlistStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -236,7 +248,6 @@ const service = computed(() => {
   return found
 })
 const serviceComments = computed(() => (service.value ? serviceStore.getCommentsByService(service.value.id) : []))
-const isWishlisted = computed(() => wishlistStore.isInWishlist(service.value?.id))
 const primaryDateLabel = computed(() => getPrimaryDateLabel(service.value))
 const relatedServices = computed(() => {
   if (!service.value) return []
@@ -476,11 +487,6 @@ const addToCartWithCurrentSelection = () => {
   cartStore.addToCart(nextItem)
 }
 
-const toggleWishlist = () => {
-  if (!service.value?.id) return
-  wishlistStore.toggleWishlist(service.value.id)
-}
-
 const handleAddToCart = () => {
   if (!validateBookingInput()) return
   addToCartWithCurrentSelection()
@@ -511,37 +517,137 @@ const handleBookNow = () => {
   })
 }
 
-const submitComment = (payload) => {
-  if (!service.value) return
-  adminStore.addComment({
-    serviceId: service.value.id,
-    userName: payload.userName,
-    rating: payload.rating,
-    content: payload.content
-  })
-}
 </script>
 
 <style scoped>
+.detail-layout {
+  grid-template-areas:
+    'main side'
+    'related related';
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 1fr);
+  align-items: start;
+}
+
+:deep(.detail-main-column) {
+  grid-area: main;
+}
+
+:deep(.detail-related-section) {
+  grid-area: related;
+}
+
+.detail-side-column {
+  grid-area: side;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-content: start;
+  align-self: start;
+}
+
+.detail-side-comment {
+  grid-column: 1;
+  grid-row: auto;
+  position: static;
+  top: auto;
+}
+
+.hotel-booking-panel {
+  display: grid;
+  grid-column: 1;
+  grid-row: auto;
+  align-content: start;
+  position: static;
+  top: auto;
+  align-self: start;
+  height: auto;
+  gap: 12px;
+  border-radius: 18px;
+  border: 1px solid #d9e3f2;
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  box-shadow: 0 14px 28px rgba(20, 45, 84, 0.1);
+  max-height: none;
+  overflow: visible;
+}
+
+.hotel-booking-note {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a7d99;
+}
+
+.hotel-booking-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hotel-booking-field {
+  display: grid;
+  gap: 7px;
+}
+
+.hotel-booking-field input,
+.hotel-booking-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
+  border-radius: 10px;
+  background: #f5f8ff;
+  color: #1d3555;
+  font-size: 0.92rem;
+}
+
+.hotel-booking-field input:focus,
+.hotel-booking-field select:focus {
+  outline: none;
+  border-color: #7ea8de;
+  box-shadow: 0 0 0 3px rgba(36, 110, 199, 0.12);
+}
+
+.hotel-booking-field :deep(.guest-room-selector__trigger) {
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
+  border-radius: 10px;
+  background: #f5f8ff;
+  color: #1d3555;
+  font-size: 0.92rem;
+}
+
+.hotel-booking-field :deep(.guest-room-selector__popup) {
+  border-radius: 10px;
+  z-index: 120;
+}
+
+.hotel-booking-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .hotel-pricing-breakdown {
-  margin-top: 10px;
-  padding: 12px;
-  border: 1px solid #dbe6f5;
+  margin-top: 0;
+  padding: 11px;
+  border: 1px solid #d4e0f0;
   border-radius: 12px;
-  background: linear-gradient(180deg, #f7fbff 0%, #f2f7ff 100%);
+  background: linear-gradient(180deg, #eff5ff 0%, #eaf2ff 100%);
 }
 
 .hotel-pricing-breakdown__row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-  font-size: 0.95rem;
-  color: #486280;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #516a8a;
 }
 
 .hotel-pricing-breakdown__row + .hotel-pricing-breakdown__row {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .hotel-pricing-breakdown__row strong {
@@ -550,42 +656,53 @@ const submitComment = (payload) => {
   text-align: right;
 }
 
+.hotel-room-rate-box {
+  padding: 11px;
+  border: 1px solid #d4e0f0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #eff5ff 0%, #eaf2ff 100%);
+  display: grid;
+  gap: 6px;
+}
+
 .hotel-pricing-breakdown__note {
-  margin: 8px 0 0;
-  font-size: 0.85rem;
-  line-height: 1.45;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .hotel-pricing-total {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed #cad9ef;
+  margin-top: 2px;
+  padding: 10px 0 8px;
+  border-top: 1px solid #d4deed;
+  border-bottom: 1px solid #d4deed;
 }
 
 .room-type-wrapper {
-  padding: 12px;
-  border: 1px solid #dbe6f5;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #f9fbff 0%, #f2f7ff 100%);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .room-type-select {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #cce0f0;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid #c8d6ea;
   border-radius: 10px;
-  background: #ffffff;
+  background: #f5f8ff;
   color: #1f3552;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 0.95rem;
-  margin-bottom: 10px;
+  font-size: 0.9rem;
+  margin-bottom: 0;
   appearance: auto;
 }
 
 .room-type-select:hover {
-  border-color: #a0c8f0;
-  background: #f8faff;
+  border-color: #9eb4d2;
+  background: #f8fbff;
 }
 
 .room-type-select:disabled {
@@ -597,13 +714,13 @@ const submitComment = (payload) => {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding-top: 10px;
-  border-top: 1px solid #dbe6f5;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .room-type-detail-item {
-  font-size: 0.9rem;
-  color: #667fa0;
+  font-size: 0.88rem;
+  color: #5a7291;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -612,5 +729,43 @@ const submitComment = (payload) => {
 .room-type-detail-item strong {
   color: #1f3552;
   font-weight: 700;
+}
+
+.hotel-booking-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.hotel-booking-actions .primary-button,
+.hotel-booking-actions .secondary-button {
+  min-height: 40px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .detail-layout {
+    grid-template-areas:
+      'main'
+      'side'
+      'related';
+    grid-template-columns: 1fr;
+  }
+
+  .detail-side-column {
+    grid-area: side;
+  }
+
+  .hotel-booking-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .hotel-booking-field-grid,
+  .hotel-booking-insight-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

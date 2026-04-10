@@ -69,7 +69,7 @@ export const resolveQuantityByCategory = (query, category) => {
  * Tạo chuỗi tóm tắt tiêu chí tìm kiếm để hiển thị nhanh trên trang danh sách.
  * @param {Object} query - Query params hiện tại trên URL.
  * @param {string} category - Nhóm dịch vụ đang xử lý.
- * @returns {string} Chuỗi mô tả ngắn gọn các điều kiện tìm kiếm.
+ * @returns {string} Chuỗi tóm tắt các điều kiện tìm kiếm.
  */
 export const resolveSearchSummary = (query, category) => {
   const startDate = resolveStartDateByCategory(query, category)

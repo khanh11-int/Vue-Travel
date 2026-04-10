@@ -98,14 +98,6 @@
           >
             {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
           </button>
-          <button
-            class="secondary-button full-width"
-            type="button"
-            :disabled="maxSelectableSlots <= 0"
-            @click="handleAddToCart"
-          >
-            {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
-          </button>
         </div>
       </aside>
 
@@ -132,7 +124,6 @@ import DetailCommentSection from '@/components/travel/DetailCommentSection.vue'
 import DetailRelatedServices from '@/components/travel/DetailRelatedServices.vue'
 import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
 import { formatDateRangeVN, formatCurrencyVND } from '@/utils/formatters'
-import { useCartStore } from '@/stores/cart/useCartStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 
 const tourDetailLogic = {
@@ -212,7 +203,6 @@ const tourDetailLogic = {
 const route = useRoute()
 const router = useRouter()
 const serviceStore = useServiceStore()
-const cartStore = useCartStore()
 const service = computed(() => {
   const found = serviceStore.getServiceBySlug(route.params.slug)
   if (!found || found.categoryId !== 'tour') return null
@@ -322,18 +312,6 @@ const flexibleWindowText = computed(() => {
   if (!start || !end) return ''
   return `Khoảng linh hoạt: ${formatDateRangeVN(start, end)}`
 })
-
-const isEditingFromCart = computed(() => route.query.edit === '1')
-const originalCartItem = computed(() => ({
-  serviceId: route.query.originServiceId ?? service.value?.id,
-  startDate: String(route.query.originStartDate || ''),
-  endDate: String(route.query.originEndDate || ''),
-  bookingType: String(route.query.originBookingType || 'tour'),
-  bookingMeta: {
-    departureId: String(route.query.departureId || route.query.originDepartureId || ''),
-    scheduleMode: String(route.query.scheduleMode || route.query.originScheduleMode || 'fixed')
-  }
-}))
 
 const normalizedChildrenAges = computed(() => {
   const count = Math.max(0, Number(bookingForm.children) || 0)
@@ -566,50 +544,8 @@ const validateBookingInput = () => {
   return true
 }
 
-const addToCartWithCurrentSelection = () => {
-  const nextItem = {
-    serviceId: service.value.id,
-    quantity: totalGuests.value,
-    bookingType: 'tour',
-    bookingMeta: tourDetailLogic.buildBookingMeta({
-      bookingForm,
-      selectedSchedule: selectedSchedule.value,
-      effectiveUnitPrice: effectiveUnitPrice.value,
-      pricingSummary: pricingSummary.value
-    }),
-    startDate: bookingForm.startDate,
-    endDate: bookingForm.scheduleMode === 'flexible' ? bookingForm.endDate : ''
-  }
-
-  if (isEditingFromCart.value) {
-    cartStore.removeCartItem(
-      originalCartItem.value.serviceId,
-      originalCartItem.value.startDate,
-      originalCartItem.value.endDate,
-      originalCartItem.value.bookingType,
-      originalCartItem.value.bookingMeta
-    )
-    cartStore.addToCart(nextItem)
-    return
-  }
-
-  cartStore.addToCart(nextItem)
-}
-
 const selectScheduleOption = (scheduleId) => {
   bookingForm.selectedScheduleId = String(scheduleId || '')
-}
-
-const handleAddToCart = () => {
-  if (!validateBookingInput()) return
-  addToCartWithCurrentSelection()
-
-  if (isEditingFromCart.value) {
-    router.push('/gio-hang')
-    return
-  }
-
-  bookingSuccess.value = 'Đã thêm dịch vụ vào giỏ đặt chỗ.'
 }
 
 const handleBookNow = async () => {

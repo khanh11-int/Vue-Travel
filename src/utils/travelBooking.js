@@ -1,9 +1,10 @@
 export const BOOKING_STATUS_LABELS = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
-  processing: 'Đang xử lý',
-  completed: 'Hoàn thành',
-  cancelled: 'Hủy'
+  'checked-in': 'Đã nhận phòng',
+  'checked-out': 'Đã trả phòng',
+  completed: 'Hoàn tất',
+  cancelled: 'Đã hủy'
 }
 
 /**
@@ -125,4 +126,41 @@ export const upsertBooking = (bookings, booking) => {
   const next = [...normalizedBookings]
   next[index] = booking
   return next
+}
+
+/**
+ * Xác định các trạng thái hợp lệ tiếp theo dựa trên trạng thái hiện tại và loại dịch vụ.
+ * @param {string} currentStatus - Trạng thái hiện tại của booking.
+ * @param {string} bookingType - Loại dịch vụ: 'hotel', 'tour', hoặc 'ticket'.
+ * @returns {Array<string>} Danh sách trạng thái hợp lệ tiếp theo.
+ */
+export const getValidNextStatuses = (currentStatus, bookingType = 'hotel') => {
+  const normalizedType = String(bookingType || 'hotel').toLowerCase()
+
+  // Terminal states - không có transition tiếp theo
+  if (currentStatus === 'completed' || currentStatus === 'cancelled') {
+    return []
+  }
+
+  // Hotel workflow
+  if (normalizedType === 'hotel') {
+    const hotelStatusFlow = {
+      pending: ['confirmed', 'cancelled'],
+      confirmed: ['checked-in', 'cancelled'],
+      'checked-in': ['checked-out', 'cancelled'],
+      'checked-out': ['completed', 'cancelled'],
+      completed: [],
+      cancelled: []
+    }
+    return hotelStatusFlow[currentStatus] || []
+  }
+
+  // Tour/Ticket workflow
+  const tourTicketStatusFlow = {
+    pending: ['confirmed', 'cancelled'],
+    confirmed: ['completed', 'cancelled'],
+    completed: [],
+    cancelled: []
+  }
+  return tourTicketStatusFlow[currentStatus] || []
 }

@@ -1,6 +1,6 @@
 <template>
-  <section class="page-section cart-layout">
-    <div>
+  <section class="page-section checkout-page">
+    <div class="checkout-main">
       <div class="section-heading compact">
         <div>
           <p class="eyebrow">Xác nhận đặt chỗ</p>
@@ -9,6 +9,14 @@
       </div>
 
       <form class="checkout-form" @submit.prevent="handleCheckout">
+        <div class="checkout-intro-panel">
+          <div>
+            <p class="eyebrow eyebrow--blue">Thanh toán an toàn</p>
+            <h2>Điền thông tin một lần, xác nhận ngay.</h2>
+          </div>
+          <p class="muted">Dữ liệu booking được chốt theo một loại dịch vụ, không trộn khách sạn, tour và vé trong cùng một luồng đặt.</p>
+        </div>
+
         <div class="form-grid">
           <div class="field-group">
             <label>Họ và tên</label>
@@ -53,31 +61,18 @@
         <div class="field-group">
           <label>Phương thức thanh toán</label>
           <div class="payment-methods">
-            <label class="payment-option">
+            <label class="payment-option" :class="{ active: form.paymentMethod === 'cash' }">
               <input v-model="form.paymentMethod" type="radio" value="cash" />
-              <span>Thanh toán khi xác nhận booking</span>
+              <span>
+                <strong>Thanh toán khi xác nhận booking</strong>
+              </span>
             </label>
-            <label class="payment-option">
-              <input v-model="form.paymentMethod" type="radio" value="momo-bank" />
-              <span>Chuyển khoản MoMo</span>
+            <label class="payment-option" :class="{ active: form.paymentMethod === 'bank-transfer' }">
+              <input v-model="form.paymentMethod" type="radio" value="bank-transfer" />
+              <span>
+                <strong>Chuyển khoản VietQR</strong>
+              </span>
             </label>
-          </div>
-
-          <div v-if="form.paymentMethod === 'momo-bank'" class="bank-transfer-box">
-            <p class="muted" style="margin: 0 0 8px;">Quét QR hoặc chuyển khoản theo thông tin bên dưới:</p>
-            <p><strong>Ngân hàng/Ví:</strong> MoMo</p>
-            <p><strong>Số tài khoản:</strong> {{ momoAccountNumber }}</p>
-            <p><strong>Chủ tài khoản:</strong> {{ momoAccountHolder }}</p>
-            <p><strong>Nội dung:</strong> {{ momoTransferContent }}</p>
-            <div class="payment-copy-actions">
-              <button class="secondary-button" type="button" @click="copyPaymentField(momoAccountNumber)">Copy STK</button>
-              <button class="secondary-button" type="button" @click="copyPaymentField(momoTransferContent)">Copy nội dung CK</button>
-            </div>
-
-            <div class="momo-qr-box">
-              <img :src="momoQrImage" alt="QR MoMo thanh toán" />
-            </div>
-            <small v-if="paymentFeedback" class="success-text">{{ paymentFeedback }}</small>
           </div>
         </div>
 
@@ -122,8 +117,11 @@
         </div>      </form>
     </div>
 
-    <aside class="summary-card sticky-card">
-      <p class="eyebrow">Đơn hàng của bạn</p>
+    <aside class="summary-card checkout-summary-card sticky-card">
+      <div class="checkout-summary-header">
+        <p class="eyebrow">Đơn hàng của bạn</p>
+        <h2>Kiểm tra trước khi xác nhận</h2>
+      </div>
 
       <div v-for="item in checkoutItems" :key="item.identityKey || `${item.serviceId}-${item.startDate}-${item.endDate}`" class="mini-booking-item">
         <strong>{{ item.service?.name }}</strong>
@@ -153,11 +151,64 @@
       </button>
       <small v-if="errors.cart" class="error-text">{{ errors.cart }}</small>
     </aside>
+
+    <div v-if="paymentOverlayVisible" class="checkout-modal-backdrop" @click.self="closePaymentOverlay">
+      <div class="checkout-modal-card" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
+        <template v-if="showPaymentQr">
+          <p class="eyebrow eyebrow--blue">Thanh toán VietQR</p>
+          <h2 id="payment-modal-title">Quét mã để thanh toán</h2>
+          <p class="muted">Mã QR đã được điền sẵn số tiền và nội dung chuyển khoản.</p>
+
+          <div class="checkout-qr-meta">
+            <div>
+              <span>Ngân hàng</span>
+              <strong>{{ bankTransfer.bankName }}</strong>
+            </div>
+            <div>
+              <span>Số tài khoản</span>
+              <strong>{{ bankTransfer.accountNumber }}</strong>
+            </div>
+            <div>
+              <span>Chủ tài khoản</span>
+              <strong>{{ bankTransfer.accountName }}</strong>
+            </div>
+            <div>
+              <span>Số tiền</span>
+              <strong>{{ formatCurrencyVND(total) }}</strong>
+            </div>
+          </div>
+
+          <div class="checkout-qr-image">
+            <img :src="vietQrImage" alt="VietQR thanh toán" />
+          </div>
+
+          <div class="checkout-transfer-note">
+            <span>Nội dung chuyển khoản</span>
+            <strong>{{ bankTransfer.transferContent }}</strong>
+          </div>
+
+          <div class="checkout-modal-actions">
+            <button class="secondary-button" type="button" @click="copyPaymentField(bankTransfer.accountNumber)">Copy STK</button>
+            <button class="secondary-button" type="button" @click="copyPaymentField(bankTransfer.transferContent)">Copy nội dung CK</button>
+          </div>
+
+          <small v-if="paymentFeedback" class="success-text">{{ paymentFeedback }}</small>
+
+          <small class="muted">Sau khoảng 30 giây hệ thống sẽ tự chuyển sang hóa đơn.</small>
+        </template>
+
+        <template v-else>
+          <p class="eyebrow">Hóa đơn</p>
+          <h2>Đang tạo hóa đơn cho bạn...</h2>
+          <p class="muted">Vui lòng chờ trong giây lát.</p>
+        </template>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup>
-import { computed, reactive, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/useAuthStore'
 import { useBookingStore } from '@/stores/booking/useBookingStore'
@@ -419,27 +470,86 @@ const customVoucherCode = ref('')
 const voucherFeedback = ref('')
 const voucherSuccess = ref(false)
 const paymentFeedback = ref('')
+const paymentOverlayVisible = ref(false)
+const showPaymentQr = ref(false)
+const activeBooking = ref(null)
+const paymentTimerIds = {
+  qr: null,
+  invoice: null
+}
 
-const momoAccountNumber = '0817367121'
-const momoAccountHolder = 'Nguyen Quoc Khanh'
+const PAYMENT_QR_DELAY_MS = 2000
+const CASH_INVOICE_DELAY_MS = 2000
+const PAYMENT_INVOICE_DELAY_MS = 30000
 
-const momoTransferContent = computed(() => {
-  const customerEmail = String(form.email || 'guest').trim().toLowerCase() || 'guest'
-  return `Thanh toan VTravel ${customerEmail} ${Math.round(total.value)}`
+const bankTransfer = computed(() => {
+  const bookingCode = String(activeBooking.value?.code || 'VV-PENDING').trim().toUpperCase()
+  const amount = Math.round(Number(total.value || 0))
+
+  return {
+    bankName: 'MB Bank',
+    bankCode: 'MB',
+    accountNumber: '0817367121',
+    accountName: 'Nguyên Quốc Khánh',
+    transferContent: `VTRAVEL ${bookingCode} ${amount}`
+  }
 })
 
-const momoQrImage = computed(() => {
-  const qrPayload = [
-    'VTRAVEL',
-    'MOMO',
-    momoAccountNumber,
-    momoAccountHolder,
-    String(Math.round(total.value)),
-    momoTransferContent.value
-  ].join('|')
+const vietQrImage = computed(() => {
+  const amount = Math.round(Number(total.value || 0))
+  const query = new URLSearchParams({
+    amount: String(amount),
+    addInfo: bankTransfer.value.transferContent,
+    accountName: bankTransfer.value.accountName
+  })
 
-  return `https://quickchart.io/qr?size=240&text=${encodeURIComponent(qrPayload)}`
+  return `https://img.vietqr.io/image/${bankTransfer.value.bankCode}-${bankTransfer.value.accountNumber}-compact2.png?${query.toString()}`
 })
+
+const clearPaymentTimers = () => {
+  if (paymentTimerIds.qr) {
+    window.clearTimeout(paymentTimerIds.qr)
+    paymentTimerIds.qr = null
+  }
+
+  if (paymentTimerIds.invoice) {
+    window.clearTimeout(paymentTimerIds.invoice)
+    paymentTimerIds.invoice = null
+  }
+}
+
+const closePaymentOverlay = () => {
+  clearPaymentTimers()
+  paymentOverlayVisible.value = false
+  showPaymentQr.value = false
+  activeBooking.value = null
+}
+
+const startPaymentFlow = (booking) => {
+  clearPaymentTimers()
+  activeBooking.value = booking
+
+  if (form.paymentMethod !== 'bank-transfer') {
+    paymentTimerIds.invoice = window.setTimeout(() => {
+      router.push({ name: 'booking-success', query: { code: booking.code } })
+    }, CASH_INVOICE_DELAY_MS)
+    return
+  }
+
+  paymentOverlayVisible.value = true
+  showPaymentQr.value = false
+
+  paymentTimerIds.qr = window.setTimeout(() => {
+    if (!paymentOverlayVisible.value) return
+    showPaymentQr.value = form.paymentMethod === 'bank-transfer'
+  }, PAYMENT_QR_DELAY_MS)
+
+  paymentTimerIds.invoice = window.setTimeout(() => {
+    if (!paymentOverlayVisible.value) return
+    closePaymentOverlay()
+    router.push({ name: 'booking-success', query: { code: booking.code } })
+  }, PAYMENT_INVOICE_DELAY_MS)
+}
 
 const validate = () => {
   if (isDirectCheckout.value && !directCheckoutItem.value) {
@@ -481,7 +591,7 @@ const handleCheckout = () => {
     customer: {
       ...form,
       paymentMethod: form.paymentMethod,
-      paymentMethodLabel: form.paymentMethod === 'momo-bank' ? 'Chuyển khoản MoMo' : 'Thanh toán khi xác nhận booking'
+      paymentMethodLabel: form.paymentMethod === 'bank-transfer' ? 'Chuyển khoản VietQR' : 'Thanh toán khi xác nhận booking'
     },
     items: checkoutItems.value,
     subtotal: subtotal.value,
@@ -498,7 +608,7 @@ const handleCheckout = () => {
     cartStore.clearCart()
   }
 
-  router.push({ name: 'booking-success', query: { code: booking.code } })
+  startPaymentFlow(booking)
 }
 
 const copyPaymentField = async (value) => {
@@ -585,9 +695,119 @@ onMounted(() => {
 
   loadAvailablePromotions()
 })
+
+onBeforeUnmount(() => {
+  clearPaymentTimers()
+})
 </script>
 
 <style scoped>
+.checkout-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 410px);
+  gap: 28px;
+  align-items: start;
+}
+
+.checkout-main {
+  display: grid;
+  gap: 18px;
+}
+
+.checkout-form {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 28px;
+  border: 1px solid rgba(10, 109, 217, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 248, 253, 0.96) 100%),
+    radial-gradient(circle at top right, rgba(10, 109, 217, 0.08), transparent 34%);
+  box-shadow: 0 18px 40px rgba(20, 45, 84, 0.08);
+}
+
+.checkout-intro-panel {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(10, 109, 217, 0.08), rgba(255, 122, 26, 0.08));
+  border: 1px solid rgba(10, 109, 217, 0.12);
+}
+
+.checkout-intro-panel h2,
+.checkout-summary-header h2 {
+  margin: 0;
+  font-size: 1.18rem;
+  line-height: 1.3;
+}
+
+.checkout-summary-card {
+  padding: 22px;
+  border-radius: 28px;
+  border: 1px solid rgba(24, 45, 75, 0.08);
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  box-shadow: 0 18px 40px rgba(20, 45, 84, 0.08);
+}
+
+.checkout-summary-header {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.checkout-summary-card .mini-booking-item {
+  display: grid;
+  gap: 4px;
+  padding: 14px 0;
+}
+
+.checkout-summary-card .mini-booking-item strong {
+  font-size: 0.98rem;
+}
+
+.checkout-summary-card .mini-booking-item span {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.checkout-summary-card .summary-row {
+  padding: 12px 0;
+}
+
+.checkout-summary-card .summary-row--total {
+  padding-top: 14px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(24, 45, 75, 0.1);
+}
+
+.checkout-summary-card .primary-button {
+  min-height: 52px;
+  border-radius: 16px;
+  box-shadow: 0 12px 24px rgba(10, 109, 217, 0.18);
+}
+
+.field-group {
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 45, 75, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-grid {
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.field-group input,
+.field-group select,
+.checkout-form input,
+.checkout-form select,
+.checkout-form textarea {
+  border-radius: 14px;
+  border: 1px solid rgba(24, 45, 75, 0.14);
+}
+
 .payment-methods {
   display: grid;
   gap: 10px;
@@ -599,11 +819,27 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border: 1px solid rgba(24, 45, 75, 0.14);
-  border-radius: 10px;
-  background: #fff;
+  border: 1px solid rgba(24, 45, 75, 0.12);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
   font-weight: 500;
   cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.payment-option.active {
+  border-color: rgba(10, 109, 217, 0.45);
+  box-shadow: 0 10px 22px rgba(10, 109, 217, 0.08);
+}
+
+.payment-option:hover {
+  border-color: rgba(10, 109, 217, 0.35);
+  box-shadow: 0 8px 18px rgba(10, 109, 217, 0.08);
+  transform: translateY(-1px);
+}
+
+.payment-option input:checked + span {
+  color: var(--primary);
 }
 
 .payment-option input[type='radio'] {
@@ -624,10 +860,10 @@ onMounted(() => {
 
 .bank-transfer-box {
   margin-top: 12px;
-  border: 1px solid rgba(24, 45, 75, 0.12);
-  border-radius: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(10, 109, 217, 0.16);
+  border-radius: 18px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(10, 109, 217, 0.06), rgba(255, 255, 255, 1));
 }
 
 .bank-transfer-box p {
@@ -641,17 +877,173 @@ onMounted(() => {
   margin-top: 8px;
 }
 
-.momo-qr-box {
-  margin-top: 10px;
+.payment-copy-actions .secondary-button,
+.custom-voucher-row .secondary-button {
+  min-height: 44px;
+  border-radius: 12px;
 }
 
-.momo-qr-box img {
-  width: 180px;
-  height: 180px;
-  object-fit: contain;
-  border-radius: 10px;
-  border: 1px solid rgba(24, 45, 75, 0.15);
+.checkout-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 17, 36, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.checkout-modal-card {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 249, 255, 0.98) 100%);
+  box-shadow: 0 30px 70px rgba(7, 17, 36, 0.28);
+}
+
+.checkout-modal-card h2 {
+  margin: 0;
+}
+
+.checkout-qr-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.checkout-qr-meta div,
+.checkout-transfer-note {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(24, 45, 75, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.checkout-qr-meta span,
+.checkout-transfer-note span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.checkout-qr-meta strong,
+.checkout-transfer-note strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.checkout-qr-image {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border-radius: 24px;
+  background: radial-gradient(circle at top, rgba(10, 109, 217, 0.1), rgba(255, 255, 255, 0.98) 60%);
+  border: 1px solid rgba(10, 109, 217, 0.12);
+}
+
+.checkout-qr-image img {
+  width: min(100%, 260px);
+  aspect-ratio: 1;
+  border-radius: 20px;
   background: #fff;
-  padding: 8px;
+  padding: 10px;
+  object-fit: contain;
+  box-shadow: 0 10px 24px rgba(24, 45, 75, 0.12);
+}
+
+.checkout-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.promotions-list {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.promotion-card {
+  border-radius: 16px;
+}
+
+.promo-badge {
+  border-radius: 12px;
+  font-size: 0.88rem;
+}
+
+.custom-voucher-row {
+  border-radius: 16px;
+  background: rgba(10, 109, 217, 0.04);
+}
+
+.mini-booking-item {
+  display: grid;
+  gap: 5px;
+}
+
+.mini-booking-item strong {
+  font-size: 0.98rem;
+}
+
+.mini-booking-item span {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.summary-row {
+  align-items: baseline;
+}
+
+.summary-row span {
+  color: var(--muted);
+}
+
+@media (max-width: 1180px) {
+  .checkout-page {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-summary-card {
+    position: static;
+    top: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .checkout-form,
+  .checkout-summary-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .field-group {
+    padding: 14px;
+  }
+
+  .promotions-list {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-summary-card .primary-button {
+    min-height: 48px;
+  }
+
+  .checkout-modal-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .checkout-qr-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-modal-actions {
+    flex-direction: column;
+  }
 }
 </style>

@@ -1,30 +1,4 @@
 /**
- * Tạo khóa định danh duy nhất cho item trong giỏ dựa trên loại booking và metadata.
- * @param {Object} item - Cart item đã chuẩn hóa.
- * @returns {string} Identity key dùng để gộp/tìm item trong cart.
- */
-export const getCartIdentity = (item) => {
-  const bookingType = item.bookingType || 'hotel'
-  const startDate = item.startDate || item.travelDate || ''
-  const endDate = item.endDate || ''
-  const bookingMeta = item.bookingMeta || {}
-
-  if (bookingType === 'hotel') {
-    const rooms = Math.max(1, Number(bookingMeta.rooms || 1) || 1)
-    const roomType = String(bookingMeta.roomType || '').trim().toLowerCase() || 'default'
-    return `${bookingType}|${item.serviceId}|${startDate}|${endDate}|rooms:${rooms}|roomType:${roomType}`
-  }
-
-  if (bookingType === 'tour') {
-    const scheduleMode = bookingMeta.scheduleMode || 'fixed'
-    const flexibleEndDate = bookingMeta.endDate || endDate || ''
-    return `${bookingType}|${item.serviceId}|mode:${scheduleMode}|${startDate}|${flexibleEndDate}|dep:${bookingMeta.departureId || ''}`
-  }
-
-  return `${bookingType}|${item.serviceId}|${startDate}`
-}
-
-/**
  * Sinh chuỗi tóm tắt thông tin đặt chỗ để hiển thị trong card/cart/checkout.
  * @param {Object} item - Cart item hoặc booking item.
  * @returns {string} Chuỗi mô tả booking theo từng loại dịch vụ.

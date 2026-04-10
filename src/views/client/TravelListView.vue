@@ -19,8 +19,8 @@
         <label>Tỉnh / Thành</label>
         <select v-model="filters.province">
           <option value="">Tất cả</option>
-          <option v-for="destination in destinations" :key="destination.id" :value="destination.province">
-            {{ destination.province }}
+          <option v-for="prov in destinations" :key="prov.id" :value="prov.province">
+            {{ prov.province }}
           </option>
         </select>
       </div>
@@ -40,10 +40,11 @@
         </select>
       </div>
       <div class="field-group">
-        <label>Tình trạng</label>
-        <select v-model="filters.availability">
+        <label>Giảm giá</label>
+        <select v-model="filters.discountStatus">
           <option value="">Tất cả</option>
-          <option value="available">Còn chỗ</option>
+          <option value="discounted">Có giảm giá</option>
+          <option value="no-discount">Không giảm giá</option>
         </select>
       </div>
       <div class="field-group">
@@ -102,7 +103,15 @@ const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 const categories = computed(() => serviceStore.categories)
-const destinations = computed(() => serviceStore.destinations)
+
+const destinations = computed(() => {
+  const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
+  const provinceSet = new Set(services.map((s) => s.province).filter(Boolean))
+  return Array.from(provinceSet).map((province, index) => ({
+    id: `province-${index}`,
+    province
+  }))
+})
 
 const isWishlisted = (serviceId) => {
   const wishlist = Array.isArray(wishlistStore.wishlist) ? wishlistStore.wishlist : []
@@ -125,7 +134,7 @@ const createInitialFilters = () => ({
   minPrice: 0,
   maxPrice: 0,
   minRating: 0,
-  availability: '',
+  discountStatus: '',
   sortBy: 'featured'
 })
 
@@ -200,10 +209,11 @@ const filteredServices = computed(() => {
     const matchesMinPrice = !filters.minPrice || service.salePrice >= filters.minPrice
     const matchesMaxPrice = !filters.maxPrice || service.salePrice <= filters.maxPrice
     const matchesRating = !filters.minRating || service.rating >= filters.minRating
-    const matchesAvailability = hasAvailableSlots
+    const isDiscounted = Number(service.discountPercent || 0) > 0 || Number(service.salePrice || 0) < Number(service.price || 0)
+    const matchesDiscountStatus = !filters.discountStatus || (filters.discountStatus === 'discounted' ? isDiscounted : !isDiscounted)
 
     return hasAvailableSlots && matchesKeyword && matchesCategory && matchesProvince && matchesMinPrice
-      && matchesMaxPrice && matchesRating && matchesAvailability
+      && matchesMaxPrice && matchesRating && matchesDiscountStatus
   })
 
   return [...result].sort((left, right) => {
@@ -230,7 +240,7 @@ const resetFilters = () => {
     minPrice: 0,
     maxPrice: 0,
     minRating: 0,
-    availability: '',
+    discountStatus: '',
     sortBy: 'featured'
   })
 }

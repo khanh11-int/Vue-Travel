@@ -13,7 +13,6 @@
 
         <div class="ota-nav-right">
           <router-link to="/wishlist">Yêu thích <span class="nav-pill">{{ wishlistCount }}</span></router-link>
-          <router-link to="/gio-hang">Giỏ hàng <span class="nav-pill">{{ cartCount }}</span></router-link>
           <router-link to="/lich-su-dat-cho">Đặt chỗ của tôi</router-link>
           <router-link v-if="isAdmin" to="/admin">Quản trị</router-link>
 
@@ -57,18 +56,15 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import SubNavBar from '@/components/common/SubNavBar.vue'
-import { useCartStore } from '@/stores/cart/useCartStore'
 import { useAuthStore } from '@/stores/auth/useAuthStore'
 import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 import logoImage from '@/assets/logo.png'
 
 const router = useRouter()
-const cartStore = useCartStore()
 const authStore = useAuthStore()
 const wishlistStore = useWishlistStore()
 
 const wishlistCount = computed(() => wishlistStore.wishlistCount)
-const cartCount = computed(() => cartStore.cartItems.length)
 const isLoggedIn = computed(() => authStore.isLoggedIn)
 const isAdmin = computed(() => authStore.isAdmin)
 const currentUserLabel = computed(() => {

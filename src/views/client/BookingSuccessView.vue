@@ -89,7 +89,7 @@ onMounted(() => {
   bookingStore.syncUserScope()
   displayTimer = window.setTimeout(() => {
     isReadyToShow.value = true
-  }, 2000)
+  }, 350)
 })
 
 onBeforeUnmount(() => {

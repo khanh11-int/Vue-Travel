@@ -11,14 +11,23 @@
         <button v-else class="secondary-button" type="button" @click="goToServicesList">Quay lại danh sách</button>
       </div>
 
+      <div v-if="!isCreatePage" class="admin-category-tabs">
+        <button
+          v-for="category in categoryTabs"
+          :key="category.id"
+          type="button"
+          :class="['admin-category-tab', { active: filters.categoryId === category.id }]"
+          @click="filters.categoryId = category.id"
+        >
+          {{ category.name }}
+        </button>
+        <button type="button" :class="['admin-category-tab', { active: !filters.categoryId }]" @click="filters.categoryId = ''">
+          Tất cả
+        </button>
+      </div>
+
       <div v-if="!isCreatePage" class="admin-toolbar">
         <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên dịch vụ hoặc điểm đến" />
-        <select v-model="filters.categoryId">
-          <option value="">Tất cả danh mục</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
-            {{ category.name }}
-          </option>
-        </select>
         <select v-model="filters.province">
           <option value="">Tất cả tỉnh/thành</option>
           <option v-for="province in provinceOptions" :key="province" :value="province">
@@ -66,8 +75,8 @@
           <div class="service-form-section__header">
             <div>
               <p class="eyebrow">Thông tin cơ bản</p>
-              <h3>Tên, slug, điểm đến và giá</h3>
-              <p class="muted small-text">Mỗi ô có nhãn rõ ràng để tránh nhầm giữa tên hiển thị, đường dẫn và giá bán.</p>
+              <h3>Tên, giá, mô tả và tiện ích</h3>
+              <p class="muted small-text">Nhập thông tin nhận diện, giá bán và nội dung mô tả trong cùng một khối để kiểm tra dễ hơn.</p>
             </div>
             <span class="service-form-badge">{{ currentCategoryLabel }}</span>
           </div>
@@ -114,7 +123,7 @@
           <div class="service-form-group-card">
             <div class="service-form-group-card__header">
               <h4>3) Giá và tồn chỗ</h4>
-              <p class="muted small-text">Quy tắc chuẩn: giá gốc (price) >= giá khuyến mãi (salePrice).</p>
+              <p class="muted small-text">Giá gốc (price) là giá chính, phần trăm giảm giá sẽ tự động tính giá sau giảm.</p>
             </div>
             <div class="admin-form-grid service-form-grid">
               <div class="field-group">
@@ -122,9 +131,42 @@
                 <input v-model.number="serviceForm.price" type="number" min="0" placeholder="0" />
               </div>
               <div class="field-group">
-                <label>Giá khuyến mãi</label>
-                <input v-model.number="serviceForm.salePrice" type="number" min="0" placeholder="0" />
+                <label>Phần trăm giảm giá (%)</label>
+                <input v-model.number="serviceForm.discountPercent" type="number" min="0" max="100" placeholder="0" />
               </div>
+            </div>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>4) Mô tả chi tiết (hiển thị trên trang chi tiết)</h4>
+              <p class="muted small-text">Chi tiết đầy đủ, điều kiện, lưu ý, qui tắc hủy bỏ...</p>
+            </div>
+            <div class="field-group">
+              <label>Mô tả chi tiết</label>
+              <textarea v-model="serviceForm.detailedDescription" rows="5" placeholder="Mô tả chi tiết, điều kiện, lưu ý, qui tắc hủy, v.v..." />
+            </div>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>5) Tiện ích nổi bật</h4>
+              <p class="muted small-text">Các tính năng / tiện ích chính (cách nhau bằng dấu phẩy hoặc xuống dòng).</p>
+            </div>
+            <div class="field-group">
+              <label>Tiện ích nổi bật</label>
+              <textarea v-model="serviceForm.highlightedFeatures" rows="4" placeholder="Ví dụ: Ăn sáng hàng ngày, Thuyền du ngoạn, Hướng dẫn viên tiếng Việt, WiFi miễn phí" />
+            </div>
+          </div>
+
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>6) Lịch trình / Thông tin hành trình</h4>
+              <p class="muted small-text">Tóm tắt lịch trình hoặc thông tin chính của dịch vụ.</p>
+            </div>
+            <div class="field-group">
+              <label>Lịch trình / Thông tin hành trình</label>
+              <textarea v-model="serviceForm.scheduleInfo" rows="4" placeholder="Ví dụ: Ngày 1: TP.HCM → Hạ Long. Ngày 2: Thuyền du ngoạn. Ngày 3: Hạ Long → TP.HCM" />
             </div>
           </div>
 
@@ -134,7 +176,7 @@
           </div>
         </section>
 
-        <section v-if="wizardStep === 2 && serviceForm.categoryId === 'hotel'" class="service-form-section admin-form-span-2">
+        <section v-if="wizardStep === 4 && serviceForm.categoryId === 'hotel'" class="service-form-section admin-form-span-2">
           <div class="service-form-section__header">
             <div>
               <p class="eyebrow">Thiết lập khách sạn</p>
@@ -177,9 +219,14 @@
           </div>
 
           <button class="ghost-button" type="button" @click="addRoomType">+ Thêm loại phòng</button>
+
+          <div class="admin-form-actions">
+            <button class="secondary-button" type="button" @click="goToStep(3)">Trở về</button>
+            <button class="primary-button" type="button" @click="goToReviewStep">Tiếp tục</button>
+          </div>
         </section>
 
-        <section v-else-if="wizardStep === 2 && serviceForm.categoryId === 'tour'" class="service-form-section admin-form-span-2">
+        <section v-else-if="wizardStep === 4 && serviceForm.categoryId === 'tour'" class="service-form-section admin-form-span-2">
           <div class="service-form-section__header">
             <div>
               <p class="eyebrow">Thiết lập tour</p>
@@ -336,10 +383,15 @@
               </div>
             </div>
             <button class="ghost-button" type="button" @click="addTourDeparture">+ Thêm lịch khởi hành</button>
+
+          <div class="admin-form-actions">
+            <button class="secondary-button" type="button" @click="goToStep(4)">Trở về</button>
+            <button class="primary-button" type="button" @click="goToReviewStep">Tiếp tục</button>
+          </div>
           </div>
         </section>
 
-        <section v-else-if="wizardStep === 2 && serviceForm.categoryId === 'ticket'" class="service-form-section admin-form-span-2">
+        <section v-else-if="wizardStep === 4 && serviceForm.categoryId === 'ticket'" class="service-form-section admin-form-span-2">
           <div class="service-form-section__header">
             <div>
               <p class="eyebrow">Thiết lập vé tham quan</p>
@@ -442,61 +494,86 @@
             </div>
 
             <button class="ghost-button" type="button" @click="addTicketPackage">+ Thêm gói vé</button>
+
+          <div class="admin-form-actions">
+            <button class="secondary-button" type="button" @click="goToStep(3)">Trở về</button>
+            <button class="primary-button" type="button" @click="goToReviewStep">Tiếp tục</button>
+          </div>
           </div>
         </section>
 
         <section v-if="wizardStep === 3" class="service-form-section admin-form-span-2">
           <div class="service-form-section__header">
             <div>
-              <p class="eyebrow">Ảnh đại diện</p>
-              <h3>Chọn URL hoặc tải ảnh từ máy</h3>
-              <p class="muted small-text">Có thể dán link ảnh hoặc chọn file để xem preview ngay. Dữ liệu file chỉ dùng mock trước, không phá cấu trúc hiện tại.</p>
+              <p class="eyebrow">Ảnh dịch vụ</p>
+              <h3>Thêm nhiều ảnh để hiển thị dịch vụ</h3>
+              <p class="muted small-text">Có thể dán link ảnh hoặc chọn file. Thêm được nhiều ảnh làm bộ sưu tập.</p>
             </div>
-            <span class="service-form-hint">Tải ảnh mô phỏng</span>
+            <span class="service-form-hint">Thêm ảnh từng cái</span>
           </div>
 
-          <div class="service-image-grid">
-            <div class="service-image-inputs">
-              <input v-model="serviceForm.image" type="text" placeholder="URL hoặc đường dẫn ảnh đại diện" />
-              <label class="service-file-picker">
-                <span>Chọn ảnh từ máy</span>
-                <input type="file" accept="image/*" @change="handleImageFileChange" />
-              </label>
-              <p v-if="selectedImageName" class="muted small-text">Đã chọn: {{ selectedImageName }}</p>
-              <p class="muted small-text">Ảnh file sẽ được giữ dưới dạng preview Data URL, còn đường dẫn assets được lưu ở metadata để sau đổi API upload.</p>
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>1) Ảnh đại diện chính</h4>
+              <p class="muted small-text">Ảnh này sẽ hiển thị trên card dịch vụ và trang danh sách.</p>
             </div>
 
-            <div class="service-image-preview" :class="{ empty: !serviceForm.image }">
-              <img v-if="serviceForm.image" :src="serviceForm.image" alt="Preview ảnh dịch vụ" />
-              <div v-else>
-                <strong>Chưa có ảnh</strong>
-                <p>Chọn file hoặc dán URL để xem preview ngay ở đây.</p>
+            <div class="service-image-grid">
+              <div class="service-image-inputs">
+                <input v-model="serviceForm.image" type="text" placeholder="URL ảnh đại diện" />
+                <label class="service-file-picker">
+                  <span>Chọn ảnh chính từ máy</span>
+                  <input type="file" accept="image/*" @change="handleImageFileChange" />
+                </label>
+                <p v-if="selectedImageName" class="muted small-text">Đã chọn: {{ selectedImageName }}</p>
+              </div>
+
+              <div class="service-image-preview" :class="{ empty: !serviceForm.image }">
+                <img v-if="serviceForm.image" :src="serviceForm.image" alt="Preview ảnh chính" />
+                <div v-else>
+                  <strong>Chưa có ảnh</strong>
+                  <p>Chọn file hoặc dán URL để xem preview.</p>
+                </div>
               </div>
             </div>
           </div>
 
+          <div class="service-form-group-card">
+            <div class="service-form-group-card__header">
+              <h4>2) Thêm ảnh vào bộ sưu tập</h4>
+              <p class="muted small-text">Thêm được tối đa 10 ảnh với cách nhau hoặc chọn file một lần.</p>
+            </div>
+
+            <div class="service-gallery-input">
+              <input v-model="galleryImageUrl" type="text" placeholder="URL hoặc đường dẫn ảnh bổ sung" />
+              <button class="ghost-button" type="button" @click="addGalleryImage(galleryImageUrl)">+ Thêm từ URL</button>
+              <label class="service-file-picker">
+                <span>Chọn ảnh từ máy</span>
+                <input type="file" accept="image/*" @change="addGalleryImageFromFile" />
+              </label>
+            </div>
+
+            <div v-if="galleryImages.length > 0" class="service-gallery-grid">
+              <div v-for="(img, index) in galleryImages" :key="img.id" class="service-gallery-item">
+                <div class="service-gallery-preview">
+                  <img :src="img.url" :alt="`Ảnh ${index + 1}`" />
+                </div>
+                <div class="service-gallery-actions">
+                  <small class="muted">{{ img.fileName || 'URL' }}</small>
+                  <button class="ghost-button small" type="button" @click="removeGalleryImage(img.id)">Xóa</button>
+                </div>
+              </div>
+            </div>
+            <p v-else class="muted small-text">Chưa có ảnh bổ sung. Thêm ảnh để hiển thị bộ sưu tập.</p>
+          </div>
+
           <div class="admin-form-actions">
             <button class="secondary-button" type="button" @click="goToStep(2)">Trở về</button>
-            <button class="primary-button" type="button" @click="goToStep(4)">Hoàn thành</button>
+            <button class="primary-button" type="button" @click="goToStep(4)">Tiếp tục</button>
           </div>
         </section>
 
-        <section v-if="wizardStep === 3" class="service-form-section admin-form-span-2">
-          <div class="service-form-section__header">
-            <div>
-              <p class="eyebrow">Mô tả</p>
-              <h3>Giới thiệu ngắn và nội dung đặc thù</h3>
-              <p class="muted small-text">Phần này hiển thị ở card và trang chi tiết, nên viết ngắn gọn, dễ đọc.</p>
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label>Mô tả ngắn</label>
-            <textarea v-model="serviceForm.shortDescription" rows="3" placeholder="Mô tả ngắn" />
-          </div>
-        </section>
-
-        <section v-if="wizardStep === 4" class="service-form-section admin-form-span-2">
+        <section v-if="wizardStep === 5" class="service-form-section admin-form-span-2">
           <div class="service-form-section__header">
             <div>
               <p class="eyebrow">Bước kiểm tra</p>
@@ -529,7 +606,7 @@
             </div>
             <div class="service-review-item">
               <span>Giá khuyến mãi</span>
-              <strong>{{ formatCurrencyVND(serviceForm.salePrice || 0) }}</strong>
+              <strong>{{ formatCurrencyVND(Math.round((serviceForm.price || 0) * (1 - (serviceForm.discountPercent || 0) / 100))) }}</strong>
             </div>
             <div class="service-review-item">
               <span>Số chỗ còn lại</span>
@@ -544,11 +621,6 @@
           <div class="service-review-image" :class="{ empty: !serviceForm.image }">
             <img v-if="serviceForm.image" :src="serviceForm.image" alt="Ảnh dịch vụ đã chọn" />
             <p v-else>Chưa có ảnh, hệ thống sẽ dùng ảnh mặc định.</p>
-          </div>
-
-          <div class="service-review-item service-review-item--full">
-            <span>Mô tả ngắn</span>
-            <strong>{{ serviceForm.shortDescription || 'Chưa nhập mô tả ngắn.' }}</strong>
           </div>
 
           <div class="admin-form-actions">
@@ -577,11 +649,10 @@
             <tr v-for="service in filteredServices" :key="service.id">
               <td>
                 <strong>{{ service.name }}</strong>
-                <p class="muted small-text">{{ service.shortDescription }}</p>
               </td>
               <td>{{ getCategoryLabel(service.categoryId) }}</td>
               <td>{{ service.destination }}, {{ service.province }}</td>
-              <td>{{ formatCurrencyVND(service.salePrice) }}</td>
+              <td>{{ formatCurrencyVND(Math.round((service.price || 0) * (1 - (service.discountPercent || 0) / 100))) }}</td>
               <td>
                 <span :class="['status-chip', service.availableSlots > 0 ? 'status-chip--blue' : 'status-chip--danger']">
                   {{ service.availableSlots > 0 ? `${service.availableSlots} chỗ` : 'Hết chỗ' }}
@@ -631,7 +702,7 @@ const serviceStore = useServiceStore()
 const categories = computed(() => serviceStore.categories)
 const filters = reactive({
   keyword: '',
-  categoryId: '',
+  categoryId: 'hotel',
   province: ''
 })
 
@@ -643,13 +714,15 @@ const defaultForm = () => ({
   destination: '',
   province: '',
   price: 0,
-  salePrice: 0,
+  discountPercent: 0,
   rating: 4.5,
   availableSlots: 0,
   status: 'active',
   image: '',
   gallery: [],
-  shortDescription: '',
+  detailedDescription: '',
+  highlightedFeatures: '',
+  scheduleInfo: '',
   description: '',
   amenities: [],
   createdAt: new Date().toISOString(),
@@ -662,6 +735,8 @@ const serviceForm = reactive(defaultForm())
 const isEditing = ref(false)
 const formError = ref('')
 const selectedImageName = ref('')
+const galleryImages = ref([])
+const galleryImageUrl = ref('')
 const wizardStep = ref(1)
 const deleteTargetServiceId = ref('')
 const isCreatePage = computed(() => route.name === 'admin-services-create')
@@ -756,9 +831,10 @@ const TOUR_DURATION_PRESET_MAP = Object.freeze({
 
 const stepItems = [
   { step: 1, title: 'Chọn loại dịch vụ', description: 'Khách sạn, tour hoặc vé tham quan.' },
-  { step: 2, title: 'Nhập thông tin', description: 'Thông tin chung và cấu hình theo loại dịch vụ.' },
-  { step: 3, title: 'Thêm ảnh và mô tả', description: 'Ảnh đại diện và mô tả hiển thị cho khách.' },
-  { step: 4, title: 'Kiểm tra', description: 'Xác nhận toàn bộ thông tin trước khi lưu.' }
+  { step: 2, title: 'Nhập thông tin', description: 'Thông tin chung, mô tả và tiện ích .' },
+  { step: 3, title: 'Thêm ảnh', description: 'Nhiều ảnh để hiển thị dịch vụ.' },
+  { step: 4, title: 'Thiết lập', description: 'Cấu hình chi tiết theo loại dịch vụ.' },
+  { step: 5, title: 'Kiểm tra', description: 'Xác nhận toàn bộ thông tin trước khi lưu.' }
 ]
 
 const categoryTabs = computed(() => categories.value.filter((category) => ['hotel', 'tour', 'ticket'].includes(String(category.id))))
@@ -835,8 +911,8 @@ const validateCommonFields = () => {
     return false
   }
 
-  if (Number(serviceForm.price) < 0 || Number(serviceForm.salePrice) < 0) {
-    formError.value = 'Giá không được nhỏ hơn 0.'
+  if (Number(serviceForm.price) < 0 || Number(serviceForm.discountPercent) < 0 || Number(serviceForm.discountPercent) > 100) {
+    formError.value = 'Giá không được nhỏ hơn 0. Phần trăm giảm giá phải từ 0 đến 100.'
     return false
   }
 
@@ -850,15 +926,22 @@ const validateModelByCategory = () => {
   }
 
   if (serviceForm.categoryId === 'tour') {
-    if (tourDepartures.value.length === 0) {
-      formError.value = 'Tour cần ít nhất 1 lịch khởi hành.'
+    const scheduleType = String(tourScheduleType.value || 'hybrid')
+    const departuresWithDate = tourDepartures.value.filter((departure) => departure.startDate && departure.endDate)
+
+    // Lịch cố định bắt buộc phải có ít nhất 1 lịch đủ ngày đi/ngày về.
+    if (scheduleType === 'fixed' && departuresWithDate.length === 0) {
+      formError.value = 'Tour lịch cố định cần ít nhất 1 lịch khởi hành có ngày đi và ngày về.'
       return false
     }
 
-    const hasInvalidDeparture = tourDepartures.value.some((departure) => !departure.startDate || !departure.endDate)
-    if (hasInvalidDeparture) {
-      formError.value = 'Mỗi lịch khởi hành của tour cần có ngày đi và ngày về.'
-      return false
+    // Lịch kết hợp: cần ít nhất 1 lịch cố định hoặc khoảng ngày linh hoạt.
+    if (scheduleType === 'hybrid') {
+      const hasFlexibleWindow = Boolean(tourFlexibleStart.value && tourFlexibleEnd.value)
+      if (departuresWithDate.length === 0 && !hasFlexibleWindow) {
+        formError.value = 'Tour kết hợp cần ít nhất 1 lịch khởi hành hoặc khoảng ngày linh hoạt.'
+        return false
+      }
     }
   }
 
@@ -870,15 +953,41 @@ const validateModelByCategory = () => {
   return true
 }
 
+const validateDescriptionFields = () => {
+  if (!serviceForm.detailedDescription?.trim()) {
+    formError.value = 'Mô tả chi tiết không được để trống.'
+    return false
+  }
+
+  if (!serviceForm.highlightedFeatures?.trim()) {
+    formError.value = 'Tiện ích nổi bật không được để trống.'
+    return false
+  }
+
+  if (!serviceForm.scheduleInfo?.trim()) {
+    formError.value = 'Lịch trình (hoặc thông tin hành trình) không được để trống.'
+    return false
+  }
+
+  return true
+}
+
 const goToStep = (step) => {
-  wizardStep.value = Math.min(4, Math.max(1, Number(step) || 1))
+  formError.value = ''
+  wizardStep.value = Math.min(5, Math.max(1, Number(step) || 1))
 }
 
 const goToStepThree = () => {
   formError.value = ''
   if (!validateCommonFields()) return
-  if (!validateModelByCategory()) return
+  if (!validateDescriptionFields()) return
   goToStep(3)
+}
+
+const goToReviewStep = () => {
+  formError.value = ''
+  if (!validateModelByCategory()) return
+  goToStep(5)
 }
 
 const addRoomType = () => roomTypes.value.push(createRoomType({ value: `room-type-${roomTypes.value.length + 1}` }))
@@ -1042,10 +1151,37 @@ const syncModelFieldsForCategory = (categoryId, sourceService = null) => {
   }
 }
 
+const addGalleryImage = (imageUrl) => {
+  if (imageUrl?.trim() && galleryImages.value.length < 10) {
+    galleryImages.value.push({ id: `img-${Date.now()}-${Math.random()}`, url: imageUrl })
+    galleryImageUrl.value = ''
+  }
+}
+
+const addGalleryImageFromFile = async (event) => {
+  const [file] = event.target.files || []
+  if (!file || galleryImages.value.length >= 10) return
+
+  try {
+    const dataUrl = await readFileAsDataUrl(file)
+    galleryImages.value.push({ id: `img-${Date.now()}-${Math.random()}`, url: dataUrl, fileName: file.name })
+  } catch (error) {
+    formError.value = error.message
+  }
+}
+
+const removeGalleryImage = (imageId) => {
+  const index = galleryImages.value.findIndex((img) => img.id === imageId)
+  if (index > -1) {
+    galleryImages.value.splice(index, 1)
+  }
+}
+
 const resetServiceForm = () => {
   Object.assign(serviceForm, defaultForm())
   formError.value = ''
   selectedImageName.value = ''
+  galleryImages.value = []
   syncModelFieldsForCategory(serviceForm.categoryId)
   isEditing.value = false
   wizardStep.value = 1
@@ -1169,13 +1305,38 @@ const normalizeTicketChildPolicyForSave = () => ({
   surcharge: Math.max(0, Number(ticketChildPolicy.value.surcharge || 0) || 0)
 })
 
+const isDataUrl = (value = '') => /^data:/i.test(String(value || '').trim())
+
+const sanitizeImageForSave = (value = '') => {
+  const normalized = String(value || '').trim()
+  if (!normalized) return ''
+  if (isDataUrl(normalized)) return ''
+  return normalized
+}
+
+const normalizeGalleryForSave = () => {
+  const stepGalleryUrls = galleryImages.value.map((item) => item?.url).filter(Boolean)
+  const mergedGallery = [...(serviceForm.gallery || []), ...stepGalleryUrls]
+  const cleanedGallery = mergedGallery
+    .map((url) => sanitizeImageForSave(url))
+    .filter(Boolean)
+
+  return [...new Set(cleanedGallery)].slice(0, 10)
+}
+
 const handleSubmitService = async () => {
   formError.value = ''
-  if (wizardStep.value !== 4) return
+  if (wizardStep.value !== 5) return
   if (!validateCommonFields()) return
+  if (!validateDescriptionFields()) return
   if (!validateModelByCategory()) return
 
-  const resolvedImage = serviceForm.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80'
+  const fallbackImage = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80'
+  const resolvedImage = sanitizeImageForSave(serviceForm.image)
+    || sanitizeImageForSave(serviceForm.imageAssetPath)
+    || fallbackImage
+  const normalizedGallery = normalizeGalleryForSave()
+  const resolvedGallery = normalizedGallery.length ? normalizedGallery : [resolvedImage]
 
   const basePayload = {
     ...serviceForm,
@@ -1183,10 +1344,10 @@ const handleSubmitService = async () => {
       ? Math.max(0, Number(derivedAvailableSlots.value) || 0)
       : 0,
     image: resolvedImage,
-    gallery: serviceForm.gallery.length ? serviceForm.gallery : [resolvedImage],
+    gallery: resolvedGallery,
     amenities: serviceForm.amenities.length ? serviceForm.amenities : ['Hỗ trợ khách Việt', 'Xác nhận nhanh'],
     itinerary: serviceForm.itinerary.length ? serviceForm.itinerary : ['Lịch trình đang cập nhật'],
-    description: serviceForm.description || serviceForm.shortDescription
+    description: serviceForm.description || serviceForm.detailedDescription
   }
 
   try {
@@ -1323,6 +1484,77 @@ const confirmDeleteService = () => {
   background: rgba(248, 250, 252, 0.7);
 }
 
+.service-gallery-input {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.service-gallery-input input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.service-gallery-input button {
+  white-space: nowrap;
+}
+
+.service-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.service-gallery-item {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.service-gallery-preview {
+  width: 100%;
+  height: 100px;
+  overflow: hidden;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-gallery-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.service-gallery-actions {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.service-gallery-actions small {
+  font-size: 0.75rem;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.service-gallery-actions button {
+  font-size: 0.85rem;
+  padding: 4px 8px;
+}
+
 .service-form-inline-note {
   margin: 8px 0 0;
   color: var(--muted);
@@ -1337,6 +1569,10 @@ const confirmDeleteService = () => {
 
   .tour-pricing-grid {
     grid-template-columns: 1fr;
+  }
+
+  .service-gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 }
 </style>

@@ -8,6 +8,25 @@
         </div>
       </div>
 
+      <div class="admin-category-tabs">
+        <button
+          type="button"
+          :class="['admin-category-tab', { active: filters.categoryId === '' }]"
+          @click="filters.categoryId = ''"
+        >
+          Tất cả
+        </button>
+        <button
+          v-for="category in bookingCategoryTabs"
+          :key="category.id"
+          type="button"
+          :class="['admin-category-tab', { active: filters.categoryId === category.id }]"
+          @click="filters.categoryId = category.id"
+        >
+          {{ category.label }} <span class="nav-pill">{{ category.count }}</span>
+        </button>
+      </div>
+
       <div class="admin-toolbar">
         <input v-model="filters.keyword" type="text" placeholder="Tìm theo mã booking hoặc tên khách" />
         <select v-model="filters.status">
@@ -40,7 +59,7 @@
               </td>
               <td>
                 <strong>{{ booking.items[0]?.service?.name || 'Dịch vụ nội địa' }}</strong>
-                <p class="muted small-text">{{ booking.items.length }} mục trong đơn</p>
+                <p class="muted small-text">{{ bookingCategoryLabel(booking) }} · {{ booking.items.length }} mục trong đơn</p>
               </td>
               <td>{{ formatDateVN(booking.createdAt) }}</td>
               <td>{{ formatCurrencyVND(booking.total) }}</td>
@@ -51,9 +70,9 @@
                 <select
                   :value="booking.status"
                   @change="store.updateBookingStatus(booking.id, $event.target.value)"
-                  :disabled="booking.status === 'completed'"
+                  :disabled="getValidStatusOptions(booking).length === 1"
                 >
-                  <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                  <option v-for="option in getValidStatusOptions(booking)" :key="option.value" :value="option.value">
                     {{ option.label }}
                   </option>
                 </select>
@@ -70,14 +89,54 @@
 import { computed, onMounted, reactive } from 'vue'
 import { useBookingStore } from '@/stores/booking/useBookingStore'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
-import { BOOKING_STATUS_LABELS } from '@/utils/travelBooking'
+import { BOOKING_STATUS_LABELS, getValidNextStatuses } from '@/utils/travelBooking'
 
 const store = useBookingStore()
-const filters = reactive({ keyword: '', status: '' })
+const filters = reactive({ keyword: '', status: '', categoryId: '' })
+
+const getBookingCategoryId = (booking) => {
+  const firstItem = Array.isArray(booking?.items) && booking.items.length > 0 ? booking.items[0] : {}
+  return String(firstItem.bookingType || firstItem.service?.categoryId || 'hotel')
+}
+
+const bookingCategoryLabel = (booking) => ({
+  hotel: 'Khách sạn',
+  tour: 'Tour',
+  ticket: 'Vé tham quan'
+}[getBookingCategoryId(booking)] || 'Dịch vụ')
+
+const bookingCategoryTabs = computed(() => {
+  const categories = [
+    { id: 'hotel', label: 'Khách sạn' },
+    { id: 'tour', label: 'Tour' },
+    { id: 'ticket', label: 'Vé tham quan' }
+  ]
+
+  return categories.map((category) => ({
+    ...category,
+    count: store.adminBookingHistory.filter((booking) => getBookingCategoryId(booking) === category.id).length
+  }))
+})
 
 const statusOptions = computed(() =>
   Object.entries(BOOKING_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 )
+
+const getValidStatusOptions = (booking) => {
+  if (!booking) return statusOptions.value
+  
+  // Xác định loại dịch vụ từ booking items
+  const firstItem = Array.isArray(booking.items) && booking.items.length > 0 ? booking.items[0] : {}
+  const bookingType = firstItem.bookingType || firstItem.service?.categoryId || 'hotel'
+  
+  // Lấy danh sách trạng thái hợp lệ tiếp theo
+  const validStatuses = getValidNextStatuses(booking.status, bookingType)
+  
+  // Cộng thêm trạng thái hiện tại để luôn có một lựa chọn
+  const allValidStatuses = [booking.status, ...validStatuses]
+  
+  return statusOptions.value.filter(option => allValidStatuses.includes(option.value))
+}
 
 onMounted(() => {
   store.fetchAllBookings()
@@ -92,14 +151,16 @@ const filteredBookings = computed(() => {
       .includes(keyword)
 
     const matchesStatus = !filters.status || booking.status === filters.status
-    return matchesKeyword && matchesStatus
+    const matchesCategory = !filters.categoryId || getBookingCategoryId(booking) === filters.categoryId
+    return matchesKeyword && matchesStatus && matchesCategory
   })
 })
 
 const getStatusClass = (status) => ({
   pending: 'status-chip--warning',
   confirmed: 'status-chip--blue',
-  processing: 'status-chip--blue',
+  'checked-in': 'status-chip--blue',
+  'checked-out': 'status-chip--purple',
   completed: 'status-chip--success',
   cancelled: 'status-chip--danger'
 }[status] || 'status-chip--blue')

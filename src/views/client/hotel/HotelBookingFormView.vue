@@ -131,14 +131,6 @@
                 class="primary-button full-width"
                 type="button"
                 :disabled="maxSelectableSlots <= 0"
-                @click="handleAddToCart"
-              >
-                Thêm vào giỏ hàng
-              </button>
-              <button
-                class="secondary-button full-width"
-                type="button"
-                :disabled="maxSelectableSlots <= 0"
                 @click="handleBookNow"
               >
                 Đặt ngay
@@ -163,7 +155,6 @@
 import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
-import { useCartStore } from '@/stores/cart/useCartStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
@@ -176,7 +167,6 @@ import {
 const route = useRoute()
 const router = useRouter()
 const serviceStore = useServiceStore()
-const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
 
 const todayISO = (() => {
@@ -279,46 +269,6 @@ const bookingSuccess = ref('')
 const toggleWishlist = () => {
   if (!service.value?.id) return
   wishlistStore.toggleWishlist(service.value.id)
-}
-
-const handleAddToCart = () => {
-  bookingFeedback.value = ''
-  bookingSuccess.value = ''
-  
-  if (!bookingForm.startDate || !bookingForm.endDate) {
-    bookingFeedback.value = 'Vui lòng chọn ngày nhận và ngày trả phòng'
-    return
-  }
-
-  if (!bookingForm.roomType) {
-    bookingFeedback.value = 'Vui lòng chọn loại phòng'
-    return
-  }
-
-  if (maxSelectableSlots.value <= 0) {
-    bookingFeedback.value = 'Loại phòng này đã hết chỗ'
-    return
-  }
-
-  const nextItem = {
-    serviceId: service.value.id,
-    bookingType: 'hotel',
-    startDate: bookingForm.startDate,
-    endDate: bookingForm.endDate,
-    quantity: bookingQuantity.value,
-    bookingMeta: {
-      roomType: bookingForm.roomType,
-      rooms: bookingForm.guestRoomSelection.rooms,
-      adults: bookingForm.guestRoomSelection.adults,
-      children: bookingForm.guestRoomSelection.children,
-      childrenAges: [...bookingForm.guestRoomSelection.childrenAges],
-      nights: stayNights.value,
-      totalPrice: totalPrice.value
-    }
-  }
-
-  cartStore.addToCart(nextItem)
-  bookingSuccess.value = '✓ Đã thêm vào giỏ hàng'
 }
 
 const handleBookNow = () => {

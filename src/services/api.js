@@ -180,7 +180,29 @@ export const servicesApi = {
    * @returns {Promise<Array>} Danh sach dich vu.
    */
   getAll(params = {}) {
-    return apiClient.get('/services', { params }).then((res) => res.data)
+    const serviceResources = [
+      { categoryId: 'hotel', path: '/hotels' },
+      { categoryId: 'ticket', path: '/tickets' },
+      { categoryId: 'tour', path: '/tours' }
+    ]
+
+    const attachCategoryFallback = (items, categoryId) =>
+      (Array.isArray(items) ? items : []).map((item) => ({
+        ...item,
+        categoryId: item?.categoryId || categoryId
+      }))
+
+    return Promise.allSettled(
+      serviceResources.map(({ categoryId, path }) =>
+        apiClient.get(path, { params }).then((res) => attachCategoryFallback(res.data, categoryId))
+      )
+    ).then((results) => {
+      const merged = results
+        .filter((result) => result.status === 'fulfilled')
+        .flatMap((result) => result.value)
+
+      return merged
+    })
   },
 
   /**
@@ -189,7 +211,22 @@ export const servicesApi = {
    * @returns {Promise<Object|null>} Chi tiet dich vu.
    */
   getById(id) {
-    return apiClient.get(`/services/${id}`).then((res) => res.data)
+    const serviceResources = [
+      { categoryId: 'hotel', path: '/hotels' },
+      { categoryId: 'ticket', path: '/tickets' },
+      { categoryId: 'tour', path: '/tours' }
+    ]
+
+    return Promise.allSettled(
+      serviceResources.map(({ categoryId, path }) =>
+        apiClient.get(`${path}/${id}`).then((res) => ({ ...res.data, categoryId: res.data?.categoryId || categoryId }))
+      )
+    ).then((results) => {
+      const matched = results.find((result) => result.status === 'fulfilled')
+      if (matched) return matched.value
+
+      throw new Error('Khong tim thay dich vu trong hotels/tickets/tours.')
+    })
   },
 
   /**
@@ -198,7 +235,14 @@ export const servicesApi = {
    * @returns {Promise<Object>} Dich vu sau khi tao.
    */
   create(payload) {
-    return apiClient.post('/services', payload).then((res) => res.data)
+    const categoryId = String(payload?.categoryId || 'hotel').toLowerCase()
+    const targetPath = {
+      hotel: '/hotels',
+      ticket: '/tickets',
+      tour: '/tours'
+    }[categoryId] || '/hotels'
+
+    return apiClient.post(targetPath, { ...payload, categoryId }).then((res) => res.data)
   },
 
   /**
@@ -208,7 +252,35 @@ export const servicesApi = {
    * @returns {Promise<Object>} Dich vu sau khi cap nhat.
    */
   update(id, payload) {
-    return apiClient.put(`/services/${id}`, payload).then((res) => res.data)
+    const serviceResources = [
+      { categoryId: 'hotel', path: '/hotels' },
+      { categoryId: 'ticket', path: '/tickets' },
+      { categoryId: 'tour', path: '/tours' }
+    ]
+
+    const explicitCategoryId = String(payload?.categoryId || '').toLowerCase()
+    const explicitPath = {
+      hotel: '/hotels',
+      ticket: '/tickets',
+      tour: '/tours'
+    }[explicitCategoryId]
+
+    const updateByPath = (path) => apiClient.put(`${path}/${id}`, payload).then((res) => res.data)
+
+    if (explicitPath) {
+      return updateByPath(explicitPath)
+    }
+
+    return Promise.allSettled(
+      serviceResources.map(({ path }) => apiClient.get(`${path}/${id}`))
+    ).then((results) => {
+      const foundIndex = results.findIndex((result) => result.status === 'fulfilled')
+      if (foundIndex > -1) {
+        return updateByPath(serviceResources[foundIndex].path)
+      }
+
+      throw new Error('Khong tim thay dich vu de cap nhat trong hotels/tickets/tours.')
+    })
   },
 
   /**
@@ -218,7 +290,35 @@ export const servicesApi = {
    * @returns {Promise<Object>} Dich vu sau khi cap nhat.
    */
   patch(id, payload) {
-    return apiClient.patch(`/services/${id}`, payload).then((res) => res.data)
+    const serviceResources = [
+      { categoryId: 'hotel', path: '/hotels' },
+      { categoryId: 'ticket', path: '/tickets' },
+      { categoryId: 'tour', path: '/tours' }
+    ]
+
+    const explicitCategoryId = String(payload?.categoryId || '').toLowerCase()
+    const explicitPath = {
+      hotel: '/hotels',
+      ticket: '/tickets',
+      tour: '/tours'
+    }[explicitCategoryId]
+
+    const patchByPath = (path) => apiClient.patch(`${path}/${id}`, payload).then((res) => res.data)
+
+    if (explicitPath) {
+      return patchByPath(explicitPath)
+    }
+
+    return Promise.allSettled(
+      serviceResources.map(({ path }) => apiClient.get(`${path}/${id}`))
+    ).then((results) => {
+      const foundIndex = results.findIndex((result) => result.status === 'fulfilled')
+      if (foundIndex > -1) {
+        return patchByPath(serviceResources[foundIndex].path)
+      }
+
+      throw new Error('Khong tim thay dich vu de cap nhat trong hotels/tickets/tours.')
+    })
   },
 
   /**
@@ -227,7 +327,18 @@ export const servicesApi = {
    * @returns {Promise<Object>} Phan hoi API sau khi xoa.
    */
   remove(id) {
-    return apiClient.delete(`/services/${id}`).then((res) => res.data)
+    const serviceResources = ['/hotels', '/tickets', '/tours']
+
+    return Promise.allSettled(
+      serviceResources.map((path) => apiClient.get(`${path}/${id}`))
+    ).then((results) => {
+      const foundIndex = results.findIndex((result) => result.status === 'fulfilled')
+      if (foundIndex > -1) {
+        return apiClient.delete(`${serviceResources[foundIndex]}/${id}`).then((res) => res.data)
+      }
+
+      throw new Error('Khong tim thay dich vu de xoa trong hotels/tickets/tours.')
+    })
   }
 }
 

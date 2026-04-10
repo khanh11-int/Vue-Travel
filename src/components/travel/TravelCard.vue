@@ -1,7 +1,9 @@
 <template>
   <article class="travel-card" role="link" tabindex="0" @click="openDetail" @keydown.enter="openDetail" @keydown.space.prevent="openDetail">
     <div class="travel-card__image-wrapper">
+      <span class="travel-card__location-tag">{{ service.destination || service.province }}</span>
       <img :src="service.image" :alt="service.name" class="travel-card__image" />
+      <span v-if="showDiscountAmount && hasDiscountedPrice" class="travel-card__discount-banner">Giảm {{ discountPercent }}%</span>
       <button
         :class="['wishlist-button', { 'wishlist-button--active': isWishlisted }]"
         type="button"
@@ -18,24 +20,16 @@
       </div>
 
       <h3>{{ service.name }}</h3>
-      <p class="muted">{{ service.destination }}, {{ service.province }}</p>
-      <p class="travel-card__description">{{ service.shortDescription }}</p>
 
       <div class="travel-card__price-row">
-        
         <div class="travel-card__price-main">
-          <p v-if="hasDiscountedPrice" class="price-before">{{ formatCurrencyVND(effectiveOriginalPrice) }}</p>
+          <p v-if="hasDiscountedPrice" class="price-before">{{ formatCurrencyVND(originalPrice) }}</p>
           <div class="travel-card__price-current">
-            <small class="price-label">{{ hasDiscountedPrice ? 'Giá ưu đãi' : 'Giá từ' }}</small>
-            <p class="price price--sale">{{ formatCurrencyVND(currentSalePrice) }}</p>
+            <small class="price-label">{{ hasDiscountedPrice ? 'Giá sau giảm' : 'Giá từ' }}</small>
+            <p class="price price--sale">{{ formatCurrencyVND(displayPrice) }}</p>
           </div>
         </div>
-
       </div>
-
-      <p v-if="showDiscountAmount && discountAmount > 0" class="travel-card__discount-amount">
-        Tiết kiệm {{ formatCurrencyVND(discountAmount) }}
-      </p>
     </div>
   </article>
 </template>
@@ -65,7 +59,7 @@ const props = defineProps({
   },
   showDiscountAmount: {
     type: Boolean,
-    default: false
+    default: true
   }
 })
 
@@ -78,6 +72,17 @@ const serviceStore = useServiceStore()
 const categoryLabel = computed(() =>
   serviceStore.categories.find((category) => category.id === props.service.categoryId)?.name || 'Dịch vụ'
 )
+
+const originalPrice = computed(() => Math.max(0, Number(props.service.price || 0) || 0))
+
+const discountPercent = computed(() => Math.max(0, Math.min(100, Math.round(Number(props.service.discountPercent ?? props.service.discount ?? 0) || 0))))
+
+const displayPrice = computed(() => {
+  const legacySalePrice = Math.max(0, Number(props.service.salePrice || 0) || 0)
+  if (legacySalePrice > 0) return legacySalePrice
+  if (!discountPercent.value || !originalPrice.value) return originalPrice.value
+  return Math.max(0, Math.round(originalPrice.value * (1 - discountPercent.value / 100)))
+})
 
 const detailRoute = computed(() => {
   const baseRoute = getDetailRouteLocation(props.service)
@@ -95,20 +100,7 @@ const detailRoute = computed(() => {
   }
 })
 
-const currentSalePrice = computed(() => Number(props.service.salePrice || props.service.price || 0) || 0)
-
-const effectiveOriginalPrice = computed(() => {
-  const salePrice = currentSalePrice.value
-  const listedPrice = Number(props.service.price || 0) || 0
-  return Math.max(listedPrice, salePrice)
-})
-
-const hasDiscountedPrice = computed(() => effectiveOriginalPrice.value > currentSalePrice.value)
-
-const discountAmount = computed(() => {
-  if (!hasDiscountedPrice.value) return 0
-  return effectiveOriginalPrice.value - currentSalePrice.value
-})
+const hasDiscountedPrice = computed(() => discountPercent.value > 0 && displayPrice.value < originalPrice.value)
 
 const openDetail = () => {
   router.push(detailRoute.value)

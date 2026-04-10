@@ -185,6 +185,22 @@ export const normalizeServicesFromStorage = (services = []) => {
   return services.map((service) => {
     const nextService = { ...service }
 
+    const fallbackPrice = Math.max(0, Number(nextService.salePrice || nextService.price || 0) || 0)
+    const price = Math.max(0, Number(nextService.price || fallbackPrice) || fallbackPrice)
+    const legacySalePrice = Math.max(0, Number(nextService.salePrice || 0) || 0)
+    const discountSource = Number.isFinite(Number(nextService.discountPercent))
+      ? Number(nextService.discountPercent)
+      : Number(nextService.discount || 0)
+    const inferredDiscountPercent = price > 0 && legacySalePrice > 0 && legacySalePrice < price
+      ? Math.round(((price - legacySalePrice) / price) * 100)
+      : 0
+
+    nextService.price = price
+    nextService.discountPercent = Math.max(0, Math.min(100, Math.round(Number.isFinite(discountSource) ? discountSource : inferredDiscountPercent)))
+    nextService.salePrice = price > 0
+      ? Math.max(0, Math.round(price * (1 - nextService.discountPercent / 100)))
+      : legacySalePrice
+
     if (nextService.categoryId === 'tour' && !Array.isArray(nextService.departures)) {
       nextService.departures = []
     }

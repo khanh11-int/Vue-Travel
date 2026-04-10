@@ -3,9 +3,8 @@ import { promotionsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth/useAuthStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { STORAGE_KEYS, getScopedKey, persistStorage, readStorage, GUEST_SCOPE, removeFromStorage } from '@/utils/travelStorage'
-import { buildBookingMeta, extractDateRangeFromBookingMeta, getBookingType, normalizeCartItem } from '@/utils/travelNormalize'
-import { getCartIdentity, buildBookingSummary, resolveItemMaxSlots } from '@/utils/travelCart'
-import { serviceRequiresEndDate } from '@/utils/bookingRules'
+import { normalizeCartItem } from '@/utils/travelNormalize'
+import { buildBookingSummary } from '@/utils/travelCart'
 
 /**
  * Ép dữ liệu đầu vào về mảng để tránh lỗi khi đọc state/storage.
@@ -139,7 +138,7 @@ export const useCartStore = defineStore('cart', {
           endDate: normalizedEndDate,
           travelDate: normalizedStartDate,
           service,
-          identityKey: getCartIdentity(normalizedItem),
+          identityKey: `${normalizedItem.bookingType || 'hotel'}-${normalizedItem.serviceId}-${normalizedStartDate}-${normalizedEndDate}-${normalizedItem.quantity}`,
           bookingSummary: buildBookingSummary(normalizedItem),
           lineTotal: Number(normalizedItem.bookingMeta?.totalPrice || 0) > 0
             ? Number(normalizedItem.bookingMeta.totalPrice)
@@ -251,154 +250,6 @@ export const useCartStore = defineStore('cart', {
       }
 
       return Array.isArray(promotions) ? promotions : []
-    },
-
-    /**
-     * Thêm item vào giỏ với chuẩn hóa bookingMeta và giới hạn theo slot còn lại.
-     * @param {Object} payload - Dữ liệu đặt chỗ từ UI/detail.
-     * @returns {void}
-     */
-    addToCart({
-      serviceId,
-      quantity = 1,
-      travelDate = '',
-      startDate = '',
-      endDate = '',
-      bookingType = '',
-      bookingMeta = null,
-      service = null
-    }) {
-      this._syncUserId()
-
-      const serviceStore = useServiceStore()
-      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
-      const targetService = service || services.find((entry) => isSameServiceId(entry.id, serviceId))
-
-      if (!targetService || targetService.availableSlots <= 0) {
-        this.error = 'Dịch vụ không có sẵn'
-        return
-      }
-
-      const resolvedBookingType = bookingType || getBookingType(targetService)
-      const rawStartDate = startDate || travelDate || ''
-      const rawEndDate = serviceRequiresEndDate(targetService) ? (endDate || '') : ''
-      const requestedQuantity = Math.max(1, Number(quantity) || 1)
-
-      const normalizedMeta = buildBookingMeta({
-        bookingType: resolvedBookingType,
-        startDate: rawStartDate,
-        endDate: rawEndDate,
-        quantity: requestedQuantity,
-        bookingMeta: bookingMeta || {}
-      })
-
-      const normalizedDates = extractDateRangeFromBookingMeta(resolvedBookingType, normalizedMeta)
-
-      const maxSlots = resolveItemMaxSlots(targetService, {
-        serviceId: targetService.id,
-        bookingType: resolvedBookingType,
-        bookingMeta: normalizedMeta
-      })
-
-      const normalizedQuantity = Math.max(1, Math.min(requestedQuantity, Math.max(maxSlots, 1)))
-
-      const candidate = {
-        serviceId: targetService.id,
-        bookingType: resolvedBookingType,
-        quantity: normalizedQuantity,
-        startDate: normalizedDates.startDate || rawStartDate,
-        endDate: serviceRequiresEndDate(targetService) ? (normalizedDates.endDate || rawEndDate) : '',
-        travelDate: normalizedDates.startDate || rawStartDate,
-        bookingMeta: buildBookingMeta({
-          bookingType: resolvedBookingType,
-          startDate: normalizedDates.startDate || rawStartDate,
-          endDate: normalizedDates.endDate || rawEndDate,
-          quantity: normalizedQuantity,
-          bookingMeta: normalizedMeta
-        })
-      }
-
-      const candidateIdentity = getCartIdentity(candidate)
-      const existingIndex = this.cartItems.findIndex((item) => getCartIdentity(item) === candidateIdentity)
-
-      if (existingIndex !== -1) {
-        this.cartItems[existingIndex].quantity += normalizedQuantity
-      } else {
-        this.cartItems.push(candidate)
-      }
-
-      this._saveCart()
-      this.error = null
-    },
-
-    /**
-     * Cập nhật số lượng item theo index, xóa item nếu số lượng về 0.
-     * @param {number} cartIndex - Vị trí item trong cart.
-     * @param {number|string} newQuantity - Số lượng mới.
-     * @returns {void}
-     */
-    updateCartQuantity(cartIndex, newQuantity) {
-      this._syncUserId()
-
-      if (cartIndex < 0 || cartIndex >= this.cartItems.length) return
-
-      const item = this.cartItems[cartIndex]
-      const safeQuantity = Math.max(0, Number(newQuantity) || 0)
-
-      if (safeQuantity === 0) {
-        this.removeCartItem(cartIndex)
-      } else {
-        item.quantity = safeQuantity
-        this._saveCart()
-      }
-    },
-
-    /**
-     * Xóa item khỏi giỏ (hỗ trợ cả mode theo index và mode theo identity cũ).
-     * @param {number|string} serviceIdOrIndex - Index hoặc service id.
-     * @param {string} startDate - Ngày bắt đầu identity mode.
-     * @param {string} endDate - Ngày kết thúc identity mode.
-     * @param {string} bookingType - Loại booking identity mode.
-     * @param {Object|null} bookingMeta - Meta identity mode.
-     * @returns {void}
-     */
-    removeCartItem(serviceIdOrIndex, startDate = '', endDate = '', bookingType = '', bookingMeta = null) {
-      this._syncUserId()
-
-      // Backward compatible: support both index and identity-based removal.
-      if (typeof serviceIdOrIndex === 'number' && startDate === '' && endDate === '' && bookingType === '' && bookingMeta === null) {
-        if (serviceIdOrIndex < 0 || serviceIdOrIndex >= this.cartItems.length) return
-        this.cartItems.splice(serviceIdOrIndex, 1)
-        this._saveCart()
-        return
-      }
-
-      const serviceStore = useServiceStore()
-      const services = Array.isArray(serviceStore.services) ? serviceStore.services : []
-      const targetService = services.find((entry) => isSameServiceId(entry.id, serviceIdOrIndex))
-      const targetBookingType = bookingType || getBookingType(targetService)
-      const targetMeta = buildBookingMeta({
-        bookingType: targetBookingType,
-        startDate: startDate || '',
-        endDate: endDate || '',
-        quantity: 1,
-        bookingMeta: bookingMeta || {}
-      })
-      const targetDates = extractDateRangeFromBookingMeta(targetBookingType, targetMeta)
-      const targetIdentity = getCartIdentity({
-        serviceId: serviceIdOrIndex,
-        bookingType: targetBookingType,
-        bookingMeta: targetMeta,
-        startDate: targetDates.startDate || startDate || '',
-        endDate: targetDates.endDate || endDate || ''
-      })
-
-      this.cartItems = this.cartItems.filter((item) => {
-        const normalizedItem = normalizeCartItem(item, services)
-        return !(isSameServiceId(normalizedItem.serviceId, serviceIdOrIndex) && getCartIdentity(normalizedItem) === targetIdentity)
-      })
-
-      this._saveCart()
     },
 
     /**

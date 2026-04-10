@@ -23,6 +23,28 @@ const positiveOrFallback = (value, fallback = 0) => {
   return numericValue > 0 ? numericValue : fallback
 }
 
+const normalizeDiscountPercent = (value, fallback = 0) => {
+  const numericValue = toNumber(value, fallback)
+  return Math.max(0, Math.min(100, Math.round(numericValue)))
+}
+
+const deriveDiscountPercent = (price, salePrice) => {
+  const originalPrice = Math.max(0, toNumber(price, 0))
+  const discountedPrice = Math.max(0, toNumber(salePrice, 0))
+
+  if (!originalPrice || !discountedPrice || discountedPrice >= originalPrice) {
+    return 0
+  }
+
+  return Math.max(0, Math.min(100, Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)))
+}
+
+const calculateSalePrice = (price, discountPercent) => {
+  const originalPrice = Math.max(0, toNumber(price, 0))
+  const percent = normalizeDiscountPercent(discountPercent, 0)
+  return Math.max(0, Math.round(originalPrice * (1 - percent / 100)))
+}
+
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
 const normalizeUserRecord = (user = {}, fallbackRole = 'customer') => ({
@@ -56,7 +78,7 @@ const sumSlots = (items = [], key = 'availableSlots') =>
   ensureArray(items).reduce((sum, item) => sum + Math.max(0, Number(item?.[key] || 0) || 0), 0)
 
 const buildDefaultHotelRoomTypes = (serviceInput = {}) => {
-  const basePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
+  const basePrice = Math.max(0, toNumber(serviceInput.price || serviceInput.salePrice || 0, 0))
   const standardSurcharge = Math.max(300000, Math.round(basePrice * 0.3))
   const deluxeSurcharge = Math.max(350000, Math.round(basePrice * 0.35))
   const familySurcharge = Math.max(450000, Math.round(basePrice * 0.42))
@@ -93,15 +115,15 @@ const buildDefaultTourChildPolicy = () => ({
 })
 
 const buildDefaultTourPricingTiers = (serviceInput = {}) => {
-  const baseSalePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
-  const basePrice = Math.max(baseSalePrice, toNumber(serviceInput.price || baseSalePrice, baseSalePrice))
+  const basePrice = Math.max(0, toNumber(serviceInput.price || serviceInput.salePrice || 0, 0))
   const childRate = buildDefaultTourChildPolicy().childRate
+  const discountedPrice = calculateSalePrice(basePrice, normalizeDiscountPercent(serviceInput.discountPercent, 0))
 
   return {
     fixed: {
       label: 'Lịch cố định (ưu đãi)',
-      adultPrice: baseSalePrice,
-      childPrice: Math.round(baseSalePrice * childRate),
+      adultPrice: discountedPrice,
+      childPrice: Math.round(discountedPrice * childRate),
       note: 'Giá ưu đãi áp dụng theo lịch cố định'
     },
     flexible: {
@@ -114,7 +136,7 @@ const buildDefaultTourPricingTiers = (serviceInput = {}) => {
 }
 
 const buildDefaultTicketChildPolicy = (serviceInput = {}) => {
-  const basePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
+  const basePrice = Math.max(0, toNumber(serviceInput.price || serviceInput.salePrice || 0, 0))
   return {
     freeUnderAge: 8,
     adultAgeThreshold: 15,
@@ -125,8 +147,9 @@ const buildDefaultTicketChildPolicy = (serviceInput = {}) => {
 }
 
 const buildDefaultTicketPackages = (serviceInput = {}) => {
-  const salePrice = Math.max(0, toNumber(serviceInput.salePrice || serviceInput.price || 0, 0))
-  const price = Math.max(salePrice, toNumber(serviceInput.price || salePrice, salePrice))
+  const price = Math.max(0, toNumber(serviceInput.price || serviceInput.salePrice || 0, 0))
+  const discountPercent = normalizeDiscountPercent(serviceInput.discountPercent, 0)
+  const salePrice = calculateSalePrice(price, discountPercent)
   const childSurcharge = buildDefaultTicketChildPolicy(serviceInput).surcharge
 
   return [
@@ -280,6 +303,12 @@ const parseJsonLike = (value, fallback) => {
 
 const normalizeServiceModelPayload = (serviceInput = {}) => {
   const categoryId = normalizeText(serviceInput.categoryId, 'hotel')
+  const legacyPrice = Math.max(0, toNumber(serviceInput.price || serviceInput.salePrice || 0, 0))
+  const legacySalePrice = Math.max(0, toNumber(serviceInput.salePrice, 0))
+  const discountPercent = normalizeDiscountPercent(
+    serviceInput.discountPercent,
+    deriveDiscountPercent(legacyPrice, legacySalePrice)
+  )
   const nextService = {
     ...serviceInput,
     categoryId,
@@ -288,8 +317,7 @@ const normalizeServiceModelPayload = (serviceInput = {}) => {
     destination: normalizeText(serviceInput.destination),
     province: normalizeText(serviceInput.province),
     status: serviceInput.status || 'active',
-    description: normalizeText(serviceInput.description || serviceInput.shortDescription),
-    shortDescription: normalizeText(serviceInput.shortDescription || serviceInput.description),
+    description: normalizeText(serviceInput.description || serviceInput.detailedDescription),
     image: normalizeText(serviceInput.image),
     imageAssetPath: normalizeText(serviceInput.imageAssetPath),
     gallery: ensureArray(serviceInput.gallery).filter(Boolean),
@@ -297,8 +325,9 @@ const normalizeServiceModelPayload = (serviceInput = {}) => {
     itinerary: ensureArray(serviceInput.itinerary).filter(Boolean),
     departures: ensureArray(serviceInput.departures).filter(Boolean),
     rating: toNumber(serviceInput.rating, 4.5),
-    price: toPositiveNumber(serviceInput.price, 0),
-    salePrice: toPositiveNumber(serviceInput.salePrice, 0),
+    price: legacyPrice,
+    discountPercent,
+    salePrice: calculateSalePrice(legacyPrice, discountPercent),
     availableSlots: toPositiveNumber(serviceInput.availableSlots, 0),
     featured: Boolean(serviceInput.featured),
     createdAt: serviceInput.createdAt || new Date().toISOString()

@@ -81,21 +81,51 @@
   <section class="page-section">
     <div class="section-heading">
       <div>
-        <p class="eyebrow">Dịch vụ tiêu biểu</p>
-        <h2>Đề xuất phù hợp cho khách du lịch nội địa Việt Nam.</h2>
+        <p class="eyebrow">Ưu đãi nổi bật</p>
+        <h2>Các dịch vụ đang giảm giá</h2>
       </div>
       <router-link to="/dich-vu" class="secondary-button">Xem tất cả</router-link>
     </div>
 
-    <div class="travel-grid">
-      <TravelCard
-        v-for="service in featuredServices"
-        :key="service.id"
-        :service="service"
-        :is-wishlisted="isWishlisted(service.id)"
-        :show-discount-amount="true"
-        @toggle-wishlist="handleToggleWishlist"
-      />
+    <div class="home-feature-groups">
+      <section class="home-feature-group">
+        <h3>Khách sạn đang giảm giá</h3>
+        <div class="travel-grid home-feature-grid">
+          <TravelCard
+            v-for="service in latestHotels"
+            :key="`hotel-${service.id}`"
+            :service="service"
+            :is-wishlisted="isWishlisted(service.id)"
+            @toggle-wishlist="handleToggleWishlist"
+          />
+        </div>
+      </section>
+
+      <section class="home-feature-group">
+        <h3>Tour đang giảm giá</h3>
+        <div class="travel-grid home-feature-grid">
+          <TravelCard
+            v-for="service in latestTours"
+            :key="`tour-${service.id}`"
+            :service="service"
+            :is-wishlisted="isWishlisted(service.id)"
+            @toggle-wishlist="handleToggleWishlist"
+          />
+        </div>
+      </section>
+
+      <section class="home-feature-group">
+        <h3>Vé tham quan đang giảm giá</h3>
+        <div class="travel-grid home-feature-grid">
+          <TravelCard
+            v-for="service in latestTickets"
+            :key="`ticket-${service.id}`"
+            :service="service"
+            :is-wishlisted="isWishlisted(service.id)"
+            @toggle-wishlist="handleToggleWishlist"
+          />
+        </div>
+      </section>
     </div>
   </section>
 
@@ -127,7 +157,7 @@
         <p class="eyebrow">Ưu đãi hot</p>
         <h2>Mã khuyến mãi nổi bật cho chuyến đi trong nước.</h2>
       </div>
-      <router-link to="/gio-hang" class="secondary-button">Xem giỏ hàng</router-link>
+      <router-link to="/dich-vu" class="secondary-button">Khám phá dịch vụ</router-link>
     </div>
 
     <div class="promo-grid home-promo-grid">
@@ -424,10 +454,30 @@ const searchTarget = computed(() => {
   return `${basePath}?${query.toString()}`
 })
 
-const featuredServices = computed(() => {
-  const source = Array.isArray(serviceStore.featuredServices) ? serviceStore.featuredServices : []
+const activeServices = computed(() => {
+  const source = Array.isArray(serviceStore.services) ? serviceStore.services : []
   return source.filter((service) => Number(service?.availableSlots || 0) > 0)
 })
+
+const getSortableId = (service) => {
+  const rawId = String(service?.id ?? '').trim()
+  const numericId = Number(rawId)
+  if (Number.isFinite(numericId)) return numericId
+
+  const digitOnly = Number(rawId.replace(/\D/g, ''))
+  return Number.isFinite(digitOnly) ? digitOnly : 0
+}
+
+const getLatestByCategory = (categoryId) => {
+  return activeServices.value
+    .filter((service) => String(service?.categoryId) === categoryId && Number(service?.discountPercent || 0) > 0)
+    .sort((left, right) => getSortableId(right) - getSortableId(left))
+    .slice(0, 4)
+}
+
+const latestHotels = computed(() => getLatestByCategory('hotel'))
+const latestTours = computed(() => getLatestByCategory('tour'))
+const latestTickets = computed(() => getLatestByCategory('ticket'))
 const activePromotions = computed(() => (Array.isArray(serviceStore.activePromotions) ? serviceStore.activePromotions : []).slice(0, 3))
 const featuredDestinations = computed(() => (Array.isArray(serviceStore.destinations) ? serviceStore.destinations : []).slice(0, 6))
 
@@ -468,5 +518,68 @@ const isWishlisted = (serviceId) => {
 .ota-search-field--selector :deep(.guest-room-selector__popup) {
   left: 0;
   top: calc(100% + 10px);
+}
+
+.home-feature-groups {
+  display: grid;
+  gap: 24px;
+}
+
+.home-feature-group h3 {
+  margin: 0 0 12px;
+  font-size: 1.2rem;
+  color: #1b2c4a;
+}
+
+.home-feature-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* Can deu noi dung card de cac the khong bi lech hang */
+.home-feature-grid :deep(.travel-card) {
+  height: 100%;
+}
+
+.home-feature-grid :deep(.travel-card h3) {
+  min-height: 2.8em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-feature-grid :deep(.travel-card .muted) {
+  min-height: 2.6em;
+}
+
+.home-feature-grid :deep(.travel-card__price-current) {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+@media (max-width: 1400px) {
+  .home-feature-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .home-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .home-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .home-feature-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

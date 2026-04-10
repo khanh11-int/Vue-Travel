@@ -12,7 +12,6 @@ import TourHome from '@/views/client/tour/TourHome.vue'
 import TourDetailView from '@/views/client/tour/TourDetailView.vue'
 import TravelListView from '@/views/client/TravelListView.vue'
 import WishlistView from '@/views/client/WishlistView.vue'
-import CartView from '@/views/client/CartView.vue'
 import CheckoutView from '@/views/client/CheckoutView.vue'
 import BookingSuccessView from '@/views/client/BookingSuccessView.vue'
 import BookingHistoryView from '@/views/client/BookingHistoryView.vue'
@@ -105,8 +104,7 @@ const routes = [
       {
         path: 'gio-hang',
         name: 'cart',
-        component: CartView,
-        meta: { title: 'Giỏ đặt chỗ' }
+        redirect: { name: 'travel-list' }
       },
       {
         path: 'thanh-toan',

@@ -485,7 +485,16 @@ export const useBookingStore = defineStore('travelBooking', {
 
       if (!existing || existing.status === 'completed' || existing.status === status) return
 
-      const shouldRestoreSlots = status === 'cancelled' && existing.status !== 'cancelled'
+      // Xác định loại dịch vụ từ booking items
+      const firstItem = Array.isArray(existing.items) && existing.items.length > 0 ? existing.items[0] : {}
+      const bookingType = firstItem.bookingType || firstItem.service?.categoryId || 'hotel'
+
+      // Hotel: hoàn lại slot khi checked-out, Tour/Ticket: hoàn lại slot khi completed
+      const shouldRestoreSlots = (
+        (status === 'cancelled' && existing.status !== 'cancelled') ||
+        (status === 'checked-out' && bookingType === 'hotel') ||
+        (status === 'completed' && (bookingType === 'tour' || bookingType === 'ticket'))
+      )
 
       if (shouldRestoreSlots) {
         const serviceStore = useServiceStore()

@@ -869,33 +869,71 @@ p {
 }
 
 .travel-card {
+  background: #ffffff;
+  border: 1px solid rgba(16, 42, 78, 0.08);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(16, 42, 78, 0.11);
 }
 
 .travel-card__image-wrapper {
   position: relative;
+  overflow: hidden;
 }
 
 .travel-card__image {
   width: 100%;
-  height: 220px;
+  height: 170px;
   object-fit: cover;
+}
+
+.travel-card__location-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(11, 31, 56, 0.92);
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.travel-card__discount-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, rgba(45, 132, 232, 0.96), rgba(74, 160, 244, 0.96));
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .wishlist-button {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 44px;
-  height: 44px;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.92);
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #999;
   transition: all 0.3s ease;
   display: flex;
@@ -918,10 +956,10 @@ p {
 }
 
 .travel-card__body {
-  padding: 20px;
+  padding: 9px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   flex: 1;
 }
 
@@ -940,21 +978,30 @@ p {
   gap: 12px;
 }
 
-.travel-card__description {
-  min-height: 48px;
-  color: var(--muted);
+.travel-card h3 {
   margin: 0;
+  font-size: 1rem;
+  line-height: 1.32;
 }
 
-.travel-card__discount-amount {
-  margin: -6px 0 0;
-  color: #e56d00;
-  font-size: 0.9rem;
-  font-weight: 700;
+.travel-card .muted {
+  margin: 0;
+  font-size: 0.92rem;
 }
 
 .travel-card__price-row {
   margin-top: auto;
+}
+
+.travel-card__price-main {
+  width: 100%;
+}
+
+.travel-card__price-current {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
 }
 
 .badge,
@@ -964,7 +1011,7 @@ p {
   align-items: center;
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -982,11 +1029,11 @@ p {
 
 .price {
   margin: 0;
-  font-size: 1.56rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   color: #0a5fbd;
-  text-shadow: 0 6px 16px rgba(10, 109, 217, 0.16);
+  text-shadow: none;
   white-space: nowrap;
   overflow-wrap: normal;
 }
@@ -2186,21 +2233,21 @@ p {
 .price-label {
   color: var(--muted);
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   white-space: nowrap;
 }
 
 .price-before {
   margin: 0;
   color: #8a97a9;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 700;
   text-decoration: line-through;
   text-shadow: none;
 }
 
 .price--sale {
-  font-size: 1.42rem;
+  font-size: 1.32rem;
   color: #0a5fbd;
 }
 
@@ -2578,9 +2625,39 @@ p {
   align-items: flex-start;
 }
 
+.admin-category-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-category-tab {
+  padding: 10px 18px;
+  border: 2px solid var(--border);
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-category-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.admin-category-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
 .admin-toolbar {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-columns: 1.5fr 1fr;
   gap: 16px;
   margin-bottom: 22px;
 }
@@ -2638,7 +2715,7 @@ p {
 
 .service-form-steps {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 18px;
   align-items: stretch;
@@ -3037,6 +3114,11 @@ p {
 .status-chip--warning {
   background: rgba(255, 176, 32, 0.18);
   color: #9a5a00;
+}
+
+.status-chip--purple {
+  background: rgba(139, 92, 246, 0.16);
+  color: #7c3aed;
 }
 
 .status-chip--danger {

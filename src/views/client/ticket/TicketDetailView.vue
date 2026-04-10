@@ -74,14 +74,6 @@
           >
             {{ maxSelectableSlots > 0 ? 'Đặt ngay' : 'Hết chỗ' }}
           </button>
-          <button
-            class="secondary-button full-width"
-            type="button"
-            :disabled="maxSelectableSlots <= 0"
-            @click="handleAddToCart"
-          >
-            {{ isEditingFromCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ' }}
-          </button>
         </div>
       </aside>
 
@@ -107,7 +99,6 @@ import DetailMainContent from '@/components/travel/DetailMainContent.vue'
 import DetailCommentSection from '@/components/travel/DetailCommentSection.vue'
 import DetailRelatedServices from '@/components/travel/DetailRelatedServices.vue'
 import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
-import { useCartStore } from '@/stores/cart/useCartStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { getPrimaryDateLabel } from '@/utils/bookingRules'
 import { formatCurrencyVND } from '@/utils/formatters'
@@ -169,7 +160,6 @@ const ticketDetailLogic = {
 const route = useRoute()
 const router = useRouter()
 const serviceStore = useServiceStore()
-const cartStore = useCartStore()
 const todayISO = (() => {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -242,14 +232,6 @@ const maxSelectableSlots = computed(() => {
   }
   return Math.max(0, Number(service.value?.availableSlots || 0))
 })
-const isEditingFromCart = computed(() => route.query.edit === '1')
-const originalCartItem = computed(() => ({
-  serviceId: route.query.originServiceId ?? service.value?.id,
-  startDate: String(route.query.originStartDate || ''),
-  endDate: String(route.query.originEndDate || ''),
-  bookingType: String(route.query.originBookingType || 'ticket'),
-  bookingMeta: {}
-}))
 
 const bookingForm = reactive({
   startDate: '',
@@ -365,48 +347,6 @@ const validateBookingInput = () => {
     return false
   }
   return true
-}
-
-const addToCartWithCurrentSelection = () => {
-  const nextItem = {
-    serviceId: service.value.id,
-    quantity: totalGuests.value,
-    bookingType: 'ticket',
-    bookingMeta: ticketDetailLogic.buildBookingMeta({
-      bookingForm,
-      selectedTicketPackage: selectedTicketPackage.value,
-      effectiveUnitPrice: effectiveUnitPrice.value,
-      pricingSummary: pricingSummary.value
-    }),
-    startDate: bookingForm.startDate,
-    endDate: ''
-  }
-
-  if (isEditingFromCart.value) {
-    cartStore.removeCartItem(
-      originalCartItem.value.serviceId,
-      originalCartItem.value.startDate,
-      originalCartItem.value.endDate,
-      originalCartItem.value.bookingType,
-      originalCartItem.value.bookingMeta
-    )
-    cartStore.addToCart(nextItem)
-    return
-  }
-
-  cartStore.addToCart(nextItem)
-}
-
-const handleAddToCart = () => {
-  if (!validateBookingInput()) return
-  addToCartWithCurrentSelection()
-
-  if (isEditingFromCart.value) {
-    router.push('/gio-hang')
-    return
-  }
-
-  bookingSuccess.value = 'Đã thêm dịch vụ vào giỏ đặt chỗ.'
 }
 
 const handleBookNow = () => {

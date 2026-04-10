@@ -36,7 +36,6 @@
       <div class="detail-meta">
         <RatingStars :value="service.rating" />
       </div>
-      <p class="lead">{{ service.shortDescription }}</p>
     </div>
 
     <div class="info-card">

@@ -95,6 +95,20 @@ const normalizeServiceSlots = (service) => {
     }
   }
 
+  if (service.categoryId === 'flight') {
+    const cabinFares = service.cabinFares && typeof service.cabinFares === 'object' ? service.cabinFares : {}
+    const seatValues = Object.values(cabinFares)
+      .map((fare) => Math.max(0, Number(fare?.seatLeft || 0) || 0))
+      .filter((value) => Number.isFinite(value))
+    const derivedSlots = seatValues.length ? Math.max(...seatValues) : 0
+
+    return {
+      ...service,
+      cabinFares,
+      availableSlots: Math.max(0, Number(service.availableSlots || derivedSlots || 0) || 0)
+    }
+  }
+
   return {
     ...service,
     availableSlots: toSafeSlots(service.availableSlots)

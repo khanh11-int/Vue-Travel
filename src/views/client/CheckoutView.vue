@@ -14,7 +14,7 @@
             <p class="eyebrow eyebrow--blue">Thanh toán an toàn</p>
             <h2>Điền thông tin một lần, xác nhận ngay.</h2>
           </div>
-          <p class="muted">Dữ liệu booking được chốt theo một loại dịch vụ, không trộn khách sạn, tour và vé trong cùng một luồng đặt.</p>
+          <p class="muted">Điền đầy đủ thông tin để chúng tôi có thể liên hệ xác nhận booking và hỗ trợ bạn tốt nhất. Bạn có thể chọn thanh toán khi xác nhận booking hoặc chuyển khoản qua VietQR để tiết kiệm thời gian.</p>
         </div>
 
         <div class="form-grid">

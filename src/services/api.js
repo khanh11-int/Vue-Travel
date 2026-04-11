@@ -183,7 +183,8 @@ export const servicesApi = {
     const serviceResources = [
       { categoryId: 'hotel', path: '/hotels' },
       { categoryId: 'ticket', path: '/tickets' },
-      { categoryId: 'tour', path: '/tours' }
+      { categoryId: 'tour', path: '/tours' },
+      { categoryId: 'flight', path: '/flights' }
     ]
 
     const attachCategoryFallback = (items, categoryId) =>
@@ -214,7 +215,8 @@ export const servicesApi = {
     const serviceResources = [
       { categoryId: 'hotel', path: '/hotels' },
       { categoryId: 'ticket', path: '/tickets' },
-      { categoryId: 'tour', path: '/tours' }
+      { categoryId: 'tour', path: '/tours' },
+      { categoryId: 'flight', path: '/flights' }
     ]
 
     return Promise.allSettled(
@@ -239,7 +241,8 @@ export const servicesApi = {
     const targetPath = {
       hotel: '/hotels',
       ticket: '/tickets',
-      tour: '/tours'
+      tour: '/tours',
+      flight: '/flights'
     }[categoryId] || '/hotels'
 
     return apiClient.post(targetPath, { ...payload, categoryId }).then((res) => res.data)
@@ -255,7 +258,8 @@ export const servicesApi = {
     const serviceResources = [
       { categoryId: 'hotel', path: '/hotels' },
       { categoryId: 'ticket', path: '/tickets' },
-      { categoryId: 'tour', path: '/tours' }
+      { categoryId: 'tour', path: '/tours' },
+      { categoryId: 'flight', path: '/flights' }
     ]
 
     const explicitCategoryId = String(payload?.categoryId || '').toLowerCase()
@@ -500,6 +504,132 @@ export const bookingDetailsApi = {
    */
   remove(id) {
     return apiClient.delete(`/bookingDetails/${id}`).then((res) => res.data)
+  }
+}
+
+// flights
+export const flightsApi = {
+  /**
+   * Alias tuong thich nguoc de giu cac cho goi cu hoat dong on dinh.
+   * @param {Object} params - Query params dung de loc/sap xep phia server.
+   * @returns {Promise<Array>} Danh sach chuyen bay.
+   */
+  list(params = {}) {
+    return this.getAll(params)
+  },
+
+  /**
+   * Alias tuong thich nguoc de giu cac cho goi chi tiet theo id van hoat dong.
+   * @param {string|number} id - Id chuyen bay.
+   * @returns {Promise<Object|null>} Chi tiet chuyen bay.
+   */
+  get(id) {
+    return this.getById(id)
+  },
+
+  /**
+   * Lay danh sach chuyen bay tu API va tra ve payload da chuan hoa.
+   * @param {Object} params - Query params dung de loc/sap xep phia server.
+   * @returns {Promise<Array>} Danh sach chuyen bay.
+   */
+  getAll(params = {}) {
+    return apiClient.get('/flights', { params }).then((res) => res.data)
+  },
+
+  /**
+   * Lay chi tiet chuyen bay theo id.
+   * @param {string|number} id - Id chuyen bay.
+   * @returns {Promise<Object|null>} Chi tiet chuyen bay.
+   */
+  getById(id) {
+    return apiClient.get(`/flights/${id}`).then((res) => res.data)
+  },
+
+  /**
+   * Tao moi ban ghi chuyen bay.
+   * @param {Object} payload - Du lieu chuyen bay can luu.
+   * @returns {Promise<Object>} Chuyen bay sau khi tao.
+   */
+  create(payload) {
+    return apiClient.post('/flights', payload).then((res) => res.data)
+  },
+
+  /**
+   * Cap nhat toan bo mot chuyen bay da ton tai.
+   * @param {string|number} id - Id chuyen bay.
+   * @param {Object} payload - Payload chuyen bay day du.
+   * @returns {Promise<Object>} Chuyen bay sau khi cap nhat.
+   */
+  update(id, payload) {
+    return apiClient.put(`/flights/${id}`, payload).then((res) => res.data)
+  },
+
+  /**
+   * Cap nhat mot phan du lieu chuyen bay.
+   * @param {string|number} id - Id chuyen bay.
+   * @param {Object} payload - Cac truong can cap nhat mot phan.
+   * @returns {Promise<Object>} Chuyen bay sau khi cap nhat.
+   */
+  patch(id, payload) {
+    return apiClient.patch(`/flights/${id}`, payload).then((res) => res.data)
+  },
+
+  /**
+   * Xoa chuyen bay khoi nguon du lieu.
+   * @param {string|number} id - Id chuyen bay.
+   * @returns {Promise<Object>} Phan hoi API sau khi xoa.
+   */
+  remove(id) {
+    return apiClient.delete(`/flights/${id}`).then((res) => res.data)
+  }
+}
+
+// flight bookings
+export const flightBookingsApi = {
+  /**
+   * Lay danh sach booking ve may bay tu API.
+   * @param {Object} params - Query params dung de loc phia server.
+   * @returns {Promise<Array>} Danh sach flight booking.
+   */
+  getAll(params = {}) {
+    return apiClient.get('/flightBookings', { params }).then((res) => res.data)
+  },
+
+  /**
+   * Lay chi tiet flight booking theo id.
+   * @param {string|number} id - Id flight booking.
+   * @returns {Promise<Object|null>} Chi tiet flight booking.
+   */
+  getById(id) {
+    return apiClient.get(`/flightBookings/${id}`).then((res) => res.data)
+  },
+
+  /**
+   * Tao moi mot flight booking.
+   * @param {Object} payload - Du lieu flight booking.
+   * @returns {Promise<Object>} Flight booking sau khi tao.
+   */
+  create(payload) {
+    return apiClient.post('/flightBookings', payload).then((res) => res.data)
+  },
+
+  /**
+   * Cap nhat flight booking.
+   * @param {string|number} id - Id flight booking.
+   * @param {Object} payload - Du lieu cap nhat.
+   * @returns {Promise<Object>} Flight booking sau khi cap nhat.
+   */
+  update(id, payload) {
+    return apiClient.put(`/flightBookings/${id}`, payload).then((res) => res.data)
+  },
+
+  /**
+   * Xoa flight booking.
+   * @param {string|number} id - Id flight booking.
+   * @returns {Promise<Object>} Phan hoi API sau khi xoa.
+   */
+  remove(id) {
+    return apiClient.delete(`/flightBookings/${id}`).then((res) => res.data)
   }
 }
 

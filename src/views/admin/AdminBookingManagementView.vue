@@ -87,12 +87,15 @@
 
 <script setup>
 import { computed, onMounted, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 import { useBookingStore } from '@/stores/booking/useBookingStore'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
 import { BOOKING_STATUS_LABELS, getValidNextStatuses } from '@/utils/travelBooking'
 
+const route = useRoute()
 const store = useBookingStore()
-const filters = reactive({ keyword: '', status: '', categoryId: '' })
+const routeCategoryId = computed(() => String(route.meta?.categoryId || route.query.category || '').trim())
+const filters = reactive({ keyword: '', status: '', categoryId: routeCategoryId.value || '' })
 
 const getBookingCategoryId = (booking) => {
   const firstItem = Array.isArray(booking?.items) && booking.items.length > 0 ? booking.items[0] : {}
@@ -112,7 +115,11 @@ const bookingCategoryTabs = computed(() => {
     { id: 'ticket', label: 'Vé tham quan' }
   ]
 
-  return categories.map((category) => ({
+  const filteredCategories = routeCategoryId.value
+    ? categories.filter((category) => category.id === routeCategoryId.value)
+    : categories
+
+  return filteredCategories.map((category) => ({
     ...category,
     count: store.adminBookingHistory.filter((booking) => getBookingCategoryId(booking) === category.id).length
   }))

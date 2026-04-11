@@ -375,6 +375,29 @@ const normalizeServiceModelPayload = (serviceInput = {}) => {
     nextService.availableSlots = sumSlots(nextService.ticketPackages, 'availableSlots')
   }
 
+  if (categoryId === 'flight') {
+    const cabinFares = parseJsonLike(serviceInput.cabinFares, null)
+    const normalizedCabinFares = cabinFares && typeof cabinFares === 'object' ? cabinFares : {}
+
+    nextService.flightNumber = normalizeText(serviceInput.flightNumber)
+    nextService.airlineCode = normalizeText(serviceInput.airlineCode)
+    nextService.airlineName = normalizeText(serviceInput.airlineName)
+    nextService.fromAirport = normalizeText(serviceInput.fromAirport)
+    nextService.toAirport = normalizeText(serviceInput.toAirport)
+    nextService.flightDate = normalizeText(serviceInput.flightDate)
+    nextService.departureTime = normalizeText(serviceInput.departureTime)
+    nextService.arrivalTime = normalizeText(serviceInput.arrivalTime)
+    nextService.durationMinutes = Math.max(0, toNumber(serviceInput.durationMinutes, 0))
+    nextService.stopCount = Math.max(0, toNumber(serviceInput.stopCount, 0))
+    nextService.aircraft = normalizeText(serviceInput.aircraft)
+    nextService.cabinFares = normalizedCabinFares
+
+    const seatValues = Object.values(normalizedCabinFares)
+      .map((fare) => Math.max(0, toNumber(fare?.seatLeft, 0)))
+      .filter((value) => Number.isFinite(value))
+    nextService.availableSlots = Math.max(0, toNumber(serviceInput.availableSlots, seatValues.length ? Math.max(...seatValues) : 0))
+  }
+
   return nextService
 }
 

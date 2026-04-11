@@ -700,9 +700,10 @@ const router = useRouter()
 const store = useAdminStore()
 const serviceStore = useServiceStore()
 const categories = computed(() => serviceStore.categories)
+const routeCategoryId = computed(() => String(route.meta?.categoryId || route.query.category || '').trim())
 const filters = reactive({
   keyword: '',
-  categoryId: 'hotel',
+  categoryId: routeCategoryId.value || 'hotel',
   province: ''
 })
 
@@ -710,7 +711,7 @@ const defaultForm = () => ({
   id: null,
   name: '',
   slug: '',
-  categoryId: 'hotel',
+  categoryId: routeCategoryId.value || 'hotel',
   destination: '',
   province: '',
   price: 0,
@@ -837,7 +838,11 @@ const stepItems = [
   { step: 5, title: 'Kiểm tra', description: 'Xác nhận toàn bộ thông tin trước khi lưu.' }
 ]
 
-const categoryTabs = computed(() => categories.value.filter((category) => ['hotel', 'tour', 'ticket'].includes(String(category.id))))
+const categoryTabs = computed(() => {
+  const availableCategories = categories.value.filter((category) => ['hotel', 'tour', 'ticket'].includes(String(category.id)))
+  if (!routeCategoryId.value) return availableCategories
+  return availableCategories.filter((category) => String(category.id) === routeCategoryId.value)
+})
 const currentCategoryLabel = computed(() => getCategoryLabel(serviceForm.categoryId) || 'Chưa chọn loại')
 
 const provinceOptions = computed(() =>
@@ -1191,12 +1196,12 @@ const startCreateService = () => {
   resetServiceForm()
   syncModelFieldsForCategory(serviceForm.categoryId)
   if (!isCreatePage.value) {
-    router.push({ name: 'admin-services-create' })
+    router.push({ name: 'admin-services-create', query: routeCategoryId.value ? { category: routeCategoryId.value } : {} })
   }
 }
 
 const goToServicesList = () => {
-  router.push({ name: 'admin-services' })
+  router.push({ name: 'admin-services', query: routeCategoryId.value ? { category: routeCategoryId.value } : {} })
 }
 
 const startEditService = (service) => {

@@ -121,6 +121,54 @@
           }
         ]
       }
+    },
+    {
+      "id": "flight",
+      "name": "Vé máy bay",
+      "description": "Chuyến bay nội địa Việt Nam, đặt nhanh theo hành trình",
+      "status": "active",
+      "homePath": "/ve-may-bay",
+      "searchPath": "/ve-may-bay",
+      "searchConfig": {
+        "submitLabel": "Tìm chuyến bay",
+        "defaults": {
+          "fromAirport": "HAN",
+          "toAirport": "SGN",
+          "departDate": "2026-04-11",
+          "passengers": 1
+        },
+        "fields": [
+          {
+            "type": "text",
+            "key": "fromAirport",
+            "queryKey": "fromAirport",
+            "placeholder": "Điểm đi (VD: HAN)",
+            "icon": "location"
+          },
+          {
+            "type": "text",
+            "key": "toAirport",
+            "queryKey": "toAirport",
+            "placeholder": "Điểm đến (VD: SGN)",
+            "icon": "location"
+          },
+          {
+            "type": "date",
+            "key": "departDate",
+            "queryKey": "departDate",
+            "icon": "calendar"
+          },
+          {
+            "type": "number",
+            "key": "passengers",
+            "queryKey": "adults",
+            "min": 1,
+            "max": 9,
+            "defaultValue": 1,
+            "icon": "users"
+          }
+        ]
+      }
     }
   ],
   "destinations": [
@@ -7778,6 +7826,541 @@
         "Ngày 3: Về Hải Phòng"
       ],
       "discountPercent": 12
+    }
+  ],
+  "flights": [
+    {
+      "id": "F001",
+      "flightNumber": "VN215",
+      "airlineCode": "VN",
+      "airlineName": "Vietnam Airlines",
+      "fromAirport": "HAN",
+      "toAirport": "SGN",
+      "flightDate": "2026-04-11",
+      "departureTime": "06:10",
+      "arrivalTime": "08:20",
+      "durationMinutes": 130,
+      "stopCount": 0,
+      "aircraft": "Airbus A321",
+      "cabinFares": {
+        "economy": {
+          "label": "Phổ thông",
+          "price": 1250000,
+          "baggage": "20kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi phí, hoàn có điều kiện",
+          "seatLeft": 21
+        },
+        "premium": {
+          "label": "Phổ thông đặc biệt",
+          "price": 1890000,
+          "baggage": "30kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi miễn phí 1 lần",
+          "seatLeft": 8
+        },
+        "business": {
+          "label": "Thương gia",
+          "price": 3820000,
+          "baggage": "40kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 4
+        }
+      }
+    },
+    {
+      "id": "F002",
+      "flightNumber": "VJ197",
+      "airlineCode": "VJ",
+      "airlineName": "VietJet Air",
+      "fromAirport": "HAN",
+      "toAirport": "SGN",
+      "flightDate": "2026-04-11",
+      "departureTime": "09:35",
+      "arrivalTime": "11:45",
+      "durationMinutes": 130,
+      "stopCount": 0,
+      "aircraft": "Airbus A320",
+      "cabinFares": {
+        "economy": {
+          "label": "Eco",
+          "price": 980000,
+          "baggage": "7kg xách tay",
+          "refundPolicy": "Không hoàn, đổi có phí",
+          "seatLeft": 29
+        },
+        "premium": {
+          "label": "Deluxe",
+          "price": 1490000,
+          "baggage": "20kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi có phí thấp",
+          "seatLeft": 11
+        },
+        "business": {
+          "label": "SkyBoss",
+          "price": 2740000,
+          "baggage": "30kg ký gửi + 10kg xách tay",
+          "refundPolicy": "Đổi linh hoạt",
+          "seatLeft": 5
+        }
+      }
+    },
+    {
+      "id": "F003",
+      "flightNumber": "QH141",
+      "airlineCode": "QH",
+      "airlineName": "Bamboo Airways",
+      "fromAirport": "HAN",
+      "toAirport": "SGN",
+      "flightDate": "2026-04-11",
+      "departureTime": "14:10",
+      "arrivalTime": "16:25",
+      "durationMinutes": 135,
+      "stopCount": 0,
+      "aircraft": "Airbus A321neo",
+      "cabinFares": {
+        "economy": {
+          "label": "Economy Saver",
+          "price": 1090000,
+          "baggage": "20kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi có phí",
+          "seatLeft": 17
+        },
+        "premium": {
+          "label": "Economy Flex",
+          "price": 1640000,
+          "baggage": "25kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi miễn phí theo điều kiện",
+          "seatLeft": 7
+        },
+        "business": {
+          "label": "Business",
+          "price": 3160000,
+          "baggage": "40kg ký gửi + 10kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 3
+        }
+      }
+    },
+    {
+      "id": "F004",
+      "flightNumber": "VN186",
+      "airlineCode": "VN",
+      "airlineName": "Vietnam Airlines",
+      "fromAirport": "SGN",
+      "toAirport": "HAN",
+      "flightDate": "2026-04-11",
+      "departureTime": "07:20",
+      "arrivalTime": "09:30",
+      "durationMinutes": 130,
+      "stopCount": 0,
+      "aircraft": "Airbus A321",
+      "cabinFares": {
+        "economy": {
+          "label": "Phổ thông",
+          "price": 1210000,
+          "baggage": "20kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi phí, hoàn có điều kiện",
+          "seatLeft": 18
+        },
+        "premium": {
+          "label": "Phổ thông đặc biệt",
+          "price": 1820000,
+          "baggage": "30kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi miễn phí 1 lần",
+          "seatLeft": 6
+        },
+        "business": {
+          "label": "Thương gia",
+          "price": 3660000,
+          "baggage": "40kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 4
+        }
+      }
+    },
+    {
+      "id": "F005",
+      "flightNumber": "VJ622",
+      "airlineCode": "VJ",
+      "airlineName": "VietJet Air",
+      "fromAirport": "SGN",
+      "toAirport": "DAD",
+      "flightDate": "2026-04-11",
+      "departureTime": "10:05",
+      "arrivalTime": "11:30",
+      "durationMinutes": 85,
+      "stopCount": 0,
+      "aircraft": "Airbus A321",
+      "cabinFares": {
+        "economy": {
+          "label": "Eco",
+          "price": 690000,
+          "baggage": "7kg xách tay",
+          "refundPolicy": "Không hoàn, đổi có phí",
+          "seatLeft": 24
+        },
+        "premium": {
+          "label": "Deluxe",
+          "price": 1080000,
+          "baggage": "20kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi có phí thấp",
+          "seatLeft": 10
+        },
+        "business": {
+          "label": "SkyBoss",
+          "price": 1980000,
+          "baggage": "30kg ký gửi + 10kg xách tay",
+          "refundPolicy": "Đổi linh hoạt",
+          "seatLeft": 5
+        }
+      }
+    },
+    {
+      "id": "F006",
+      "flightNumber": "VN7109",
+      "airlineCode": "VN",
+      "airlineName": "Vietnam Airlines",
+      "fromAirport": "SGN",
+      "toAirport": "PQC",
+      "flightDate": "2026-04-11",
+      "departureTime": "12:15",
+      "arrivalTime": "13:20",
+      "durationMinutes": 65,
+      "stopCount": 0,
+      "aircraft": "Airbus A321",
+      "cabinFares": {
+        "economy": {
+          "label": "Phổ thông",
+          "price": 880000,
+          "baggage": "20kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi phí, hoàn có điều kiện",
+          "seatLeft": 20
+        },
+        "premium": {
+          "label": "Phổ thông đặc biệt",
+          "price": 1290000,
+          "baggage": "30kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi miễn phí 1 lần",
+          "seatLeft": 9
+        },
+        "business": {
+          "label": "Thương gia",
+          "price": 2480000,
+          "baggage": "40kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 4
+        }
+      }
+    },
+    {
+      "id": "F007",
+      "flightNumber": "QH1523",
+      "airlineCode": "QH",
+      "airlineName": "Bamboo Airways",
+      "fromAirport": "HAN",
+      "toAirport": "DAD",
+      "flightDate": "2026-04-11",
+      "departureTime": "15:10",
+      "arrivalTime": "16:30",
+      "durationMinutes": 80,
+      "stopCount": 0,
+      "aircraft": "Embraer E190",
+      "cabinFares": {
+        "economy": {
+          "label": "Economy Saver",
+          "price": 740000,
+          "baggage": "20kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi có phí",
+          "seatLeft": 15
+        },
+        "premium": {
+          "label": "Economy Flex",
+          "price": 1160000,
+          "baggage": "25kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi miễn phí theo điều kiện",
+          "seatLeft": 6
+        },
+        "business": {
+          "label": "Business",
+          "price": 2100000,
+          "baggage": "40kg ký gửi + 10kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 2
+        }
+      }
+    },
+    {
+      "id": "F008",
+      "flightNumber": "VJ552",
+      "airlineCode": "VJ",
+      "airlineName": "VietJet Air",
+      "fromAirport": "DAD",
+      "toAirport": "HAN",
+      "flightDate": "2026-04-12",
+      "departureTime": "08:40",
+      "arrivalTime": "10:00",
+      "durationMinutes": 80,
+      "stopCount": 0,
+      "aircraft": "Airbus A320",
+      "cabinFares": {
+        "economy": {
+          "label": "Eco",
+          "price": 710000,
+          "baggage": "7kg xách tay",
+          "refundPolicy": "Không hoàn, đổi có phí",
+          "seatLeft": 28
+        },
+        "premium": {
+          "label": "Deluxe",
+          "price": 1120000,
+          "baggage": "20kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi có phí thấp",
+          "seatLeft": 11
+        },
+        "business": {
+          "label": "SkyBoss",
+          "price": 2050000,
+          "baggage": "30kg ký gửi + 10kg xách tay",
+          "refundPolicy": "Đổi linh hoạt",
+          "seatLeft": 5
+        }
+      }
+    },
+    {
+      "id": "F009",
+      "flightNumber": "VN1281",
+      "airlineCode": "VN",
+      "airlineName": "Vietnam Airlines",
+      "fromAirport": "DAD",
+      "toAirport": "SGN",
+      "flightDate": "2026-04-12",
+      "departureTime": "11:30",
+      "arrivalTime": "13:00",
+      "durationMinutes": 90,
+      "stopCount": 0,
+      "aircraft": "Airbus A321",
+      "cabinFares": {
+        "economy": {
+          "label": "Phổ thông",
+          "price": 930000,
+          "baggage": "20kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi phí, hoàn có điều kiện",
+          "seatLeft": 22
+        },
+        "premium": {
+          "label": "Phổ thông đặc biệt",
+          "price": 1360000,
+          "baggage": "30kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi miễn phí 1 lần",
+          "seatLeft": 9
+        },
+        "business": {
+          "label": "Thương gia",
+          "price": 2590000,
+          "baggage": "40kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 4
+        }
+      }
+    },
+    {
+      "id": "F010",
+      "flightNumber": "QH1925",
+      "airlineCode": "QH",
+      "airlineName": "Bamboo Airways",
+      "fromAirport": "HAN",
+      "toAirport": "CXR",
+      "flightDate": "2026-04-12",
+      "departureTime": "13:20",
+      "arrivalTime": "15:05",
+      "durationMinutes": 105,
+      "stopCount": 0,
+      "aircraft": "Airbus A320",
+      "cabinFares": {
+        "economy": {
+          "label": "Economy Saver",
+          "price": 980000,
+          "baggage": "20kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi có phí",
+          "seatLeft": 16
+        },
+        "premium": {
+          "label": "Economy Flex",
+          "price": 1490000,
+          "baggage": "25kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi miễn phí theo điều kiện",
+          "seatLeft": 7
+        },
+        "business": {
+          "label": "Business",
+          "price": 2760000,
+          "baggage": "40kg ký gửi + 10kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 3
+        }
+      }
+    },
+    {
+      "id": "F011",
+      "flightNumber": "VN1347",
+      "airlineCode": "VN",
+      "airlineName": "Vietnam Airlines",
+      "fromAirport": "HAN",
+      "toAirport": "VCA",
+      "flightDate": "2026-04-12",
+      "departureTime": "05:45",
+      "arrivalTime": "08:00",
+      "durationMinutes": 135,
+      "stopCount": 0,
+      "aircraft": "Airbus A321",
+      "cabinFares": {
+        "economy": {
+          "label": "Phổ thông",
+          "price": 1320000,
+          "baggage": "20kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi phí, hoàn có điều kiện",
+          "seatLeft": 19
+        },
+        "premium": {
+          "label": "Phổ thông đặc biệt",
+          "price": 1960000,
+          "baggage": "30kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Đổi miễn phí 1 lần",
+          "seatLeft": 8
+        },
+        "business": {
+          "label": "Thương gia",
+          "price": 3480000,
+          "baggage": "40kg ký gửi + 12kg xách tay",
+          "refundPolicy": "Hoàn/đổi linh hoạt",
+          "seatLeft": 4
+        }
+      }
+    },
+    {
+      "id": "F012",
+      "flightNumber": "VJ773",
+      "airlineCode": "VJ",
+      "airlineName": "VietJet Air",
+      "fromAirport": "HAN",
+      "toAirport": "PQC",
+      "flightDate": "2026-04-13",
+      "departureTime": "16:55",
+      "arrivalTime": "19:05",
+      "durationMinutes": 130,
+      "stopCount": 0,
+      "aircraft": "Airbus A321",
+      "cabinFares": {
+        "economy": {
+          "label": "Eco",
+          "price": 1160000,
+          "baggage": "7kg xách tay",
+          "refundPolicy": "Không hoàn, đổi có phí",
+          "seatLeft": 25
+        },
+        "premium": {
+          "label": "Deluxe",
+          "price": 1710000,
+          "baggage": "20kg ký gửi + 7kg xách tay",
+          "refundPolicy": "Đổi có phí thấp",
+          "seatLeft": 12
+        },
+        "business": {
+          "label": "SkyBoss",
+          "price": 2920000,
+          "baggage": "30kg ký gửi + 10kg xách tay",
+          "refundPolicy": "Đổi linh hoạt",
+          "seatLeft": 6
+        }
+      }
+    }
+  ],
+  "flightBookings": [
+    {
+      "id": "onFOxUtHG68",
+      "bookingCode": "FL25445731",
+      "flightId": "F010",
+      "flightNumber": "QH1925",
+      "fromAirport": "HAN",
+      "toAirport": "CXR",
+      "flightDate": "2026-04-12",
+      "departureTime": "13:20",
+      "arrivalTime": "15:05",
+      "airlineCode": "QH",
+      "airlineName": "Bamboo Airways",
+      "cabinClass": "economy",
+      "cabinLabel": "Economy Saver",
+      "passengers": [
+        {
+          "type": "adult",
+          "fullName": "Khánh",
+          "gender": "male",
+          "dob": "2005-02-03",
+          "passportOrId": "060205001890"
+        }
+      ],
+      "contact": {
+        "fullName": "Nguyễn Quốc Khánh",
+        "email": "banhtrangnao@gmail.com",
+        "phone": "0817367121"
+      },
+      "passengerCounts": {
+        "adults": 1,
+        "children": 0,
+        "infants": 0,
+        "total": 1
+      },
+      "unitPrice": 980000,
+      "totalPrice": 980000,
+      "status": "pending",
+      "createdAt": "2026-04-11T16:37:25.731Z"
+    },
+    {
+      "id": "CsAjYAO1Iio",
+      "bookingCode": "FL27392232",
+      "flightId": "F009",
+      "flightNumber": "VN1281",
+      "fromAirport": "DAD",
+      "toAirport": "SGN",
+      "flightDate": "2026-04-12",
+      "departureTime": "11:30",
+      "arrivalTime": "13:00",
+      "airlineCode": "VN",
+      "airlineName": "Vietnam Airlines",
+      "cabinClass": "economy",
+      "cabinLabel": "Phổ thông",
+      "passengers": [
+        {
+          "type": "adult",
+          "fullName": "Nguyễn Quốc khánh",
+          "gender": "male",
+          "dob": "2005-02-03",
+          "passportOrId": "060205001890",
+          "checkedBaggageKg": 0,
+          "checkedBaggageFee": 0
+        }
+      ],
+      "contact": {
+        "fullName": "Nguyễn Quốc khánh",
+        "email": "banhtrangnao@gmail.com",
+        "phone": "0123456789"
+      },
+      "passengerCounts": {
+        "adults": 1,
+        "children": 0,
+        "infants": 0,
+        "total": 1
+      },
+      "paymentMethod": "vietqr",
+      "priceSummary": {
+        "unitPrice": 930000,
+        "baseFareTotal": 930000,
+        "baggageTotal": 0,
+        "totalPrice": 930000
+      },
+      "unitPrice": 930000,
+      "totalPrice": 930000,
+      "status": "confirmed",
+      "createdAt": "2026-04-11T17:09:52.232Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

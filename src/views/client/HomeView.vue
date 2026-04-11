@@ -17,7 +17,29 @@
       </button>
     </div>
 
-    <div class="home-ota-searchbar">
+    <div v-if="activeService === 'flight'" class="home-ota-searchbar home-ota-searchbar--flight">
+      <FlightSearchPanel
+        :airports="flightStore.airports"
+        :cabin-options="flightStore.cabinOptions"
+        :from-airport="homeFlightFromAirport"
+        :to-airport="homeFlightToAirport"
+        :depart-date="homeFlightDepartDate"
+        :cabin-class="homeFlightCabinClass"
+        :passengers="homeFlightPassengers"
+        :total-passengers="homeFlightTotalPassengers"
+        :min-date="todayISO"
+        :search-error-message="homeFlightSearchError"
+        @update:from-airport="setHomeFlightField('fromAirport', $event)"
+        @update:to-airport="setHomeFlightField('toAirport', $event)"
+        @update:depart-date="setHomeFlightField('departDate', $event)"
+        @update:cabin-class="setHomeFlightField('cabinClass', $event)"
+        @swap="handleHomeFlightSwap"
+        @search="handleHomeFlightSearch"
+        @adjust-passenger="handleHomeFlightPassengerAdjust"
+      />
+    </div>
+
+    <div v-else class="home-ota-searchbar">
       <template v-for="(field, index) in activeSearchFields" :key="`${field.type}-${field.key || index}`">
         <label
           v-if="['text', 'date', 'number'].includes(field.type)"
@@ -82,14 +104,14 @@
     <div class="section-heading">
       <div>
         <p class="eyebrow">Ưu đãi nổi bật</p>
-        <h2>Các dịch vụ đang giảm giá</h2>
+        <h2>Đừng bỏ lỡ các ưu đãi hấp dẫn cho chuyến đi của bạn.</h2>
       </div>
       <router-link to="/dich-vu" class="secondary-button">Xem tất cả</router-link>
     </div>
 
     <div class="home-feature-groups">
       <section class="home-feature-group">
-        <h3>Khách sạn đang giảm giá</h3>
+        <h3>Nhiều lựa chọn khách sạn</h3>
         <div class="travel-grid home-feature-grid">
           <TravelCard
             v-for="service in latestHotels"
@@ -102,7 +124,7 @@
       </section>
 
       <section class="home-feature-group">
-        <h3>Tour đang giảm giá</h3>
+        <h3>Tour du lịch hấp dẫn</h3>
         <div class="travel-grid home-feature-grid">
           <TravelCard
             v-for="service in latestTours"
@@ -115,7 +137,7 @@
       </section>
 
       <section class="home-feature-group">
-        <h3>Vé tham quan đang giảm giá</h3>
+        <h3>Các hoạt động du lịch đa dạng</h3>
         <div class="travel-grid home-feature-grid">
           <TravelCard
             v-for="service in latestTickets"
@@ -182,6 +204,10 @@ import { useCategorySearchSchemaStore } from '@/stores/categorySearchSchema/useC
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
+import { useFlightStore } from '@/stores/flight/useFlightStore'
+import FlightSearchPanel from '@/components/travel/FlightSearchPanel.vue'
+import { useRouter } from 'vue-router'
+import { buildFlightSearchQuery } from '@/utils/flightSearchRoute'
 
 const DEFAULT_GUEST_QUERY_KEYS = {
   guests: 'guests',
@@ -192,8 +218,10 @@ const DEFAULT_GUEST_QUERY_KEYS = {
 }
 
 const route = useRoute()
+const router = useRouter()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
+const flightStore = useFlightStore()
 const guestRoomStore = useHotelGuestRoomStore()
 const categorySearchSchemaStore = useCategorySearchSchemaStore()
 
@@ -370,6 +398,14 @@ const ticketGuestSelection = ref({
   childrenAges: []
 })
 
+const homeFlightPassengers = ref({
+  adults: 1,
+  children: 0,
+  infants: 0
+})
+
+const homeFlightSearchError = ref('')
+
 const travelerSelection = ref({
   adults: 2,
   children: 0,
@@ -400,6 +436,136 @@ watch(serviceTabs, () => {
   ensureActiveService()
 }, { immediate: true })
 
+const homeFlightTotalPassengers = computed(() => {
+  const adults = Math.max(1, Number(homeFlightPassengers.value.adults || 1) || 1)
+  const children = Math.max(0, Number(homeFlightPassengers.value.children || 0) || 0)
+  const infants = Math.max(0, Number(homeFlightPassengers.value.infants || 0) || 0)
+  return adults + children + infants
+})
+
+const homeFlightFromAirport = computed(() => String(form.value.fromAirport || 'HAN').trim().toUpperCase())
+const homeFlightToAirport = computed(() => String(form.value.toAirport || 'SGN').trim().toUpperCase())
+const homeFlightDepartDate = computed(() => String(form.value.departDate || todayISO).trim())
+const homeFlightCabinClass = computed(() => String(form.value.cabinClass || 'economy').trim())
+
+const setHomeFlightField = (key, value) => {
+  homeFlightSearchError.value = ''
+  updateFieldValue(key, value)
+}
+
+const handleHomeFlightSwap = () => {
+  const currentFrom = homeFlightFromAirport.value
+  const currentTo = homeFlightToAirport.value
+  setHomeFlightField('fromAirport', currentTo)
+  setHomeFlightField('toAirport', currentFrom)
+}
+
+const handleHomeFlightPassengerAdjust = ({ key, delta } = {}) => {
+  if (!key || !delta) return
+
+  const next = {
+    ...homeFlightPassengers.value
+  }
+
+  const floor = key === 'adults' ? 1 : 0
+  const current = Number(next[key] || 0)
+  const candidate = Math.max(floor, current + Number(delta || 0))
+  next[key] = candidate
+
+  const total = Math.max(1, Number(next.adults || 1)) + Math.max(0, Number(next.children || 0)) + Math.max(0, Number(next.infants || 0))
+  if (total > 9) return
+
+  if (key === 'adults' && Number(next.infants || 0) > Number(next.adults || 1)) {
+    next.infants = Number(next.adults || 1)
+  }
+
+  if (key === 'infants' && Number(next.infants || 0) > Number(next.adults || 1)) {
+    return
+  }
+
+  homeFlightSearchError.value = ''
+  homeFlightPassengers.value = {
+    adults: Math.max(1, Number(next.adults || 1) || 1),
+    children: Math.max(0, Number(next.children || 0) || 0),
+    infants: Math.max(0, Number(next.infants || 0) || 0)
+  }
+}
+
+const handleHomeFlightSearch = () => {
+  const fromAirport = homeFlightFromAirport.value
+  const toAirport = homeFlightToAirport.value
+  const departDate = homeFlightDepartDate.value
+
+  if (!fromAirport || !toAirport) {
+    homeFlightSearchError.value = 'Vui lòng chọn điểm đi và điểm đến.'
+    return
+  }
+
+  if (fromAirport === toAirport) {
+    homeFlightSearchError.value = 'Điểm đi và điểm đến không được trùng nhau.'
+    return
+  }
+
+  if (!departDate || departDate < todayISO) {
+    homeFlightSearchError.value = 'Ngày bay phải từ hôm nay trở đi.'
+    return
+  }
+
+  const adults = Math.max(1, Number(homeFlightPassengers.value.adults || 1) || 1)
+  const children = Math.max(0, Number(homeFlightPassengers.value.children || 0) || 0)
+  const infants = Math.max(0, Number(homeFlightPassengers.value.infants || 0) || 0)
+
+  if (infants > adults) {
+    homeFlightSearchError.value = 'Số em bé không được vượt số người lớn.'
+    return
+  }
+
+  homeFlightSearchError.value = ''
+  router.push({
+    name: 'flight-results',
+    query: buildFlightSearchQuery({
+      fromAirport,
+      toAirport,
+      departDate,
+      adults,
+      children,
+      infants,
+      cabinClass: homeFlightCabinClass.value || 'economy'
+    })
+  })
+}
+
+watch(
+  () => [activeService.value, currentCategoryId.value],
+  () => {
+    if (activeService.value !== 'flight') return
+
+    if (!form.value.fromAirport) updateFieldValue('fromAirport', 'HAN')
+    if (!form.value.toAirport) updateFieldValue('toAirport', 'SGN')
+    if (!form.value.departDate) updateFieldValue('departDate', todayISO)
+    if (!form.value.cabinClass) updateFieldValue('cabinClass', 'economy')
+
+    const storedAdults = Math.max(1, Number(form.value.passengers || homeFlightPassengers.value.adults || 1) || 1)
+    if (storedAdults !== Number(homeFlightPassengers.value.adults || 1)) {
+      homeFlightPassengers.value = {
+        adults: storedAdults,
+        children: Math.max(0, Number(homeFlightPassengers.value.children || 0) || 0),
+        infants: Math.max(0, Number(homeFlightPassengers.value.infants || 0) || 0)
+      }
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  homeFlightTotalPassengers,
+  (nextTotal) => {
+    if (activeService.value !== 'flight') return
+    updateFieldValue('passengers', String(nextTotal))
+  },
+  { immediate: true }
+)
+
 const searchTarget = computed(() => {
   if (activeService.value === 'hotel') {
     return baseSearchTarget.value
@@ -429,6 +595,24 @@ const searchTarget = computed(() => {
     if (childrenAges.length) {
       query.set('childrenAges', childrenAges.join(','))
     }
+  } else if (activeService.value === 'flight') {
+    const normalizedFromAirport = homeFlightFromAirport.value
+    const normalizedToAirport = homeFlightToAirport.value
+    const normalizedDepartDate = homeFlightDepartDate.value
+    const normalizedCabinClass = homeFlightCabinClass.value
+    const adults = Math.max(1, Number(homeFlightPassengers.value.adults || 1) || 1)
+    const children = Math.max(0, Number(homeFlightPassengers.value.children || 0) || 0)
+    const infants = Math.max(0, Number(homeFlightPassengers.value.infants || 0) || 0)
+
+    if (normalizedFromAirport) query.set('fromAirport', normalizedFromAirport)
+    if (normalizedToAirport) query.set('toAirport', normalizedToAirport)
+    if (normalizedDepartDate) query.set('departDate', normalizedDepartDate)
+    query.set('adults', String(adults))
+    query.set('children', String(children))
+    query.set('infants', String(infants))
+    query.set('cabinClass', normalizedCabinClass || 'economy')
+
+    return `/ve-may-bay?${query.toString()}`
   } else if (activeService.value === 'tour') {
     if (form.value.destination) query.set('destination', form.value.destination)
     if (form.value.startDate) query.set('startDate', form.value.startDate)
@@ -499,6 +683,19 @@ const isWishlisted = (serviceId) => {
 </script>
 
 <style scoped>
+.home-ota-searchbar--flight {
+  display: block;
+  grid-template-columns: 1fr;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-ota-searchbar--flight :deep(.flight-search-card) {
+  margin-top: 0;
+}
+
 .ota-search-field--selector {
   grid-template-columns: auto minmax(0, 1fr);
   padding-right: 8px;

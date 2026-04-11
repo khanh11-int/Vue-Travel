@@ -5,8 +5,12 @@ import HomeView from '@/views/client/HomeView.vue'
 import HotelHome from '@/views/client/hotel/HotelHome.vue'
 import HotelSearchView from '@/views/client/hotel/HotelSearchView.vue'
 import HotelDetailView from '@/views/client/hotel/HotelDetailView.vue'
-import HotelBookingFormView from '@/views/client/hotel/HotelBookingFormView.vue'
 import TicketHome from '@/views/client/ticket/TicketHome.vue'
+import FlightHome from '@/views/client/flight/FlightHome.vue'
+import FlightResultsView from '@/views/client/flight/FlightResultsView.vue'
+import FlightContactView from '@/views/client/flight/FlightContactView.vue'
+import FlightCheckoutView from '@/views/client/flight/FlightCheckoutView.vue'
+import FlightInvoiceView from '@/views/client/flight/FlightInvoiceView.vue'
 import TicketDetailView from '@/views/client/ticket/TicketDetailView.vue'
 import TourHome from '@/views/client/tour/TourHome.vue'
 import TourDetailView from '@/views/client/tour/TourDetailView.vue'
@@ -20,6 +24,8 @@ import LoginView from '@/views/client/LoginView.vue'
 import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
 import AdminServiceManagementView from '@/views/admin/AdminServiceManagementView.vue'
 import AdminBookingManagementView from '@/views/admin/AdminBookingManagementView.vue'
+import AdminFlightManagementView from '@/views/admin/AdminFlightManagementView.vue'
+import AdminFlightBookingManagementView from '@/views/admin/AdminFlightBookingManagementView.vue'
 import AdminCommentManagementView from '@/views/admin/AdminCommentManagementView.vue'
 import AdminPromotionManagementView from '@/views/admin/AdminPromotionManagementView.vue'
 import AdminCategoryManagementView from '@/views/admin/AdminCategoryManagementView.vue'
@@ -63,17 +69,40 @@ const routes = [
         meta: { title: 'Chi tiết khách sạn' }
       },
       {
-        path: 'khach-san/:slug/booking',
-        name: 'hotel-booking',
-        component: HotelBookingFormView,
-        props: true,
-        meta: { title: 'Đặt phòng' }
-      },
-      {
         path: 've-tham-quan',
         name: 'ticket-search',
         component: TicketHome,
         meta: { title: 'Tìm vé tham quan nội địa' }
+      },
+      {
+        path: 've-may-bay',
+        name: 'flight-home',
+        component: FlightHome,
+        meta: { title: 'Vé máy bay nội địa Việt Nam' }
+      },
+      {
+        path: 've-may-bay/ket-qua',
+        name: 'flight-results',
+        component: FlightResultsView,
+        meta: { title: 'Kết quả chuyến bay' }
+      },
+      {
+        path: 've-may-bay/thong-tin',
+        name: 'flight-contact',
+        component: FlightContactView,
+        meta: { title: 'Thông tin liên hệ chuyến bay' }
+      },
+      {
+        path: 've-may-bay/checkout',
+        name: 'flight-checkout',
+        component: FlightCheckoutView,
+        meta: { title: 'Thanh toán chuyến bay' }
+      },
+      {
+        path: 've-may-bay/hoa-don',
+        name: 'flight-invoice',
+        component: FlightInvoiceView,
+        meta: { title: 'Hóa đơn chuyến bay' }
       },
       {
         path: 've-tham-quan/:slug',
@@ -157,6 +186,30 @@ const routes = [
         meta: { requiresAdmin: true, title: 'Quản lý dịch vụ' }
       },
       {
+        path: 'services/hotel',
+        name: 'admin-services-hotel',
+        component: AdminServiceManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý khách sạn', categoryId: 'hotel' }
+      },
+      {
+        path: 'services/ticket',
+        name: 'admin-services-ticket',
+        component: AdminServiceManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý vé tham quan', categoryId: 'ticket' }
+      },
+      {
+        path: 'services/tour',
+        name: 'admin-services-tour',
+        component: AdminServiceManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý tour', categoryId: 'tour' }
+      },
+      {
+        path: 'services/flight',
+        name: 'admin-services-flight',
+        component: AdminFlightManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý chuyến bay' }
+      },
+      {
         path: 'services/create',
         name: 'admin-services-create',
         component: AdminServiceManagementView,
@@ -167,6 +220,30 @@ const routes = [
         name: 'admin-bookings',
         component: AdminBookingManagementView,
         meta: { requiresAdmin: true, title: 'Quản lý đơn đặt chỗ' }
+      },
+      {
+        path: 'bookings/hotel',
+        name: 'admin-bookings-hotel',
+        component: AdminBookingManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý booking khách sạn', categoryId: 'hotel' }
+      },
+      {
+        path: 'bookings/ticket',
+        name: 'admin-bookings-ticket',
+        component: AdminBookingManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý booking vé tham quan', categoryId: 'ticket' }
+      },
+      {
+        path: 'bookings/tour',
+        name: 'admin-bookings-tour',
+        component: AdminBookingManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý booking tour', categoryId: 'tour' }
+      },
+      {
+        path: 'bookings/flight',
+        name: 'admin-bookings-flight',
+        component: AdminFlightBookingManagementView,
+        meta: { requiresAdmin: true, title: 'Quản lý đặt vé bay đi' }
       },
       {
         path: 'categories',

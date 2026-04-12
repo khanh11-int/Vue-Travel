@@ -10,34 +10,21 @@
         <div class="tour-home__hero-overlay"></div>
         <div class="tour-home__hero-content">
           <h1>Khám phá các tour nội địa được yêu thích nhất</h1>
-          <p>Lọc tour theo điểm đến, ngày khởi hành, ngày về và số khách phù hợp.</p>
+          <p>Đặt tour dễ dàng, giá tốt và tận hưởng chuyến đi của bạn.</p>
         </div>
       </div>
 
       <div class="tour-home__search-wrap">
         <div class="search-panel service-search-panel home-search-tabs">
-          <div class="service-search-panel__row">
-            <div class="home-search-panel">
-              <div class="home-search-panel__destination">
-                <label>Điểm đến</label>
-                <input v-model="searchForm.destination" type="text" placeholder="Ví dụ: Hội An" />
-              </div>
-              <div class="home-search-panel__date">
-                <label>Ngày khởi hành</label>
-                <input v-model="searchForm.startDate" :min="todayISO" type="date" />
-              </div>
-              <div class="home-search-panel__return-date">
-                <label>Ngày về</label>
-                <input v-model="searchForm.endDate" :min="searchForm.startDate || todayISO" type="date" />
-              </div>
-              <div class="home-search-panel__travelers">
-                <label>Người lớn và trẻ em</label>
-                <TourTravelerSelector v-model="travelerSelection" />
-              </div>
-            </div>
-
-            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tìm kiếm tour</router-link>
-          </div>
+          <UnifiedSearchPanel
+            layout="inline"
+            :category="currentCategory"
+            :search-config="currentCategory?.searchConfig"
+            :model-value="searchModel"
+            :min-date="todayISO"
+            @update:model-value="searchModel = $event"
+            @submit="handleSubmitSearch"
+          />
         </div>
       </div>
     </section>
@@ -118,39 +105,20 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TourTravelerSelector from '@/components/travel/TourTravelerSelector.vue'
+import UnifiedSearchPanel from '@/components/travel/UnifiedSearchPanel.vue'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
+import { buildSearchQueryByCategory, createSearchModelByCategory, getTodayISO } from '@/utils/searchQueryBuilder'
 
 const router = useRouter()
 const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 
-const todayISO = (() => {
-  const now = new Date()
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-})()
-
-const searchForm = ref({
-  destination: '',
-  startDate: '',
-  endDate: ''
-})
-
-const travelerSelection = ref({
-  adults: Math.max(1, Number(route.query.adults || route.query.travelers || route.query.quantity || 2) || 2),
-  children: Math.max(0, Number(route.query.children || 0) || 0),
-  childrenAges: String(route.query.childrenAges || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => Math.min(17, Math.max(1, Number(item) || 8)))
-})
+const todayISO = getTodayISO()
 
 const selectedCity = ref('Tất cả')
 
@@ -160,6 +128,16 @@ const currentCategory = computed(() => {
 })
 
 const currentCategoryId = computed(() => String(currentCategory.value?.id || route.query.category || ''))
+const searchModel = ref({})
+
+watch([currentCategory, () => route.fullPath], () => {
+  searchModel.value = createSearchModelByCategory({
+    categoryId: currentCategoryId.value,
+    searchConfig: currentCategory.value?.searchConfig,
+    routeQuery: route.query,
+    todayISO
+  })
+}, { immediate: true })
 
 const allTours = computed(() => {
   const source = Array.isArray(serviceStore.services) ? serviceStore.services : []
@@ -195,34 +173,16 @@ const promotionsList = computed(() => {
   return source.slice(0, 3)
 })
 
-const searchTarget = computed(() => {
-  const basePath = '/dich-vu'
-  const query = new URLSearchParams()
-  if (currentCategoryId.value) {
-    query.set('category', currentCategoryId.value)
-  }
-  if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
-  if (searchForm.value.startDate) query.set('startDate', searchForm.value.startDate)
-  if (searchForm.value.endDate) query.set('endDate', searchForm.value.endDate)
+const handleSubmitSearch = () => {
+  const { path, query } = buildSearchQueryByCategory({
+    category: currentCategory.value,
+    searchConfig: currentCategory.value?.searchConfig,
+    modelValue: searchModel.value,
+    targetPath: '/dich-vu'
+  })
 
-  const adults = Math.max(1, Number(travelerSelection.value.adults || 1) || 1)
-  const children = Math.max(0, Number(travelerSelection.value.children || 0) || 0)
-  const childrenAges = Array.isArray(travelerSelection.value.childrenAges)
-    ? travelerSelection.value.childrenAges
-        .slice(0, children)
-        .map((age) => Math.min(17, Math.max(1, Number(age) || 8)))
-    : []
-
-  query.set('travelers', String(adults + children))
-  query.set('adults', String(adults))
-  query.set('children', String(children))
-  query.set('quantity', String(adults + children))
-  if (childrenAges.length) {
-    query.set('childrenAges', childrenAges.join(','))
-  }
-
-  return `${basePath}?${query.toString()}`
-})
+  router.push({ path, query })
+}
 
 const handleToggleWishlist = (serviceId) => {
   wishlistStore.toggleWishlist(serviceId)
@@ -248,7 +208,9 @@ const handleSelectDestination = (destination) => {
 }
 
 .tour-home__hero-banner {
-  min-height: 260px;
+  height: 150px;
+  min-height: 150px;
+  max-height: 150px;
   border-radius: 24px;
   overflow: hidden;
   position: relative;
@@ -272,7 +234,7 @@ const handleSelectDestination = (destination) => {
   position: absolute;
   left: 28px;
   right: 28px;
-  bottom: 62px;
+  bottom: 32px;
   color: #ffffff;
   z-index: 2;
   max-width: 680px;
@@ -280,17 +242,17 @@ const handleSelectDestination = (destination) => {
 
 .tour-home__hero-content h1 {
   margin: 0 0 8px;
-  font-size: clamp(1.65rem, 2.6vw, 2.5rem);
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
 }
 
 .tour-home__hero-content p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.92rem;
   opacity: 0.92;
 }
 
 .tour-home__search-wrap {
-  margin-top: -30px;
+  margin-top: -10px;
   position: relative;
   z-index: 3;
 }
@@ -309,6 +271,10 @@ const handleSelectDestination = (destination) => {
 .tour-home__search-wrap .home-search-panel__return-date,
 .tour-home__search-wrap .home-search-panel__travelers {
   grid-column: auto;
+}
+
+.tour-home__search-wrap .home-search-panel__date-range {
+  grid-column: span 2;
 }
 
 .tour-home__search-wrap .service-search-panel__submit {
@@ -410,30 +376,33 @@ const handleSelectDestination = (destination) => {
 
 @media (max-width: 1024px) {
   .tour-home__hero-content {
-    bottom: 56px;
+    bottom: 12px;
   }
 }
 
 @media (max-width: 768px) {
   .tour-home__hero-banner {
-    min-height: 210px;
+    height: 96px;
+    min-height: 96px;
+    max-height: 96px;
     border-radius: 16px;
   }
 
   .tour-home__hero-content {
     left: 16px;
     right: 16px;
-    bottom: 42px;
+    bottom: 10px;
   }
 
   .tour-home__search-wrap {
-    margin-top: -20px;
+    margin-top: -6px;
   }
 
   .tour-home__search-wrap .home-search-panel {
     grid-template-columns: 1fr 1fr;
   }
 
+  .tour-home__search-wrap .home-search-panel__date-range,
   .tour-home__search-wrap .home-search-panel__travelers {
     grid-column: 1 / -1;
   }

@@ -10,29 +10,21 @@
       <div class="flight-hero__content">
         <p class="flight-hero__eyebrow">Vé máy bay nội địa Việt Nam</p>
         <h1>Tìm chuyến bay nhanh, giá tốt </h1>
-        <p>Chọn hành trình một chiều, sau đó chuyển sang view kết quả riêng để lọc, sắp xếp và đặt vé.</p>
+        <p>Đặt vé dễ dàng, thanh toán linh hoạt và tận hưởng chuyến đi của bạn.</p>
       </div>
     </div>
 
-    <FlightSearchPanel
-      :airports="airportOptions"
-      :cabin-options="cabinOptions"
-      :from-airport="fromAirport"
-      :to-airport="toAirport"
-      :depart-date="departDate"
-      :cabin-class="cabinClass"
-      :passengers="passengers"
-      :total-passengers="totalPassengers"
+    <UnifiedSearchPanel
+      layout="inline"
+      :category="'flight'"
+      :model-value="searchModel"
       :min-date="todayISO"
-      :loading="flightStore.loading"
-      :search-error-message="searchErrorMessage"
-      @update:from-airport="fromAirport = $event"
-      @update:to-airport="toAirport = $event"
-      @update:depart-date="departDate = $event"
-      @update:cabin-class="cabinClass = $event"
-      @swap="handleSwapAirports"
-      @search="handleSearch"
-      @adjust-passenger="handleAdjustPassenger"
+      :flight-airports="airportOptions"
+      :flight-cabin-options="cabinOptions"
+      :flight-loading="flightStore.loading"
+      :flight-error-message="searchErrorMessage"
+      @update:model-value="searchModel = $event"
+      @submit="handleSearch"
     />
 
     <section class="flight-showcase hero-card">
@@ -55,7 +47,6 @@
       <div class="flight-deal-row">
         <article v-for="deal in visibleDeals" :key="deal.id" class="flight-deal-card">
           <div class="flight-deal-card__media">
-            <span class="flight-oneway-badge">Một chiều</span>
             <img :src="deal.image" :alt="deal.routeLabel" loading="lazy" />
           </div>
           <div class="flight-deal-card__body">
@@ -97,11 +88,12 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import FlightSearchPanel from '@/components/travel/FlightSearchPanel.vue'
+import UnifiedSearchPanel from '@/components/travel/UnifiedSearchPanel.vue'
 import { useFlightStore } from '@/stores/flight/useFlightStore'
 import { buildFlightSearchQuery } from '@/utils/flightSearchRoute'
 import { flightsApi } from '@/services/api'
 import { formatCurrencyVND, formatDateVN } from '@/utils/formatters'
+import { buildSearchQueryByCategory, createSearchModelByCategory, getTodayISO } from '@/utils/searchQueryBuilder'
 
 const route = useRoute()
 const router = useRouter()
@@ -109,6 +101,7 @@ const flightStore = useFlightStore()
 const allFlights = ref([])
 const activeDealTab = ref('')
 const copiedCouponCode = ref('')
+const searchErrorMessage = ref('')
 
 const flightCoupons = Object.freeze([
   {
@@ -168,25 +161,24 @@ const airportOptions = computed(() => {
   return airports.filter((airport) => availableAirportCodes.value.has(String(airport?.code || '').toUpperCase()))
 })
 const cabinOptions = computed(() => flightStore.cabinOptions)
-const totalPassengers = computed(() => flightStore.totalPassengers)
-const passengers = computed(() => flightStore.searchParams.passengers)
+const todayISO = getTodayISO()
+const searchModel = ref(createSearchModelByCategory({
+  categoryId: 'flight',
+  searchConfig: null,
+  routeQuery: route.query,
+  todayISO
+}))
 
-const todayISO = (() => {
-  const now = new Date()
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-})()
-
-const searchErrorMessage = computed(() => {
-  return (
-    flightStore.validationErrors.route
-    || flightStore.validationErrors.fromAirport
-    || flightStore.validationErrors.toAirport
-    || flightStore.validationErrors.departDate
-    || flightStore.validationErrors.passengers
-    || flightStore.error
-  )
+const passengers = computed(() => {
+  const source = searchModel.value?.passengers || {}
+  return {
+    adults: Math.max(1, Number(source.adults || 1) || 1),
+    children: Math.max(0, Number(source.children || 0) || 0),
+    infants: Math.max(0, Number(source.infants || 0) || 0)
+  }
 })
+
+const cabinClass = computed(() => String(searchModel.value?.cabinClass || 'economy').trim() || 'economy')
 
 const dealTabs = computed(() => {
   const airportMap = new Map((airportOptions.value || []).map((airport) => [airport.code, airport.name || airport.code]))
@@ -255,79 +247,19 @@ const visibleDeals = computed(() => {
   return filtered.slice(0, 5)
 })
 
-const fromAirport = computed({
-  get: () => flightStore.searchParams.fromAirport,
-  set: (value) => flightStore.updateSearchField('fromAirport', value)
-})
+const handleSearch = () => {
+  const { path, query, errors } = buildSearchQueryByCategory({
+    category: 'flight',
+    modelValue: searchModel.value
+  })
 
-const toAirport = computed({
-  get: () => flightStore.searchParams.toAirport,
-  set: (value) => flightStore.updateSearchField('toAirport', value)
-})
-
-const departDate = computed({
-  get: () => flightStore.searchParams.departDate,
-  set: (value) => flightStore.updateSearchField('departDate', value)
-})
-
-const cabinClass = computed({
-  get: () => flightStore.searchParams.cabinClass,
-  set: (value) => flightStore.updateSearchField('cabinClass', value)
-})
-
-const clearSearchError = () => {
-  flightStore.error = null
-  flightStore.validationErrors = {}
-}
-
-const handleAdjustPassenger = ({ key, delta } = {}) => {
-  if (!key || !delta) return
-
-  const next = { ...passengers.value }
-  const current = Number(next[key] || 0)
-  const floor = key === 'adults' ? 1 : 0
-  next[key] = Math.max(floor, current + Number(delta || 0))
-
-  const total = Math.max(1, Number(next.adults || 1)) + Math.max(0, Number(next.children || 0)) + Math.max(0, Number(next.infants || 0))
-  if (total > 9) return
-
-  if (key === 'adults' && next.infants > next.adults) {
-    next.infants = next.adults
-  }
-
-  if (key === 'infants' && next.infants > next.adults) {
+  if (errors?.length) {
+    searchErrorMessage.value = errors[0]
     return
   }
 
-  flightStore.updatePassengers({
-    adults: Math.max(1, Number(next.adults || 1) || 1),
-    children: Math.max(0, Number(next.children || 0) || 0),
-    infants: Math.max(0, Number(next.infants || 0) || 0)
-  })
-  clearSearchError()
-}
-
-const handleSwapAirports = () => {
-  flightStore.swapAirports()
-  clearSearchError()
-}
-
-const handleSearch = () => {
-  if (!flightStore.validateSearchParams()) return
-
-  flightStore.validationErrors = {}
-  router.push({
-    name: 'flight-results',
-    query: buildFlightSearchQuery({
-      fromAirport: fromAirport.value,
-      toAirport: toAirport.value,
-      departDate: departDate.value,
-      cabinClass: cabinClass.value,
-      adults: passengers.value.adults,
-      children: passengers.value.children,
-      infants: passengers.value.infants
-    })
-  })
+  searchErrorMessage.value = ''
+  router.push({ path, query })
 }
 
 const goDeal = (deal) => {
@@ -385,7 +317,12 @@ watch(
 )
 
 onMounted(() => {
-  flightStore.hydrateFromQuery(route.query)
+  searchModel.value = createSearchModelByCategory({
+    categoryId: 'flight',
+    searchConfig: null,
+    routeQuery: route.query,
+    todayISO
+  })
   loadFlightDeals()
 })
 </script>
@@ -401,7 +338,9 @@ onMounted(() => {
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  min-height: 300px;
+  height: 150px;
+  min-height: 150px;
+  max-height: 150px;
   box-shadow: 0 24px 45px rgba(9, 26, 58, 0.2);
 }
 
@@ -423,7 +362,7 @@ onMounted(() => {
   z-index: 2;
   left: 28px;
   right: 28px;
-  bottom: 26px;
+  bottom: 12px;
   color: #fff;
   max-width: 740px;
 }
@@ -437,11 +376,12 @@ onMounted(() => {
 
 .flight-hero__content h1 {
   margin: 0;
-  font-size: clamp(1.5rem, 2.7vw, 2.4rem);
+  font-size: clamp(1.3rem, 2.3vw, 2rem);
 }
 
 .flight-hero__content p {
   margin: 8px 0 0;
+  font-size: 0.92rem;
   opacity: 0.92;
 }
 
@@ -450,6 +390,33 @@ onMounted(() => {
   padding: 18px;
   border-radius: 20px;
   box-shadow: var(--shadow);
+}
+
+@media (max-width: 1024px) {
+  .flight-hero {
+    height: 118px;
+    min-height: 118px;
+    max-height: 118px;
+  }
+
+  .flight-hero__content {
+    bottom: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .flight-hero {
+    height: 96px;
+    min-height: 96px;
+    max-height: 96px;
+    border-radius: 16px;
+  }
+
+  .flight-hero__content {
+    left: 16px;
+    right: 16px;
+    bottom: 8px;
+  }
 }
 
 .flight-showcase__header h2,
@@ -516,20 +483,6 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.flight-oneway-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  z-index: 1;
-  border-radius: 999px;
-  background: rgba(8, 76, 149, 0.94);
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  padding: 4px 9px;
 }
 
 .flight-deal-card__body {

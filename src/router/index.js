@@ -3,7 +3,6 @@ import ClientLayout from '@/layouts/ClientLayout.vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import HomeView from '@/views/client/HomeView.vue'
 import HotelHome from '@/views/client/hotel/HotelHome.vue'
-import HotelSearchView from '@/views/client/hotel/HotelSearchView.vue'
 import HotelDetailView from '@/views/client/hotel/HotelDetailView.vue'
 import TicketHome from '@/views/client/ticket/TicketHome.vue'
 import FlightHome from '@/views/client/flight/FlightHome.vue'
@@ -58,7 +57,7 @@ const routes = [
       {
         path: 'khach-san',
         name: 'hotel-search',
-        component: HotelSearchView,
+        component: HotelHome,
         meta: { title: 'Tìm khách sạn nội địa' }
       },
       {

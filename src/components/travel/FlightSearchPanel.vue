@@ -1,8 +1,6 @@
 <template>
   <div class="flight-search-card">
     <div class="flight-toolbar">
-      <div class="flight-trip-badge">Một chiều</div>
-
       <div class="flight-toolbar-right">
         <div ref="passengerDropdownRef" class="flight-passenger-dropdown">
           <button
@@ -232,33 +230,19 @@ onBeforeUnmount(() => {
 }
 
 .flight-toolbar {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
+  display: flex;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 10px;
 }
 
 .flight-toolbar-right {
+  width: 100%;
   display: inline-flex;
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
   flex-wrap: nowrap;
-  margin-left: auto;
-}
-
-.flight-trip-badge {
-  min-height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: #e9f2ff;
-  color: #0f5ab6;
-  border: 1px solid #c8ddfb;
-  font-size: 0.86rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
 }
 
 .flight-passenger-dropdown {
@@ -424,13 +408,11 @@ onBeforeUnmount(() => {
 
 @media (max-width: 1200px) {
   .flight-toolbar {
-    grid-template-columns: 1fr;
+    justify-content: flex-end;
   }
 
   .flight-toolbar-right {
-    justify-content: flex-start;
     flex-wrap: wrap;
-    margin-left: 0;
   }
 
   .flight-passenger-trigger {
@@ -458,7 +440,6 @@ onBeforeUnmount(() => {
   }
 
   .flight-toolbar {
-    grid-template-columns: 1fr;
     align-items: start;
   }
 

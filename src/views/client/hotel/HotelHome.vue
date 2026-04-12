@@ -10,34 +10,21 @@
         <div class="hotel-home__hero-overlay"></div>
         <div class="hotel-home__hero-content">
           <h1>Khám phá các khách sạn hàng đầu Việt Nam</h1>
-          <p>Từ Hà Nội tới TP.HCM, tìm kiếm nơi lưu trú phù hợp cho kỳ nghỉ của bạn.</p>
+          <p>Đặt phòng dễ dàng, giá tốt và tận hưởng kỳ nghỉ của bạn.</p>
         </div>
       </div>
 
       <div class="hotel-home__search-wrap">
         <div class="search-panel service-search-panel home-search-tabs">
-          <div class="service-search-panel__row">
-            <div class="home-search-panel">
-              <div class="home-search-panel__destination">
-                <label>Điểm đến</label>
-                <input v-model="searchForm.destination" type="text" placeholder="Ví dụ: Đà Nẵng" />
-              </div>
-              <div class="home-search-panel__date">
-                <label>Ngày nhận phòng</label>
-                <input v-model="searchForm.checkInDate" :min="todayISO" type="date" />
-              </div>
-              <div class="home-search-panel__return-date">
-                <label>Ngày trả phòng</label>
-                <input v-model="searchForm.checkOutDate" :min="searchForm.checkInDate || todayISO" type="date" />
-              </div>
-              <div class="home-search-panel__guest-room">
-                <label>Khách và phòng</label>
-                <GuestRoomSelector v-model="guestRoomSelection" />
-              </div>
-            </div>
-
-            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tìm kiếm khách sạn</router-link>
-          </div>
+          <UnifiedSearchPanel
+            layout="inline"
+            :category="currentCategory"
+            :search-config="currentCategory?.searchConfig"
+            :model-value="searchModel"
+            :min-date="todayISO"
+            @update:model-value="searchModel = $event"
+            @submit="handleSubmitSearch"
+          />
         </div>
       </div>
     </section>
@@ -118,38 +105,21 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TravelCard from '@/components/travel/TravelCard.vue'
-import GuestRoomSelector from '@/components/travel/GuestRoomSelector.vue'
+import UnifiedSearchPanel from '@/components/travel/UnifiedSearchPanel.vue'
 import { useHotelGuestRoomStore } from '@/stores/hotelGuestRoom/useHotelGuestRoomStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
+import { buildSearchQueryByCategory, createSearchModelByCategory, getTodayISO } from '@/utils/searchQueryBuilder'
 
 const router = useRouter()
 const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 const guestRoomStore = useHotelGuestRoomStore()
-
-const todayISO = (() => {
-  const now = new Date()
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-})()
-
-const searchForm = ref({
-  destination: '',
-  checkInDate: '',
-  checkOutDate: ''
-})
-
-const guestRoomSelection = computed({
-  get: () => guestRoomStore.selection,
-  set: (value) => {
-    guestRoomStore.setSelection(value)
-  }
-})
+const todayISO = getTodayISO()
 
 const selectedCity = ref('Tất cả')
 
@@ -159,6 +129,29 @@ const currentCategory = computed(() => {
 })
 
 const currentCategoryId = computed(() => String(currentCategory.value?.id || route.query.category || ''))
+const searchModel = ref({})
+
+watch([currentCategory, () => route.fullPath], () => {
+  searchModel.value = createSearchModelByCategory({
+    categoryId: currentCategoryId.value,
+    searchConfig: currentCategory.value?.searchConfig,
+    routeQuery: route.query,
+    todayISO
+  })
+
+  if (searchModel.value?.guestRoomSelection) {
+    guestRoomStore.setSelection(searchModel.value.guestRoomSelection)
+  }
+}, { immediate: true })
+
+watch(
+  () => searchModel.value?.guestRoomSelection,
+  (nextSelection) => {
+    if (!nextSelection) return
+    guestRoomStore.setSelection(nextSelection)
+  },
+  { deep: true }
+)
 
 const allHotels = computed(() => {
   const source = Array.isArray(serviceStore.services) ? serviceStore.services : []
@@ -193,26 +186,16 @@ const promotionsList = computed(() => {
   return source.slice(0, 3)
 })
 
-const searchTarget = computed(() => {
-  const basePath = '/dich-vu'
-  const query = new URLSearchParams()
-  if (currentCategoryId.value) {
-    query.set('category', currentCategoryId.value)
-  }
-  if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
-  if (searchForm.value.checkInDate) query.set('checkInDate', searchForm.value.checkInDate)
-  if (searchForm.value.checkOutDate) query.set('checkOutDate', searchForm.value.checkOutDate)
-  const guestRoomQuery = guestRoomStore.getQueryPayload()
-  query.set('guests', guestRoomQuery.guests)
-  query.set('adults', guestRoomQuery.adults)
-  query.set('children', guestRoomQuery.children)
-  query.set('rooms', guestRoomQuery.rooms)
-  if (guestRoomQuery.childrenAges) {
-    query.set('childrenAges', guestRoomQuery.childrenAges)
-  }
+const handleSubmitSearch = () => {
+  const { path, query } = buildSearchQueryByCategory({
+    category: currentCategory.value,
+    searchConfig: currentCategory.value?.searchConfig,
+    modelValue: searchModel.value,
+    targetPath: '/dich-vu'
+  })
 
-  return `${basePath}?${query.toString()}`
-})
+  router.push({ path, query })
+}
 
 const handleToggleWishlist = (serviceId) => {
   wishlistStore.toggleWishlist(serviceId)
@@ -238,7 +221,9 @@ const handleSelectDestination = (destination) => {
 }
 
 .hotel-home__hero-banner {
-  min-height: 260px;
+  height: 150px;
+  min-height: 150px;
+  max-height: 150px;
   border-radius: 24px;
   overflow: hidden;
   position: relative;
@@ -262,7 +247,7 @@ const handleSelectDestination = (destination) => {
   position: absolute;
   left: 28px;
   right: 28px;
-  bottom: 62px;
+  bottom: 14px;
   color: #ffffff;
   z-index: 2;
   max-width: 680px;
@@ -270,17 +255,17 @@ const handleSelectDestination = (destination) => {
 
 .hotel-home__hero-content h1 {
   margin: 0 0 8px;
-  font-size: clamp(1.65rem, 2.6vw, 2.5rem);
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
 }
 
 .hotel-home__hero-content p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.92rem;
   opacity: 0.92;
 }
 
 .hotel-home__search-wrap {
-  margin-top: -30px;
+  margin-top: -10px;
   position: relative;
   z-index: 3;
 }
@@ -299,6 +284,10 @@ const handleSelectDestination = (destination) => {
 .hotel-home__search-wrap .home-search-panel__return-date,
 .hotel-home__search-wrap .home-search-panel__guest-room {
   grid-column: auto;
+}
+
+.hotel-home__search-wrap .home-search-panel__date-range {
+  grid-column: span 2;
 }
 
 .hotel-home__search-wrap .service-search-panel__submit {
@@ -455,30 +444,33 @@ const handleSelectDestination = (destination) => {
 
 @media (max-width: 1024px) {
   .hotel-home__hero-content {
-    bottom: 56px;
+    bottom: 12px;
   }
 }
 
 @media (max-width: 768px) {
   .hotel-home__hero-banner {
-    min-height: 210px;
+    height: 96px;
+    min-height: 96px;
+    max-height: 96px;
     border-radius: 16px;
   }
 
   .hotel-home__hero-content {
     left: 16px;
     right: 16px;
-    bottom: 42px;
+    bottom: 10px;
   }
 
   .hotel-home__search-wrap {
-    margin-top: -20px;
+    margin-top: -6px;
   }
 
   .hotel-home__search-wrap .home-search-panel {
     grid-template-columns: 1fr 1fr;
   }
 
+  .hotel-home__search-wrap .home-search-panel__date-range,
   .hotel-home__search-wrap .home-search-panel__guest-room {
     grid-column: 1 / -1;
   }

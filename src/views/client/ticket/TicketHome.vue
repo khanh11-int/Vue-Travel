@@ -10,30 +10,21 @@
         <div class="ticket-home__hero-overlay"></div>
         <div class="ticket-home__hero-content">
           <h1>Khám phá vé tham quan nổi bật tại Việt Nam</h1>
-          <p>Tìm vé nhanh theo điểm đến, ngày sử dụng và số lượng phù hợp lịch trình.</p>
+          <p>Đặt vé dễ dàng, giá tốt và tận hưởng trải nghiệm du lịch của bạn.</p>
         </div>
       </div>
 
       <div class="ticket-home__search-wrap">
         <div class="search-panel service-search-panel home-search-tabs">
-          <div class="service-search-panel__row">
-            <div class="home-search-panel">
-              <div class="home-search-panel__destination">
-                <label>Điểm đến</label>
-                <input v-model="searchForm.destination" type="text" placeholder="Ví dụ: Phú Quốc" />
-              </div>
-              <div class="home-search-panel__date">
-                <label>Ngày sử dụng</label>
-                <input v-model="searchForm.useDate" :min="todayISO" type="date" />
-              </div>
-              <div class="home-search-panel__tickets">
-                <label>Số vé và trẻ em</label>
-                <TicketGuestSelector v-model="ticketGuestSelection" />
-              </div>
-            </div>
-
-            <router-link :to="searchTarget" class="primary-button service-search-panel__submit">Tìm kiếm vé</router-link>
-          </div>
+          <UnifiedSearchPanel
+            layout="inline"
+            :category="currentCategory"
+            :search-config="currentCategory?.searchConfig"
+            :model-value="searchModel"
+            :min-date="todayISO"
+            @update:model-value="searchModel = $event"
+            @submit="handleSubmitSearch"
+          />
         </div>
       </div>
     </section>
@@ -114,38 +105,20 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TicketGuestSelector from '@/components/travel/TicketGuestSelector.vue'
+import UnifiedSearchPanel from '@/components/travel/UnifiedSearchPanel.vue'
 import TravelCard from '@/components/travel/TravelCard.vue'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { useWishlistStore } from '@/stores/wishlist/useWishlistStore'
+import { buildSearchQueryByCategory, createSearchModelByCategory, getTodayISO } from '@/utils/searchQueryBuilder'
 
 const router = useRouter()
 const route = useRoute()
 const serviceStore = useServiceStore()
 const wishlistStore = useWishlistStore()
 
-const todayISO = (() => {
-  const now = new Date()
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-})()
-
-const searchForm = ref({
-  destination: '',
-  useDate: ''
-})
-
-const ticketGuestSelection = ref({
-  tickets: Math.max(1, Number(route.query.ticketQuantity || route.query.adults || route.query.quantity || 2) || 2),
-  children: Math.max(0, Number(route.query.children || 0) || 0),
-  childrenAges: String(route.query.childrenAges || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => Math.min(17, Math.max(1, Number(item) || 8)))
-})
+const todayISO = getTodayISO()
 const selectedCity = ref('Tất cả')
 
 const currentCategory = computed(() => {
@@ -154,6 +127,16 @@ const currentCategory = computed(() => {
 })
 
 const currentCategoryId = computed(() => String(currentCategory.value?.id || route.query.category || ''))
+const searchModel = ref({})
+
+watch([currentCategory, () => route.fullPath], () => {
+  searchModel.value = createSearchModelByCategory({
+    categoryId: currentCategoryId.value,
+    searchConfig: currentCategory.value?.searchConfig,
+    routeQuery: route.query,
+    todayISO
+  })
+}, { immediate: true })
 
 const allTickets = computed(() => {
   const source = Array.isArray(serviceStore.services) ? serviceStore.services : []
@@ -189,33 +172,16 @@ const promotionsList = computed(() => {
   return source.slice(0, 3)
 })
 
-const searchTarget = computed(() => {
-  const basePath = '/dich-vu'
-  const query = new URLSearchParams()
-  if (currentCategoryId.value) {
-    query.set('category', currentCategoryId.value)
-  }
-  if (searchForm.value.destination) query.set('destination', searchForm.value.destination)
-  if (searchForm.value.useDate) query.set('useDate', searchForm.value.useDate)
+const handleSubmitSearch = () => {
+  const { path, query } = buildSearchQueryByCategory({
+    category: currentCategory.value,
+    searchConfig: currentCategory.value?.searchConfig,
+    modelValue: searchModel.value,
+    targetPath: '/dich-vu'
+  })
 
-  const tickets = Math.max(1, Number(ticketGuestSelection.value.tickets || 1) || 1)
-  const children = Math.max(0, Number(ticketGuestSelection.value.children || 0) || 0)
-  const childrenAges = Array.isArray(ticketGuestSelection.value.childrenAges)
-    ? ticketGuestSelection.value.childrenAges
-        .slice(0, children)
-        .map((age) => Math.min(17, Math.max(1, Number(age) || 8)))
-    : []
-
-  query.set('ticketQuantity', String(tickets))
-  query.set('adults', String(tickets))
-  query.set('children', String(children))
-  query.set('quantity', String(tickets + children))
-  if (childrenAges.length) {
-    query.set('childrenAges', childrenAges.join(','))
-  }
-
-  return `${basePath}?${query.toString()}`
-})
+  router.push({ path, query })
+}
 
 const handleToggleWishlist = (serviceId) => {
   wishlistStore.toggleWishlist(serviceId)
@@ -241,7 +207,9 @@ const handleSelectDestination = (destination) => {
 }
 
 .ticket-home__hero-banner {
-  min-height: 260px;
+  height: 150px;
+  min-height: 150px;
+  max-height: 150px;
   border-radius: 24px;
   overflow: hidden;
   position: relative;
@@ -265,7 +233,7 @@ const handleSelectDestination = (destination) => {
   position: absolute;
   left: 28px;
   right: 28px;
-  bottom: 62px;
+  bottom: 32px;
   color: #ffffff;
   z-index: 2;
   max-width: 680px;
@@ -273,17 +241,17 @@ const handleSelectDestination = (destination) => {
 
 .ticket-home__hero-content h1 {
   margin: 0 0 8px;
-  font-size: clamp(1.65rem, 2.6vw, 2.5rem);
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
 }
 
 .ticket-home__hero-content p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.92rem;
   opacity: 0.92;
 }
 
 .ticket-home__search-wrap {
-  margin-top: -30px;
+  margin-top: -10px;
   position: relative;
   z-index: 3;
 }
@@ -299,6 +267,7 @@ const handleSelectDestination = (destination) => {
 
 .ticket-home__search-wrap .home-search-panel__destination,
 .ticket-home__search-wrap .home-search-panel__date,
+.ticket-home__search-wrap .home-search-panel__date-range,
 .ticket-home__search-wrap .home-search-panel__tickets {
   grid-column: auto;
 }
@@ -402,24 +371,26 @@ const handleSelectDestination = (destination) => {
 
 @media (max-width: 1024px) {
   .ticket-home__hero-content {
-    bottom: 56px;
+    bottom: 12px;
   }
 }
 
 @media (max-width: 768px) {
   .ticket-home__hero-banner {
-    min-height: 210px;
+    height: 96px;
+    min-height: 96px;
+    max-height: 96px;
     border-radius: 16px;
   }
 
   .ticket-home__hero-content {
     left: 16px;
     right: 16px;
-    bottom: 42px;
+    bottom: 10px;
   }
 
   .ticket-home__search-wrap {
-    margin-top: -20px;
+    margin-top: -6px;
   }
 
   .ticket-home__search-wrap .home-search-panel {

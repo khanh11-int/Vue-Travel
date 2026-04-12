@@ -740,6 +740,10 @@ p {
   grid-column: span 2;
 }
 
+.home-search-panel__date-range {
+  grid-column: span 4;
+}
+
 .home-search-panel__category {
   grid-column: span 3;
 }

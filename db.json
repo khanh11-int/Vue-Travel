@@ -99,7 +99,7 @@
             "type": "text",
             "key": "destination",
             "queryKey": "destination",
-            "placeholder": "Điểm tham quan",
+            "placeholder": "ĐiỒm tham quan",
             "icon": "location"
           },
           {
@@ -1645,6 +1645,41 @@
       "createdAt": "2026-04-10T19:05:26.210Z",
       "visible": true,
       "itemCount": 1
+    },
+    {
+      "id": "KTKkkZUM1VA",
+      "code": "VV459733",
+      "customer": {
+        "fullName": "Admin Vtravel",
+        "email": "admin@vtravel.vn",
+        "phone": "0912345678",
+        "city": "TP.HCM",
+        "address": "Quận 1, TP.HCM",
+        "note": "",
+        "paymentMethod": "bank-transfer",
+        "paymentMethodLabel": "Chuyển khoản VietQR",
+        "id": "1",
+        "userId": "1"
+      },
+      "subtotal": 2046800,
+      "discount": 307020,
+      "serviceFee": 50000,
+      "total": 1789780,
+      "promotion": {
+        "id": "3003",
+        "code": "HEVN2026",
+        "type": "percent",
+        "value": 15,
+        "description": "Ưu đãi hè cho các điểm đến biển Việt Nam",
+        "status": "active",
+        "startDate": "2026-04-01",
+        "endDate": "2026-08-31"
+      },
+      "status": "pending",
+      "statusLabel": "Chờ xác nhận",
+      "createdAt": "2026-04-14T13:30:59.733Z",
+      "visible": true,
+      "itemCount": 1
     }
   ],
   "bookingDetails": [
@@ -2287,6 +2322,88 @@
       "bookingSummary": "2026-04-11 - 2026-04-12 · 2 người lớn · 0 trẻ em · 1 phòng · Phòng tiêu chuẩn",
       "identityKey": "direct-197-2026-04-11-2026-04-12-2",
       "lineTotal": 2499200
+    },
+    {
+      "id": "iwefeUGduTU",
+      "bookingId": "1776173459733",
+      "bookingCode": "VV459733",
+      "lineIndex": 0,
+      "serviceId": "199",
+      "bookingType": "hotel",
+      "bookingMeta": {
+        "checkInDate": "2026-04-14",
+        "checkOutDate": "2026-04-15",
+        "guests": 2,
+        "adults": 2,
+        "children": 0,
+        "childrenAges": [],
+        "rooms": 1,
+        "roomType": "city",
+        "roomTypeLabel": "Phòng hướng phố",
+        "nights": 1,
+        "chargeableAdults": 2,
+        "childrenUnderFour": 0,
+        "children4To14": 0,
+        "childSurchargeMin": 500000,
+        "childSurchargeMax": 500000,
+        "totalPrice": 2046800,
+        "durationLabel": "",
+        "unitPrice": 1023400
+      },
+      "service": {
+        "id": "199",
+        "name": "Khách sạn Nha Trang Coral Bay",
+        "slug": "khach-san-nha-trang-coral-bay-199",
+        "categoryId": "hotel",
+        "destination": "Nha Trang",
+        "province": "Khánh Hòa",
+        "price": 1190000,
+        "rating": 4.5,
+        "availableSlots": 12,
+        "status": "active",
+        "image": "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=80",
+        "gallery": [
+          "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80"
+        ],
+        "shortDescription": "Khách sạn gần biển với hồ bơi rooftop.",
+        "description": "Thuận tiện tắm biển, ăn uống và vui chơi tại trung tâm Nha Trang.",
+        "amenities": [
+          "Hồ bơi",
+          "Bữa sáng",
+          "Wifi"
+        ],
+        "createdAt": "2026-04-11T09:00:00Z",
+        "featured": true,
+        "itinerary": [
+          "Nhận phòng từ 14:00",
+          "Trả phòng trước 12:00"
+        ],
+        "roomTypes": [
+          {
+            "value": "city",
+            "label": "Phòng hướng phố",
+            "priceMultiplier": 1,
+            "childSurcharge": 320000,
+            "availableSlots": 6
+          },
+          {
+            "value": "sea",
+            "label": "Phòng hướng biển",
+            "priceMultiplier": 1.2,
+            "childSurcharge": 430000,
+            "availableSlots": 6
+          }
+        ],
+        "discountPercent": 14,
+        "salePrice": 1023400
+      },
+      "quantity": 2,
+      "startDate": "2026-04-14",
+      "endDate": "2026-04-15",
+      "travelDate": "2026-04-14",
+      "bookingSummary": "2026-04-14 - 2026-04-15 · 2 người lớn · 0 trẻ em · 1 phòng · Phòng hướng phố",
+      "identityKey": "direct-199-2026-04-14-2026-04-15-2",
+      "lineTotal": 2046800
     }
   ],
   "hotels": [
@@ -3283,7 +3400,7 @@
         "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Khách sạn view núi Fansipan, không khí mát lạnh quanh năm.",
+      "shortDescription": "Khách sạn view núi Fansipan, không khí mát lạnh quanh nĒm.",
       "description": "Không gian ấm áp theo phong cách Tây Bắc, gần trung tâm thị trấn Sapa.",
       "amenities": [
         "Bữa sáng",
@@ -4303,7 +4420,7 @@
       "gallery": [
         "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Vé tham quan vườn hoa và tiểu cảnh tại Đà Lạt.",
+      "shortDescription": "Vé tham quan vườn hoa và tiỒu cảnh tại Đà Lạt.",
       "description": "Vé check-in trong ngày cho nhóm bạn và gia đình. Chính sách trẻ em theo độ tuổi giúp linh hoạt chi phí cho từng nhóm khách.",
       "amenities": [
         "Vé điện tử",
@@ -4341,7 +4458,7 @@
           "features": [
             "Tuyến tham quan chính",
             "Hỗ trợ check-in",
-            "Điểm ngắm cảnh chuẩn"
+            "ĐiỒm ngắm cảnh chuẩn"
           ],
           "availableSlots": 15
         },
@@ -4915,7 +5032,7 @@
           "features": [
             "Tuyến tham quan chính",
             "Hỗ trợ check-in",
-            "Điểm ngắm cảnh chuẩn"
+            "ĐiỒm ngắm cảnh chuẩn"
           ],
           "availableSlots": 15
         },
@@ -5079,7 +5196,7 @@
           "features": [
             "Tuyến tham quan chính",
             "Hỗ trợ check-in",
-            "Điểm ngắm cảnh chuẩn"
+            "ĐiỒm ngắm cảnh chuẩn"
           ],
           "availableSlots": 12
         },
@@ -5161,7 +5278,7 @@
           "features": [
             "Tuyến tham quan chính",
             "Hỗ trợ check-in",
-            "Điểm ngắm cảnh chuẩn"
+            "ĐiỒm ngắm cảnh chuẩn"
           ],
           "availableSlots": 12
         },
@@ -5325,7 +5442,7 @@
           "features": [
             "Tuyến tham quan chính",
             "Hỗ trợ check-in",
-            "Điểm ngắm cảnh chuẩn"
+            "ĐiỒm ngắm cảnh chuẩn"
           ],
           "availableSlots": 12
         },
@@ -5407,7 +5524,7 @@
           "features": [
             "Tuyến tham quan chính",
             "Hỗ trợ check-in",
-            "Điểm ngắm cảnh chuẩn"
+            "ĐiỒm ngắm cảnh chuẩn"
           ],
           "availableSlots": 12
         },
@@ -5571,7 +5688,7 @@
           "features": [
             "Tuyến tham quan chính",
             "Hỗ trợ check-in",
-            "Điểm ngắm cảnh chuẩn"
+            "ĐiỒm ngắm cảnh chuẩn"
           ],
           "availableSlots": 12
         },
@@ -6750,7 +6867,7 @@
       "gallery": [
         "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Đà Lạt - Thung Lũng Tình Yêu, Trảng Trombă, thác Prenn 3N2Đ.",
+      "shortDescription": "Đà Lạt - Thung Lũng Tình Yêu, Trảng TrombĒ, thác Prenn 3N2Đ.",
       "description": "Khám phá thành phố Đà Lạt, vườn hoa, thác nước. Khách sạn 3 sao.",
       "amenities": [
         "Khách sạn 3 sao",
@@ -6763,7 +6880,7 @@
       "featured": true,
       "itinerary": [
         "Ngày 1: Đà Lạt - Thung lũng",
-        "Ngày 2: Trảng Trombă - Thác Prenn",
+        "Ngày 2: Trảng TrombĒ - Thác Prenn",
         "Ngày 3: Về Đà Lạt"
       ],
       "discountPercent": 13,
@@ -7131,7 +7248,7 @@
         "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
       ],
       "shortDescription": "Thành phố Huế, Phong Nha hang động, Thiên Mục 4N3Đ.",
-      "description": "Khám phá di sản Huế, hang Phong Nha, khách sạn 3 sao, ăn sáng.",
+      "description": "Khám phá di sản Huế, hang Phong Nha, khách sạn 3 sao, Ēn sáng.",
       "amenities": [
         "Khách sạn 3 sao",
         "Xe đưa đón",
@@ -7283,7 +7400,7 @@
       "gallery": [
         "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
       ],
-      "shortDescription": "Đà Lạt - Thung Lũng Tình Yêu, Trảng Trombă, thác Prenn 3N2Đ.",
+      "shortDescription": "Đà Lạt - Thung Lũng Tình Yêu, Trảng TrombĒ, thác Prenn 3N2Đ.",
       "description": "Khám phá thành phố Đà Lạt, vườn hoa, thác nước. Khách sạn 3 sao.",
       "amenities": [
         "Khách sạn 3 sao",
@@ -7296,7 +7413,7 @@
       "featured": true,
       "itinerary": [
         "Ngày 1: Đà Lạt - Thung lũng",
-        "Ngày 2: Trảng Trombă - Thác Prenn",
+        "Ngày 2: Trảng TrombĒ - Thác Prenn",
         "Ngày 3: Về Đà Lạt"
       ],
       "discountPercent": 13
@@ -7836,7 +7953,7 @@
       "airlineName": "Vietnam Airlines",
       "fromAirport": "HAN",
       "toAirport": "SGN",
-      "flightDate": "2026-04-11",
+      "flightDate": "2026-04-21",
       "departureTime": "06:10",
       "arrivalTime": "08:20",
       "durationMinutes": 130,
@@ -7873,7 +7990,7 @@
       "airlineName": "VietJet Air",
       "fromAirport": "HAN",
       "toAirport": "SGN",
-      "flightDate": "2026-04-11",
+      "flightDate": "2026-04-21",
       "departureTime": "09:35",
       "arrivalTime": "11:45",
       "durationMinutes": 130,
@@ -7910,7 +8027,7 @@
       "airlineName": "Bamboo Airways",
       "fromAirport": "HAN",
       "toAirport": "SGN",
-      "flightDate": "2026-04-11",
+      "flightDate": "2026-04-21",
       "departureTime": "14:10",
       "arrivalTime": "16:25",
       "durationMinutes": 135,
@@ -7947,7 +8064,7 @@
       "airlineName": "Vietnam Airlines",
       "fromAirport": "SGN",
       "toAirport": "HAN",
-      "flightDate": "2026-04-11",
+      "flightDate": "2026-04-21",
       "departureTime": "07:20",
       "arrivalTime": "09:30",
       "durationMinutes": 130,
@@ -7984,7 +8101,7 @@
       "airlineName": "VietJet Air",
       "fromAirport": "SGN",
       "toAirport": "DAD",
-      "flightDate": "2026-04-11",
+      "flightDate": "2026-04-21",
       "departureTime": "10:05",
       "arrivalTime": "11:30",
       "durationMinutes": 85,
@@ -8021,7 +8138,7 @@
       "airlineName": "Vietnam Airlines",
       "fromAirport": "SGN",
       "toAirport": "PQC",
-      "flightDate": "2026-04-11",
+      "flightDate": "2026-04-21",
       "departureTime": "12:15",
       "arrivalTime": "13:20",
       "durationMinutes": 65,
@@ -8058,7 +8175,7 @@
       "airlineName": "Bamboo Airways",
       "fromAirport": "HAN",
       "toAirport": "DAD",
-      "flightDate": "2026-04-11",
+      "flightDate": "2026-04-21",
       "departureTime": "15:10",
       "arrivalTime": "16:30",
       "durationMinutes": 80,
@@ -8086,7 +8203,12 @@
           "refundPolicy": "Hoàn/đổi linh hoạt",
           "seatLeft": 2
         }
-      }
+      },
+      "categoryId": "flight",
+      "price": 0,
+      "discountPercent": 0,
+      "salePrice": 0,
+      "availableSlots": 15
     },
     {
       "id": "F008",
@@ -8095,7 +8217,7 @@
       "airlineName": "VietJet Air",
       "fromAirport": "DAD",
       "toAirport": "HAN",
-      "flightDate": "2026-04-12",
+      "flightDate": "2026-04-22",
       "departureTime": "08:40",
       "arrivalTime": "10:00",
       "durationMinutes": 80,
@@ -8123,7 +8245,12 @@
           "refundPolicy": "Đổi linh hoạt",
           "seatLeft": 5
         }
-      }
+      },
+      "categoryId": "flight",
+      "price": 0,
+      "discountPercent": 0,
+      "salePrice": 0,
+      "availableSlots": 28
     },
     {
       "id": "F009",
@@ -8132,7 +8259,7 @@
       "airlineName": "Vietnam Airlines",
       "fromAirport": "DAD",
       "toAirport": "SGN",
-      "flightDate": "2026-04-12",
+      "flightDate": "2026-04-22",
       "departureTime": "11:30",
       "arrivalTime": "13:00",
       "durationMinutes": 90,
@@ -8160,7 +8287,12 @@
           "refundPolicy": "Hoàn/đổi linh hoạt",
           "seatLeft": 4
         }
-      }
+      },
+      "categoryId": "flight",
+      "price": 0,
+      "discountPercent": 0,
+      "salePrice": 0,
+      "availableSlots": 22
     },
     {
       "id": "F010",
@@ -8169,7 +8301,7 @@
       "airlineName": "Bamboo Airways",
       "fromAirport": "HAN",
       "toAirport": "CXR",
-      "flightDate": "2026-04-12",
+      "flightDate": "2026-04-22",
       "departureTime": "13:20",
       "arrivalTime": "15:05",
       "durationMinutes": 105,
@@ -8197,7 +8329,12 @@
           "refundPolicy": "Hoàn/đổi linh hoạt",
           "seatLeft": 3
         }
-      }
+      },
+      "categoryId": "flight",
+      "price": 0,
+      "discountPercent": 0,
+      "salePrice": 0,
+      "availableSlots": 16
     },
     {
       "id": "F011",
@@ -8206,7 +8343,7 @@
       "airlineName": "Vietnam Airlines",
       "fromAirport": "HAN",
       "toAirport": "VCA",
-      "flightDate": "2026-04-12",
+      "flightDate": "2026-04-22",
       "departureTime": "05:45",
       "arrivalTime": "08:00",
       "durationMinutes": 135,
@@ -8234,7 +8371,12 @@
           "refundPolicy": "Hoàn/đổi linh hoạt",
           "seatLeft": 4
         }
-      }
+      },
+      "categoryId": "flight",
+      "price": 0,
+      "discountPercent": 0,
+      "salePrice": 0,
+      "availableSlots": 19
     },
     {
       "id": "F012",
@@ -8243,7 +8385,7 @@
       "airlineName": "VietJet Air",
       "fromAirport": "HAN",
       "toAirport": "PQC",
-      "flightDate": "2026-04-13",
+      "flightDate": "2026-04-23",
       "departureTime": "16:55",
       "arrivalTime": "19:05",
       "durationMinutes": 130,
@@ -8271,7 +8413,12 @@
           "refundPolicy": "Đổi linh hoạt",
           "seatLeft": 6
         }
-      }
+      },
+      "categoryId": "flight",
+      "price": 0,
+      "discountPercent": 0,
+      "salePrice": 0,
+      "availableSlots": 25
     }
   ],
   "flightBookings": [
@@ -8282,7 +8429,7 @@
       "flightNumber": "QH1925",
       "fromAirport": "HAN",
       "toAirport": "CXR",
-      "flightDate": "2026-04-12",
+      "flightDate": "2026-04-22",
       "departureTime": "13:20",
       "arrivalTime": "15:05",
       "airlineCode": "QH",
@@ -8321,7 +8468,7 @@
       "flightNumber": "VN1281",
       "fromAirport": "DAD",
       "toAirport": "SGN",
-      "flightDate": "2026-04-12",
+      "flightDate": "2026-04-22",
       "departureTime": "11:30",
       "arrivalTime": "13:00",
       "airlineCode": "VN",
@@ -8361,6 +8508,104 @@
       "totalPrice": 930000,
       "status": "confirmed",
       "createdAt": "2026-04-11T17:09:52.232Z"
+    },
+    {
+      "id": "7vm-B4UGg54",
+      "bookingCode": "FL75800661",
+      "flightId": "F007",
+      "flightNumber": "QH1523",
+      "fromAirport": "HAN",
+      "toAirport": "DAD",
+      "flightDate": "2026-04-21",
+      "departureTime": "15:10",
+      "arrivalTime": "16:30",
+      "airlineCode": "QH",
+      "airlineName": "Bamboo Airways",
+      "cabinClass": "economy",
+      "cabinLabel": "Economy Saver",
+      "passengers": [
+        {
+          "type": "adult",
+          "fullName": "khanh",
+          "gender": "male",
+          "dob": "2005-02-03",
+          "passportOrId": "060205001890",
+          "checkedBaggageKg": 0,
+          "checkedBaggageFee": 0
+        }
+      ],
+      "contact": {
+        "fullName": "Nguyễn Quốc Khánh",
+        "email": "banhtrangnao@gmail.com",
+        "phone": "0123456789"
+      },
+      "passengerCounts": {
+        "adults": 1,
+        "children": 0,
+        "infants": 0,
+        "total": 1
+      },
+      "paymentMethod": "vietqr",
+      "priceSummary": {
+        "unitPrice": 740000,
+        "baseFareTotal": 740000,
+        "baggageTotal": 0,
+        "totalPrice": 740000
+      },
+      "unitPrice": 740000,
+      "totalPrice": 740000,
+      "status": "confirmed",
+      "createdAt": "2026-04-14T14:10:00.661Z"
+    },
+    {
+      "id": "3PAUybeqbBU",
+      "bookingCode": "FL76247061",
+      "userId": "1",
+      "customerUserId": "1",
+      "flightId": "F007",
+      "flightNumber": "QH1523",
+      "fromAirport": "HAN",
+      "toAirport": "DAD",
+      "flightDate": "2026-04-21",
+      "departureTime": "15:10",
+      "arrivalTime": "16:30",
+      "airlineCode": "QH",
+      "airlineName": "Bamboo Airways",
+      "cabinClass": "economy",
+      "cabinLabel": "Economy Saver",
+      "passengers": [
+        {
+          "type": "adult",
+          "fullName": "Nguyễn quốc Khánh",
+          "gender": "male",
+          "dob": "2005-02-03",
+          "passportOrId": "060205001890",
+          "checkedBaggageKg": 0,
+          "checkedBaggageFee": 0
+        }
+      ],
+      "contact": {
+        "fullName": "Nguyễn quốc Khánh",
+        "email": "banhtrangnao@gmail.com",
+        "phone": "0123456789"
+      },
+      "passengerCounts": {
+        "adults": 1,
+        "children": 0,
+        "infants": 0,
+        "total": 1
+      },
+      "paymentMethod": "cash",
+      "priceSummary": {
+        "unitPrice": 740000,
+        "baseFareTotal": 740000,
+        "baggageTotal": 0,
+        "totalPrice": 740000
+      },
+      "unitPrice": 740000,
+      "totalPrice": 740000,
+      "status": "confirmed",
+      "createdAt": "2026-04-14T14:17:27.061Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

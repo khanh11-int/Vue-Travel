@@ -8,7 +8,7 @@
       </div>
 
       <div class="flight-results-actions">
-        <button class="secondary-button" type="button" @click="goBackToSearch">Sửa tìm kiếm</button>
+        <button class="secondary-button" type="button" @click="goBackToSearch">Tìm kiếm</button>
         <div class="flight-results-meta">
           <span>{{ departDate }}</span>
           <span>{{ totalPassengers }} khách</span>
@@ -83,7 +83,7 @@
               <p>{{ flight.fromAirport }}</p>
             </div>
             <div class="timeline-line">
-              <span>{{ `${flight.stopCount || 0} điểm dừng` }}</span>
+              <span>{{ Number(flight.stopCount || 0) === 0 ? 'Đi thẳng' : `${flight.stopCount} điểm dừng` }}</span>
               <small>{{ formatDuration(flight.durationMinutes) }}</small>
             </div>
             <div>

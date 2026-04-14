@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { flightBookingsApi, flightsApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth/useAuthStore'
 
 const AIRPORTS = Object.freeze([
   { code: 'HAN', name: 'Nội Bài' },
@@ -527,6 +528,8 @@ export const useFlightStore = defineStore('flight', {
 
       this.loading = true
       this.setPaymentMethod(paymentMethod)
+      const authStore = useAuthStore()
+      const currentUserId = authStore.currentUser?.id ?? null
 
       try {
         const bookingCode = `FL${Date.now().toString().slice(-8)}`
@@ -547,6 +550,8 @@ export const useFlightStore = defineStore('flight', {
         const payload = {
           id: Date.now(),
           bookingCode,
+          userId: currentUserId,
+          customerUserId: currentUserId,
           flightId: selectedFlight.id,
           flightNumber: selectedFlight.flightNumber,
           fromAirport: selectedFlight.fromAirport,

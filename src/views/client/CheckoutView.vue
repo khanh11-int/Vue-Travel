@@ -212,7 +212,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/useAuthStore'
 import { useBookingStore } from '@/stores/booking/useBookingStore'
-import { useCartStore } from '@/stores/cart/useCartStore'
+import { useCheckoutStore } from '@/stores/checkout/useCheckoutStore'
 import { useServiceStore } from '@/stores/service/useServiceStore'
 import { isDateSelectionInvalid } from '@/utils/bookingRules'
 import { resolveItemMaxSlots } from '@/utils/travelCart'
@@ -222,11 +222,10 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const bookingStore = useBookingStore()
-const cartStore = useCartStore()
+const checkoutStore = useCheckoutStore()
 const serviceStore = useServiceStore()
 const destinations = computed(() => serviceStore.destinations)
 
-const cartItems = computed(() => cartStore.enrichedCartItems)
 const isDirectCheckout = computed(() => route.query.mode === 'direct')
 const directRequestedServiceId = computed(() => {
   if (route.query.serviceId === undefined || route.query.serviceId === null) return ''
@@ -378,15 +377,12 @@ const directCheckoutItem = computed(() => {
   }
 })
 const checkoutItems = computed(() => {
-  if (isDirectCheckout.value) {
-    return directCheckoutItem.value ? [directCheckoutItem.value] : []
-  }
-  return cartItems.value
+  return directCheckoutItem.value ? [directCheckoutItem.value] : []
 })
 const subtotal = computed(() =>
   checkoutItems.value.reduce((acc, item) => acc + (item.lineTotal || 0), 0)
 )
-const discount = computed(() => cartStore.calculatePromotionDiscount(subtotal.value))
+const discount = computed(() => checkoutStore.calculatePromotionDiscount(subtotal.value))
 const serviceFee = computed(() => (subtotal.value > 0 ? 50000 : 0))
 const total = computed(() => Math.max(0, subtotal.value - discount.value + serviceFee.value))
 const getSlotValidationError = (item) => {
@@ -435,7 +431,7 @@ const getSlotValidationError = (item) => {
 const slotValidationMessage = computed(() =>
   checkoutItems.value.map((item) => getSlotValidationError(item)).find(Boolean) || ''
 )
-const hasInvalidCartItems = computed(() =>
+const hasInvalidCheckoutItems = computed(() =>
   checkoutItems.value.some((item) => {
     return isDateSelectionInvalid({
       startDate: item.startDate,
@@ -465,7 +461,7 @@ const errors = reactive({
 
 // Voucher/promotion state
 const availablePromotions = ref([])
-const appliedPromotion = computed(() => cartStore.appliedPromotion)
+const appliedPromotion = computed(() => checkoutStore.appliedPromotion)
 const customVoucherCode = ref('')
 const voucherFeedback = ref('')
 const voucherSuccess = ref(false)
@@ -565,8 +561,8 @@ const validate = () => {
   errors.email = /.+@.+\..+/.test(form.email) ? '' : 'Email không hợp lệ.'
   errors.phone = /^0\d{9,10}$/.test(form.phone) ? '' : 'Số điện thoại phải bắt đầu bằng 0 và có 10-11 số.'
   errors.city = form.city ? '' : 'Vui lòng chọn tỉnh/thành.'
-  errors.cart = hasInvalidCartItems.value
-    ? 'Giỏ hàng còn dịch vụ thiếu ngày hợp lệ. Vui lòng quay lại giỏ để chỉnh sửa.'
+  errors.cart = hasInvalidCheckoutItems.value
+    ? 'Thông tin dịch vụ chưa đủ ngày hợp lệ. Vui lòng quay lại trang chi tiết để chỉnh sửa.'
     : slotValidationMessage.value
 
   return !errors.fullName && !errors.email && !errors.phone && !errors.city && !errors.cart
@@ -574,14 +570,12 @@ const validate = () => {
 
 const handleCheckout = () => {
   if (!checkoutItems.value.length) {
-    errors.cart = isDirectCheckout.value
-      ? 'Không tìm thấy dịch vụ đặt ngay. Vui lòng quay lại trang chi tiết và thử lại.'
-      : 'Giỏ hàng đang trống.'
+    errors.cart = 'Không tìm thấy dịch vụ đặt ngay. Vui lòng quay lại trang chi tiết và thử lại.'
     return
   }
   if (!validate()) return
 
-  const promotionValidation = cartStore.validateAppliedPromotion(subtotal.value)
+  const promotionValidation = checkoutStore.validateAppliedPromotion(subtotal.value)
   if (!promotionValidation.valid) {
     errors.cart = promotionValidation.message
     return
@@ -598,15 +592,10 @@ const handleCheckout = () => {
     discount: discount.value,
     serviceFee: serviceFee.value,
     total: total.value,
-    promotion: appliedPromotion.value,
-    clearCartAfterBooking: !isDirectCheckout.value,
-    clearPromotionAfterBooking: !isDirectCheckout.value
+    promotion: appliedPromotion.value
   })
 
-  if (!isDirectCheckout.value) {
-    cartStore.clearAppliedPromotion()
-    cartStore.clearCart()
-  }
+  checkoutStore.clearAppliedPromotion()
 
   startPaymentFlow(booking)
 }
@@ -625,7 +614,7 @@ const copyPaymentField = async (value) => {
 
 const loadAvailablePromotions = async () => {
   try {
-    const promotions = await cartStore.loadAvailablePromotions()
+    const promotions = await checkoutStore.loadAvailablePromotions()
     const now = Date.now()
     const active = Array.isArray(promotions)
       ? promotions.filter((promotion) => {
@@ -649,7 +638,7 @@ const loadAvailablePromotions = async () => {
 }
 
 const selectPromotion = async (promo) => {
-  const result = await cartStore.applyPromotionCode(promo.code, subtotal.value)
+  const result = await checkoutStore.applyPromotionCode(promo.code, subtotal.value)
   voucherSuccess.value = Boolean(result.success)
   voucherFeedback.value = result.success
     ? `Áp dụng thành công mã ${promo.code}`
@@ -658,7 +647,7 @@ const selectPromotion = async (promo) => {
 }
 
 const clearPromotion = () => {
-  cartStore.clearAppliedPromotion()
+  checkoutStore.clearAppliedPromotion()
   customVoucherCode.value = ''
   voucherFeedback.value = ''
   voucherSuccess.value = false
@@ -668,11 +657,11 @@ const handleApplyCustomVoucher = async () => {
   voucherFeedback.value = ''
   
   if (!customVoucherCode.value.trim()) {
-    cartStore.clearAppliedPromotion()
+    checkoutStore.clearAppliedPromotion()
     return
   }
 
-  const result = await cartStore.applyPromotionCode(customVoucherCode.value, subtotal.value)
+  const result = await checkoutStore.applyPromotionCode(customVoucherCode.value, subtotal.value)
   if (result.success) {
     customVoucherCode.value = ''
     voucherFeedback.value = `Áp dụng thành công mã ${result.promotion?.code || ''}`

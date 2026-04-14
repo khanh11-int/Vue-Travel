@@ -379,17 +379,22 @@ const emitSubmit = () => {
 <style scoped>
 .ota-search-item {
   display: grid;
+  grid-template-rows: 14px 44px;
   gap: 4px;
-  align-content: end;
+  align-content: stretch;
+  align-items: stretch;
   min-width: 0;
 }
 
 .ota-search-label {
   font-size: 0.75rem;
-  line-height: 1;
+  line-height: 14px;
+  min-height: 14px;
   color: #4d6487;
   font-weight: 700;
   padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .ota-search-label--hidden {
@@ -402,6 +407,27 @@ const emitSubmit = () => {
 
 .ota-search-item--submit .service-search-panel__submit {
   height: 44px;
+  min-height: 44px;
+  align-self: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ota-search-item :deep(.selector),
+.ota-search-item :deep(.guest-room-selector) {
+  height: 100%;
+}
+
+.ota-search-item :deep(.selector__trigger),
+.ota-search-item :deep(.guest-room-selector__trigger) {
+  height: 100%;
+}
+
+.ota-search-field {
+  min-height: 44px;
+  height: 44px;
+  align-items: center;
 }
 
 .ota-search-field--selector {

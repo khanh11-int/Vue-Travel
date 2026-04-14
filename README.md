@@ -296,7 +296,3 @@ Ví dụ endpoint:
   - Upload hình ảnh
   - Báo cáo doanh thu
   - Dashboard thống kê nâng cao
-
----
-
-Nếu bạn muốn, có thể thêm tiếp bản README song ngữ Việt/Anh hoặc phiên bản “chuẩn CV/Portfolio” (có hình minh họa, GIF demo, kiến trúc diagram) để repo nhìn nổi bật hơn khi nộp và khi showcase.
